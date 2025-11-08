@@ -3,11 +3,11 @@ package main
 import (
 	"log"
 
+	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/routes"
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/routes"
 )
 
 func main(){
@@ -26,6 +26,5 @@ func main(){
 	
 	log.Println("API Gateway listening on port :8080")
 	router.Run(":8080")
-
 }
  

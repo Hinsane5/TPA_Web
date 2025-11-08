@@ -3,6 +3,7 @@ module github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway
 go 1.25.3
 
 require (
+	github.com/Hinsane5/hoshiBmaTchi/backend/proto v0.0.0-00010101000000-000000000000
 	github.com/gin-gonic/gin v1.11.0
 	google.golang.org/grpc v1.76.0
 )
@@ -42,3 +43,7 @@ require (
 	google.golang.org/protobuf v1.36.10 // indirect
 )
 
+replace (
+	github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/routes => ./routes
+	github.com/Hinsane5/hoshiBmaTchi/backend/proto => ../proto
+)
