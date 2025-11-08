@@ -2,13 +2,14 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v6.33.0
-// source: backend/proto/users.proto
+// source: users/users.proto
 
 package users
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -22,18 +23,21 @@ const (
 )
 
 type RegisterUserRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Username          string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Email             string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Password          string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	DateOfBirth       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_of_birth,proto3" json:"date_of_birth,omitempty"`
+	Gender            string                 `protobuf:"bytes,6,opt,name=gender,proto3" json:"gender,omitempty"`
+	ProfilePictureUrl string                 `protobuf:"bytes,7,opt,name=profile_picture_url,proto3" json:"profile_picture_url,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *RegisterUserRequest) Reset() {
 	*x = RegisterUserRequest{}
-	mi := &file_backend_proto_users_proto_msgTypes[0]
+	mi := &file_users_users_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +49,7 @@ func (x *RegisterUserRequest) String() string {
 func (*RegisterUserRequest) ProtoMessage() {}
 
 func (x *RegisterUserRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_users_proto_msgTypes[0]
+	mi := &file_users_users_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -58,7 +62,7 @@ func (x *RegisterUserRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterUserRequest.ProtoReflect.Descriptor instead.
 func (*RegisterUserRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_users_proto_rawDescGZIP(), []int{0}
+	return file_users_users_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *RegisterUserRequest) GetName() string {
@@ -89,17 +93,43 @@ func (x *RegisterUserRequest) GetPassword() string {
 	return ""
 }
 
+func (x *RegisterUserRequest) GetDateOfBirth() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DateOfBirth
+	}
+	return nil
+}
+
+func (x *RegisterUserRequest) GetGender() string {
+	if x != nil {
+		return x.Gender
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetProfilePictureUrl() string {
+	if x != nil {
+		return x.ProfilePictureUrl
+	}
+	return ""
+}
+
 type RegisterUserResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	UserId            string                 `protobuf:"bytes,1,opt,name=user_id,proto3" json:"user_id,omitempty"`
+	Name              string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Username          string                 `protobuf:"bytes,3,opt,name=username,proto3" json:"username,omitempty"`
+	Email             string                 `protobuf:"bytes,4,opt,name=email,proto3" json:"email,omitempty"`
+	DateOfBirth       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_of_birth,proto3" json:"date_of_birth,omitempty"`
+	Gender            string                 `protobuf:"bytes,6,opt,name=gender,proto3" json:"gender,omitempty"`
+	ProfilePictureUrl string                 `protobuf:"bytes,7,opt,name=profile_picture_url,proto3" json:"profile_picture_url,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *RegisterUserResponse) Reset() {
 	*x = RegisterUserResponse{}
-	mi := &file_backend_proto_users_proto_msgTypes[1]
+	mi := &file_users_users_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -111,7 +141,7 @@ func (x *RegisterUserResponse) String() string {
 func (*RegisterUserResponse) ProtoMessage() {}
 
 func (x *RegisterUserResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_users_proto_msgTypes[1]
+	mi := &file_users_users_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -124,7 +154,7 @@ func (x *RegisterUserResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterUserResponse.ProtoReflect.Descriptor instead.
 func (*RegisterUserResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_users_proto_rawDescGZIP(), []int{1}
+	return file_users_users_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *RegisterUserResponse) GetUserId() string {
@@ -134,76 +164,122 @@ func (x *RegisterUserResponse) GetUserId() string {
 	return ""
 }
 
-func (x *RegisterUserResponse) GetMessage() string {
+func (x *RegisterUserResponse) GetName() string {
 	if x != nil {
-		return x.Message
+		return x.Name
 	}
 	return ""
 }
 
-var File_backend_proto_users_proto protoreflect.FileDescriptor
+func (x *RegisterUserResponse) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
 
-const file_backend_proto_users_proto_rawDesc = "" +
+func (x *RegisterUserResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *RegisterUserResponse) GetDateOfBirth() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DateOfBirth
+	}
+	return nil
+}
+
+func (x *RegisterUserResponse) GetGender() string {
+	if x != nil {
+		return x.Gender
+	}
+	return ""
+}
+
+func (x *RegisterUserResponse) GetProfilePictureUrl() string {
+	if x != nil {
+		return x.ProfilePictureUrl
+	}
+	return ""
+}
+
+var File_users_users_proto protoreflect.FileDescriptor
+
+const file_users_users_proto_rawDesc = "" +
 	"\n" +
-	"\x19backend/proto/users.proto\x12\x05users\"w\n" +
+	"\x11users/users.proto\x12\x05users\x1a\x1fgoogle/protobuf/timestamp.proto\"\x83\x02\n" +
 	"\x13RegisterUserRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\"I\n" +
-	"\x14RegisterUserResponse\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2V\n" +
+	"\bpassword\x18\x04 \x01(\tR\bpassword\x12@\n" +
+	"\rdate_of_birth\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\rdate_of_birth\x12\x16\n" +
+	"\x06gender\x18\x06 \x01(\tR\x06gender\x120\n" +
+	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url\"\x82\x02\n" +
+	"\x14RegisterUserResponse\x12\x18\n" +
+	"\auser_id\x18\x01 \x01(\tR\auser_id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
+	"\busername\x18\x03 \x01(\tR\busername\x12\x14\n" +
+	"\x05email\x18\x04 \x01(\tR\x05email\x12@\n" +
+	"\rdate_of_birth\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\rdate_of_birth\x12\x16\n" +
+	"\x06gender\x18\x06 \x01(\tR\x06gender\x120\n" +
+	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url2V\n" +
 	"\vUserService\x12G\n" +
 	"\fRegisterUser\x12\x1a.users.RegisterUserRequest\x1a\x1b.users.RegisterUserResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
 
 var (
-	file_backend_proto_users_proto_rawDescOnce sync.Once
-	file_backend_proto_users_proto_rawDescData []byte
+	file_users_users_proto_rawDescOnce sync.Once
+	file_users_users_proto_rawDescData []byte
 )
 
-func file_backend_proto_users_proto_rawDescGZIP() []byte {
-	file_backend_proto_users_proto_rawDescOnce.Do(func() {
-		file_backend_proto_users_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_backend_proto_users_proto_rawDesc), len(file_backend_proto_users_proto_rawDesc)))
+func file_users_users_proto_rawDescGZIP() []byte {
+	file_users_users_proto_rawDescOnce.Do(func() {
+		file_users_users_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_users_users_proto_rawDesc), len(file_users_users_proto_rawDesc)))
 	})
-	return file_backend_proto_users_proto_rawDescData
+	return file_users_users_proto_rawDescData
 }
 
-var file_backend_proto_users_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_backend_proto_users_proto_goTypes = []any{
-	(*RegisterUserRequest)(nil),  // 0: users.RegisterUserRequest
-	(*RegisterUserResponse)(nil), // 1: users.RegisterUserResponse
+var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_users_users_proto_goTypes = []any{
+	(*RegisterUserRequest)(nil),   // 0: users.RegisterUserRequest
+	(*RegisterUserResponse)(nil),  // 1: users.RegisterUserResponse
+	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
-var file_backend_proto_users_proto_depIdxs = []int32{
-	0, // 0: users.UserService.RegisterUser:input_type -> users.RegisterUserRequest
-	1, // 1: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+var file_users_users_proto_depIdxs = []int32{
+	2, // 0: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
+	2, // 1: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
+	0, // 2: users.UserService.RegisterUser:input_type -> users.RegisterUserRequest
+	1, // 3: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
+	3, // [3:4] is the sub-list for method output_type
+	2, // [2:3] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_backend_proto_users_proto_init() }
-func file_backend_proto_users_proto_init() {
-	if File_backend_proto_users_proto != nil {
+func init() { file_users_users_proto_init() }
+func file_users_users_proto_init() {
+	if File_users_users_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_backend_proto_users_proto_rawDesc), len(file_backend_proto_users_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_users_proto_rawDesc), len(file_users_users_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_backend_proto_users_proto_goTypes,
-		DependencyIndexes: file_backend_proto_users_proto_depIdxs,
-		MessageInfos:      file_backend_proto_users_proto_msgTypes,
+		GoTypes:           file_users_users_proto_goTypes,
+		DependencyIndexes: file_users_users_proto_depIdxs,
+		MessageInfos:      file_users_users_proto_msgTypes,
 	}.Build()
-	File_backend_proto_users_proto = out.File
-	file_backend_proto_users_proto_goTypes = nil
-	file_backend_proto_users_proto_depIdxs = nil
+	File_users_users_proto = out.File
+	file_users_users_proto_goTypes = nil
+	file_users_users_proto_depIdxs = nil
 }
