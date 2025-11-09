@@ -10,7 +10,7 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/utils"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -108,7 +108,7 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	err = h.repo.Save(newUser)
 	if err != nil {
 
-		var pqErr *pq.Error
+		var pqErr *pgconn.PgError
 		if errors.As(err, &pqErr) && pqErr.Code == "23505"{
 			return nil, status.Error(codes.AlreadyExists, "username or email already exists")
 		}
