@@ -23,16 +23,19 @@ const (
 )
 
 type RegisterUserRequest struct {
-	state             protoimpl.MessageState `protogen:"open.v1"`
-	Name              string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Username          string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	Email             string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
-	Password          string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
-	DateOfBirth       *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_of_birth,proto3" json:"date_of_birth,omitempty"`
-	Gender            string                 `protobuf:"bytes,6,opt,name=gender,proto3" json:"gender,omitempty"`
-	ProfilePictureUrl string                 `protobuf:"bytes,7,opt,name=profile_picture_url,proto3" json:"profile_picture_url,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"open.v1"`
+	Name                  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Username              string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Email                 string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Password              string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	DateOfBirth           *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=date_of_birth,proto3" json:"date_of_birth,omitempty"`
+	Gender                string                 `protobuf:"bytes,6,opt,name=gender,proto3" json:"gender,omitempty"`
+	ProfilePictureUrl     string                 `protobuf:"bytes,7,opt,name=profile_picture_url,proto3" json:"profile_picture_url,omitempty"`
+	ConfirmPassword       string                 `protobuf:"bytes,8,opt,name=confirm_password,proto3" json:"confirm_password,omitempty"`
+	SubscribeToNewsletter bool                   `protobuf:"varint,9,opt,name=subscribe_to_newsletter,proto3" json:"subscribe_to_newsletter,omitempty"`
+	Enable_2Fa            bool                   `protobuf:"varint,10,opt,name=enable_2fa,proto3" json:"enable_2fa,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *RegisterUserRequest) Reset() {
@@ -112,6 +115,27 @@ func (x *RegisterUserRequest) GetProfilePictureUrl() string {
 		return x.ProfilePictureUrl
 	}
 	return ""
+}
+
+func (x *RegisterUserRequest) GetConfirmPassword() string {
+	if x != nil {
+		return x.ConfirmPassword
+	}
+	return ""
+}
+
+func (x *RegisterUserRequest) GetSubscribeToNewsletter() bool {
+	if x != nil {
+		return x.SubscribeToNewsletter
+	}
+	return false
+}
+
+func (x *RegisterUserRequest) GetEnable_2Fa() bool {
+	if x != nil {
+		return x.Enable_2Fa
+	}
+	return false
 }
 
 type RegisterUserResponse struct {
@@ -210,7 +234,7 @@ var File_users_users_proto protoreflect.FileDescriptor
 
 const file_users_users_proto_rawDesc = "" +
 	"\n" +
-	"\x11users/users.proto\x12\x05users\x1a\x1fgoogle/protobuf/timestamp.proto\"\x83\x02\n" +
+	"\x11users/users.proto\x12\x05users\x1a\x1fgoogle/protobuf/timestamp.proto\"\x89\x03\n" +
 	"\x13RegisterUserRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -218,7 +242,13 @@ const file_users_users_proto_rawDesc = "" +
 	"\bpassword\x18\x04 \x01(\tR\bpassword\x12@\n" +
 	"\rdate_of_birth\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\rdate_of_birth\x12\x16\n" +
 	"\x06gender\x18\x06 \x01(\tR\x06gender\x120\n" +
-	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url\"\x82\x02\n" +
+	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url\x12*\n" +
+	"\x10confirm_password\x18\b \x01(\tR\x10confirm_password\x128\n" +
+	"\x17subscribe_to_newsletter\x18\t \x01(\bR\x17subscribe_to_newsletter\x12\x1e\n" +
+	"\n" +
+	"enable_2fa\x18\n" +
+	" \x01(\bR\n" +
+	"enable_2fa\"\x82\x02\n" +
 	"\x14RegisterUserResponse\x12\x18\n" +
 	"\auser_id\x18\x01 \x01(\tR\auser_id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +

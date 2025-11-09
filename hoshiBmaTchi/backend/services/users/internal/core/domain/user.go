@@ -22,6 +22,9 @@ type User struct{
 	DateOfBirth     time.Time
 	Gender          string
 	ProfilePictureURL string
+
+	SubscribedToNewsletters bool `gorm:"default:false"`
+	TwoFactorEnabled bool `gorm:"default:false"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

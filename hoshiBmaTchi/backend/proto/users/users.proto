@@ -18,6 +18,9 @@ message RegisterUserRequest {
   google.protobuf.Timestamp date_of_birth = 5 [json_name = "date_of_birth"];
   string gender = 6;
   string profile_picture_url = 7 [json_name = "profile_picture_url"];
+  string confirm_password = 8 [json_name = "confirm_password"];
+  bool subscribe_to_newsletter = 9 [json_name = "subscribe_to_newsletter"];
+  bool enable_2fa = 10 [json_name = "enable_2fa"];
 }
 
 message RegisterUserResponse {
