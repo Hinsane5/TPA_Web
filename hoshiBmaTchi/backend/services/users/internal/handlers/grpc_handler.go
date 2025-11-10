@@ -37,6 +37,53 @@ func NewUserHandler(repo ports.UserRepository, redis *redis.Client, amqpChan *am
 	}
 }
 
+func (h *UserHandler) SendOtp(ctx context.Context, req *pb.SendOtpRequest) (*pb.SendOtpResponse, error){
+	if !regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$`).MatchString(req.Email) {
+		return nil, status.Error(codes.InvalidArgument, "Invalid email format")
+	}
+
+	rateLimitKey := "ratelimit:" + req.Email
+
+	set, err := h.redis.SetNX(ctx, rateLimitKey, 1, 60*time.Second).Result()
+	if err != nil{
+		return nil, status.Error(codes.Internal, "failed to check rate limit")
+	}
+
+	if !set{
+		return nil, status.Error(codes.ResourceExhausted, "Please wait 60 seconds before resending OTP")
+	}
+
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+
+	otpKey := "otp:" + req.Email
+
+	err = h.redis.Set(ctx, otpKey, otp, 5*time.Minute).Err()
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to store OTP")
+	}
+
+	emailBody := fmt.Sprintf("Your verification code is %s", otp)
+
+	err = h.amqpChan.PublishWithContext(ctx, 
+		"email_exchange",
+		"send_email",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
+		},
+	)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to publish email task")
+	}
+
+	return &pb.SendOtpResponse{
+		Message: "OTP sent successfully",
+	}, nil
+}
+
 func (h *UserHandler) validateRegisterRequest(req *pb.RegisterUserRequest) error{
 	if len(req.Name) <= 4 {
 		return status.Error(codes.InvalidArgument, "name must be at least 5 characters long")
@@ -91,6 +138,19 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 
 	if err := h.validateRegisterRequest(req); err != nil {
 		return nil, err
+	}
+
+	otpKey := "otp:" + req.Email
+	storedOtp, err := h.redis.Get(ctx, otpKey).Result()
+
+	if err == redis.Nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid or expired OTP")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get OTP")
+	}
+
+	if storedOtp != req.OtpCode{
+		return nil, status.Error(codes.InvalidArgument, "Invalid or expired OTP code")
 	}
 
 	hashedPassword, err := utils.HashPassword(req.Password)

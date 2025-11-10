@@ -8,6 +8,16 @@ import "google/protobuf/timestamp.proto";
 
 service UserService {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
+
+  rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
+}
+
+message SendOtpRequest{
+  string email = 1;
+}
+
+message SendOtpResponse{
+  string message = 1;
 }
 
 message RegisterUserRequest {
@@ -22,6 +32,7 @@ message RegisterUserRequest {
   bool subscribe_to_newsletter = 9 [json_name = "subscribe_to_newsletter"];
   bool enable_2fa = 10 [json_name = "enable_2fa"];
   string otp_code = 11 [json_name = "otp_code"];
+
 }
 
 message RegisterUserResponse {

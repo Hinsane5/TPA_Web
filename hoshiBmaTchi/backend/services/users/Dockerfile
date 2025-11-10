@@ -18,6 +18,8 @@ WORKDIR /app
 
 COPY --from=builder /app/users-service /app/users-service
 
+RUN chmod +x /app/users-service
+
 EXPOSE 50051
 
 CMD ["/app/users-service"]

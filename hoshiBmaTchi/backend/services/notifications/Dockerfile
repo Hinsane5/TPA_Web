@@ -1,8 +1,12 @@
+# --- Tahap 1: Builder ---
+# PERUBAHAN: Tentukan platform builder
 FROM golang:1.25 AS builder
 
 WORKDIR /app
 
 COPY backend/services/notifications/go.mod backend/services/notifications/go.sum ./
+
+COPY backend/proto /proto
 
 RUN go mod download
 
@@ -19,4 +23,3 @@ COPY --from=builder /app/notification-service /app/notification-service
 RUN chmod +x /app/notification-service
 
 CMD ["/app/notification-service"]
-

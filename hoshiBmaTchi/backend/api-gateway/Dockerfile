@@ -18,6 +18,8 @@ WORKDIR /app
 
 COPY --from=builder /app/api-gateway /app/api-gateway
 
+RUN chmod +x /app/api-gateway
+
 EXPOSE 8080
 
 CMD ["/app/api-gateway"]
