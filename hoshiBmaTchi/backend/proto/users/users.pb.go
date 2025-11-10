@@ -34,6 +34,7 @@ type RegisterUserRequest struct {
 	ConfirmPassword       string                 `protobuf:"bytes,8,opt,name=confirm_password,proto3" json:"confirm_password,omitempty"`
 	SubscribeToNewsletter bool                   `protobuf:"varint,9,opt,name=subscribe_to_newsletter,proto3" json:"subscribe_to_newsletter,omitempty"`
 	Enable_2Fa            bool                   `protobuf:"varint,10,opt,name=enable_2fa,proto3" json:"enable_2fa,omitempty"`
+	OtpCode               string                 `protobuf:"bytes,11,opt,name=otp_code,proto3" json:"otp_code,omitempty"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -138,6 +139,13 @@ func (x *RegisterUserRequest) GetEnable_2Fa() bool {
 	return false
 }
 
+func (x *RegisterUserRequest) GetOtpCode() string {
+	if x != nil {
+		return x.OtpCode
+	}
+	return ""
+}
+
 type RegisterUserResponse struct {
 	state             protoimpl.MessageState `protogen:"open.v1"`
 	UserId            string                 `protobuf:"bytes,1,opt,name=user_id,proto3" json:"user_id,omitempty"`
@@ -234,7 +242,7 @@ var File_users_users_proto protoreflect.FileDescriptor
 
 const file_users_users_proto_rawDesc = "" +
 	"\n" +
-	"\x11users/users.proto\x12\x05users\x1a\x1fgoogle/protobuf/timestamp.proto\"\x89\x03\n" +
+	"\x11users/users.proto\x12\x05users\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa5\x03\n" +
 	"\x13RegisterUserRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
@@ -248,7 +256,8 @@ const file_users_users_proto_rawDesc = "" +
 	"\n" +
 	"enable_2fa\x18\n" +
 	" \x01(\bR\n" +
-	"enable_2fa\"\x82\x02\n" +
+	"enable_2fa\x12\x1a\n" +
+	"\botp_code\x18\v \x01(\tR\botp_code\"\x82\x02\n" +
 	"\x14RegisterUserResponse\x12\x18\n" +
 	"\auser_id\x18\x01 \x01(\tR\auser_id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +

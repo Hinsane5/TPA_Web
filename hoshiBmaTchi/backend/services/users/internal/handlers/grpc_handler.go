@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math/rand"
 	"regexp"
 	"time"
 
@@ -11,9 +13,11 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/utils"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 
@@ -21,10 +25,16 @@ import (
 type UserHandler struct{
 	pb.UnimplementedUserServiceServer
 	repo ports.UserRepository
+	redis *redis.Client
+	amqpChan *amqp.Channel
 }
 
-func NewUserHandler(repo ports.UserRepository) *UserHandler{
-	return &UserHandler{repo: repo}
+func NewUserHandler(repo ports.UserRepository, redis *redis.Client, amqpChan *amqp.Channel) *UserHandler{
+	return &UserHandler{
+		repo: repo,
+		redis: redis,
+		amqpChan: amqpChan,
+	}
 }
 
 func (h *UserHandler) validateRegisterRequest(req *pb.RegisterUserRequest) error{
@@ -120,6 +130,32 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	if !newUser.DateOfBirth.IsZero(){
 		dobTimestamp = timestamppb.New(newUser.DateOfBirth)
 	}
+
+	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+
+	err = h.redis.Set(ctx, "otp:"+req.Email, otp, 5*time.Minute).Err()
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to store OTP")
+	}
+
+	emailBody := fmt.Sprintf("Your verification code is %s", otp)
+
+	err = h.amqpChan.PublishWithContext(ctx, 
+		"email_exchange",
+		"send_email",
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body: []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
+		},
+	)
+
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to publish email task")
+	}
+	
 
 	return &pb.RegisterUserResponse{
 		UserId:            newUser.ID.String(),

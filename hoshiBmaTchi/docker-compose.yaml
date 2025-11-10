@@ -96,6 +96,18 @@ services:
         condition: service_started
     restart: unless-stopped
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./backend/services/notifications/Dockerfile
+    container_name: ${PROJECT_NAME}-notification-service
+    networks:
+      - hoshi-network
+    depends_on:
+      rabbitmq:
+        condition: service_started 
+    restart: unless-stopped
+
   api-gateway:
     build:
       context: .
