@@ -40,7 +40,7 @@ services:
       - ./infra/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
     networks:
       - ${NETWORK_NAME}
-    ports: 
+    ports:
       - "5433:5432"
     restart: unless-stopped
     healthcheck:
@@ -105,7 +105,7 @@ services:
       - hoshi-network
     depends_on:
       rabbitmq:
-        condition: service_started 
+        condition: service_started
     restart: unless-stopped
 
   api-gateway:
