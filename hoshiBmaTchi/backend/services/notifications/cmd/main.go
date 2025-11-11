@@ -52,11 +52,32 @@ func main(){
 		false,
 		nil,
 	)
+
 	failOnError(err, "Failed to bind a queue")
 
-	msgs, err := ch.Consume(
-		q.Name,
-		"",
+	welcomeQueue, err := ch.QueueDeclare(
+		"welcome_email_queue",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	failOnError(err, "Failed to declare Welcome queue")
+
+	err = ch.QueueBind(
+		welcomeQueue.Name,
+		"email.welcome",  
+		"email_exchange",  
+		false,
+		nil,
+	)
+	failOnError(err, "Failed to bind Welcome queue")
+
+	otpMsgs, err := ch.Consume(
+		q.Name, 
+		"otp_customer",
 		false,
 		false,
 		false,
@@ -64,15 +85,34 @@ func main(){
 		nil,
 	)
 
-	failOnError(err, "Failed to register a consumer")
+	failOnError(err, "Failed to register Welcome consumer")
+
+	welcomeMsgs, err := ch.Consume(
+		welcomeQueue.Name,    // queue
+		"welcome_consumer", // consumer tag
+		false,              // auto-ack
+		false,              // exclusive
+		false,              // no-local
+		false,              // no-wait
+		nil,                // args
+	)
+	failOnError(err, "Failed to register Welcome consumer")
 
 	log.Println("Notification service started. Waiting for email tasks...")
 
 	var forever chan struct{}
 
-	go func(){
-		for d := range msgs{
-			log.Printf(" [x] Received email task: %s", d.Body)
+	go func() {
+		for d := range otpMsgs {
+			log.Printf(" [OTP] Received email task: %s", d.Body)
+			d.Ack(false)
+		}
+	}()
+
+	go func() {
+		for d := range welcomeMsgs {
+			log.Printf(" [WELCOME] Received email task: %s", d.Body)
+			
 
 			d.Ack(false)
 		}

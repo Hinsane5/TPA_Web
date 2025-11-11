@@ -2,9 +2,13 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"math/rand"
+	"net/http"
+	"net/url"
 	"regexp"
 	"time"
 
@@ -13,11 +17,11 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/utils"
 	"github.com/jackc/pgx/v5/pgconn"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 
@@ -27,6 +31,10 @@ type UserHandler struct{
 	repo ports.UserRepository
 	redis *redis.Client
 	amqpChan *amqp.Channel
+}
+
+type turnstileResponse struct{
+	Success bool `json:"success"`
 }
 
 func NewUserHandler(repo ports.UserRepository, redis *redis.Client, amqpChan *amqp.Channel) *UserHandler{
@@ -134,7 +142,42 @@ func (h *UserHandler) validateRegisterRequest(req *pb.RegisterUserRequest) error
 	return nil
 }
 
+func (h *UserHandler) validateTurnstile (token string) error{
+	const turnstileSecretKey = "CLOUDFLARE_SECRET"
+
+	resp, err := http.PostForm("https://challenges.cloudflare.com/turnstile/v0/siteverify",
+		url.Values{
+			"secret": {turnstileSecretKey},
+			"response": {token},
+		})
+	
+	if err != nil {
+		return status.Error(codes.Internal, "failed to verify turnstile")
+	}
+
+	if err != nil{
+		return status.Error(codes.Internal, "failed to verify turnstile")
+	}
+
+	defer resp.Body.Close()
+
+	var body turnstileResponse
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		return status.Error(codes.Internal, "failed to parse turnstile response")
+	}
+
+	if !body.Success {
+		return status.Error(codes.Unauthenticated, "Invalid CAPTCHA token")
+	}
+
+	return nil
+}
+
 func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error){
+
+	// if err := h.validateTurnstile(req.TurnstileToken); err != nil {
+	// 	return nil, err
+	// }
 
 	if err := h.validateRegisterRequest(req); err != nil {
 		return nil, err
@@ -186,6 +229,24 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		return nil, status.Error(codes.Internal, "failed to save user")
 	}
 
+	h.redis.Del(ctx, otpKey)
+
+	welcomeBody := fmt.Sprintf("Hi %s, welcome to hoshiBmaTchi!", req.Name)
+	err = h.amqpChan.PublishWithContext(ctx, 
+		"email_exchange",
+		"email.welcome",
+		false, 
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        []byte(fmt.Sprintf(`{"email": "%s", "subject": "Welcome to hoshiBmaTchi!", "body": "%s"}`, req.Email, welcomeBody)),
+		},
+	)	
+
+	if err != nil{
+		log.Printf("Failed to publish welcome email task: %v", err)
+	}
+
 	var dobTimestamp *timestamppb.Timestamp
 	if !newUser.DateOfBirth.IsZero(){
 		dobTimestamp = timestamppb.New(newUser.DateOfBirth)
@@ -227,4 +288,6 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		ProfilePictureUrl: newUser.ProfilePictureURL,
 	}, nil
 }
+
+
 

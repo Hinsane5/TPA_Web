@@ -32,6 +32,7 @@ message RegisterUserRequest {
   bool subscribe_to_newsletter = 9 [json_name = "subscribe_to_newsletter"];
   bool enable_2fa = 10 [json_name = "enable_2fa"];
   string otp_code = 11 [json_name = "otp_code"];
+  string turnstile_token = 12 [json_name = "turnstile_token"];
 
 }
 

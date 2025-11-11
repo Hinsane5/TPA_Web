@@ -32,6 +32,7 @@ type registerRequestJSON struct {
 	SubscribeToNewsletter bool `json:"subscribe_to_newsletter"`
 	Enable2FA             bool `json:"enable_2fa"`
 	OtpCode               string `json:"otp_code"`
+	TurnstileToken	   string `json:"turnstile_token"`
 }
 
 func (h *AuthHandler) SendOtp(c *gin.Context){
@@ -44,7 +45,7 @@ func (h *AuthHandler) SendOtp(c *gin.Context){
 	res, err := h.UserClient.SendOtp(context.Background(), &pb.SendOtpRequest{
 		Email: jsonReq.Email,
 	})
-
+ 
 	if err != nil {
 		// Handle gRPC errors (like rate limit)
 		if s, ok := status.FromError(err); ok {
@@ -94,6 +95,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		SubscribeToNewsletter: jsonReq.SubscribeToNewsletter,
 		Enable_2Fa:            jsonReq.Enable2FA,
 		OtpCode:               jsonReq.OtpCode,
+		TurnstileToken: jsonReq.TurnstileToken,
 	}
 
 	res, err := h.UserClient.RegisterUser(context.Background(), grpcReq)
