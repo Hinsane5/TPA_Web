@@ -177,20 +177,23 @@ func (h *UserHandler) validateTurnstile (token string) error{
 }
 
 func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoogleRequest) (*pb.LoginResponse, error){
-	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-	// if err != nil {
-	// 	return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-	// }
-
-	// email := payload.Claims["email"].(string)
-	// name := payload.Claims["name"].(string)
-	// picture := payload.Claims["picture"].(string)
-
+	
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientID == "" {
 		log.Println("FATAL ERROR: GOOGLE_CLIENT_ID environment variable is not set.")
 		return nil, status.Error(codes.Internal, "Google login is not configured")
 	}
+	
+	payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
+	}
+
+	email := payload.Claims["email"].(string)
+	name := payload.Claims["name"].(string)
+	picture := payload.Claims["picture"].(string)
+
+	
 
 	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
 	// if err != nil {
@@ -202,29 +205,26 @@ func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoog
 	// name := payload.Claims["name"].(string)
 	// picture := payload.Claims["picture"].(string)
 
-	var email string
-	var name string
-	var picture string
+	// var email string
+	// var name string
+	// var picture string
 
-	if req.IdToken == "test_token_123" {
-		log.Println("--- MOCK GOOGLE LOGIN: Using test token ---")
-		// If it's our test token, use mock data and skip Google's validation
-		email = "testuser_google@example.com"
-		name = "Google Test User"
-		picture = "http://example.com/google.jpg"
-	} else {
-		// If it's NOT the test token, try to validate it with Google
-		payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-		if err != nil {
-			log.Printf("Google token validation failed: %v", err)
-			return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-		}
+	// if req.IdToken == "test_token_123" {
+	// 	log.Println("--- MOCK GOOGLE LOGIN: Using test token ---")
+	// 	email = "testuser_google@example.com"
+	// 	name = "Google Test User"
+	// 	picture = "http://example.com/google.jpg"
+	// } else {
+	// 	payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
+	// 	if err != nil {
+	// 		log.Printf("Google token validation failed: %v", err)
+	// 		return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
+	// 	}
 
-		// Get real data from the token
-		email = payload.Claims["email"].(string)
-		name = payload.Claims["name"].(string)
-		picture = payload.Claims["picture"].(string)
-	}
+	// 	email = payload.Claims["email"].(string)
+	// 	name = payload.Claims["name"].(string)
+	// 	picture = payload.Claims["picture"].(string)
+	// }
 
 	user, err := h.repo.FindByEmail(email)
 	if err != nil && err != gorm.ErrRecordNotFound{

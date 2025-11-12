@@ -1,10 +1,20 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
+	"os"
+	"strconv"
 
 	amqp "github.com/rabbitmq/amqp091-go"
+	"gopkg.in/gomail.v2"
 )
+
+type EmailTask struct{
+	Email string `json:"email"`
+	Subject string `json:"subject"`
+	Body string `json:"body"`
+}
 
 func failOnError(err error, msg string){
 	if err != nil{
@@ -13,6 +23,26 @@ func failOnError(err error, msg string){
 }
 
 func main(){
+
+	smtpHost := os.Getenv("SMTP_HOST")
+	smtpPortStr := os.Getenv("SMTP_PORT")
+	emailUser := os.Getenv("EMAIL_USER")
+	emailPass := os.Getenv("EMAIL_APP_PASSWORD")
+
+	if smtpHost == "" || smtpPortStr == "" || emailUser == "" || emailPass == "" {
+		log.Fatal("FATAL: SMTP environment variables are not set")
+	}
+
+	smtpPort, err := strconv.Atoi(smtpPortStr)
+	failOnError(err, "Invalid SMTP_PORT")
+
+	dialer := gomail.NewDialer(smtpHost, smtpPort, emailUser, emailPass)
+
+	dialerConn, err := dialer.Dial()
+	failOnError(err, "Failed to connect to SMTP server")
+	dialerConn.Close()
+	log.Println("SMTP connection successful.")
+
 	conn, err := amqp.Dial("amqp://admin:rabbitmq_password_123@rabbitmq:5672/")
 
 	failOnError(err, "Failed to connect to RabbitMQ")
@@ -88,13 +118,13 @@ func main(){
 	failOnError(err, "Failed to register Welcome consumer")
 
 	welcomeMsgs, err := ch.Consume(
-		welcomeQueue.Name,    // queue
-		"welcome_consumer", // consumer tag
-		false,              // auto-ack
-		false,              // exclusive
-		false,              // no-local
-		false,              // no-wait
-		nil,                // args
+		welcomeQueue.Name,    
+		"welcome_consumer", 
+		false,              
+		false,              
+		false,              
+		false,              
+		nil,                
 	)
 	failOnError(err, "Failed to register Welcome consumer")
 
@@ -104,17 +134,55 @@ func main(){
 
 	go func() {
 		for d := range otpMsgs {
-			log.Printf(" [OTP] Received email task: %s", d.Body)
-			d.Ack(false)
+			log.Printf(" [OTP] Received email task for: %s", d.Body)
+			
+			var task EmailTask
+			if err := json.Unmarshal(d.Body, &task); err != nil {
+				log.Printf("Error: Failed to parse task body: %v", err)
+				d.Nack(false, false)
+				continue
+			}
+
+			m := gomail.NewMessage()
+			m.SetHeader("From", emailUser)
+			m.SetHeader("To", task.Email)
+			m.SetHeader("Subject", task.Subject)
+			m.SetBody("text/html", task.Body)
+
+			if err := dialer.DialAndSend(m); err != nil {
+				log.Printf("Error: Failed to send OTP email: %v", err)
+				d.Nack(false, true) 
+			} else {
+				log.Printf(" [OTP] Successfully sent email to %s", task.Email)
+				d.Ack(false) 
+			}
 		}
 	}()
 
 	go func() {
 		for d := range welcomeMsgs {
 			log.Printf(" [WELCOME] Received email task: %s", d.Body)
-			
 
-			d.Ack(false)
+			var task EmailTask
+			if err := json.Unmarshal(d.Body, &task); err != nil {
+				log.Printf("Error: Failed to parse task body: %v", err)
+				d.Nack(false, false)
+				continue
+			}
+
+			m := gomail.NewMessage()
+			m.SetHeader("From", emailUser)
+			m.SetHeader("To", task.Email)
+			m.SetHeader("Subject", task.Subject)
+			m.SetBody("text/html", task.Body)
+
+			if err := dialer.DialAndSend(m); err != nil {
+				log.Printf("Error: Failed to send welcome email: %v", err)
+				d.Nack(false, true)
+			} else {
+				log.Printf(" [WELCOME] Successfully sent email to %s", task.Email)
+				d.Ack(false)
+			}
 		}
 	}()
 

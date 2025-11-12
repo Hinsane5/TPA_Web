@@ -2,12 +2,13 @@ package utils
 
 import (
 	"log"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte("VERY_VERY_SECRET_KEY")
+var jwtSecret = []byte(os.Getenv("JWT_SECRET_KEY"))
 
 func GenerateTokens(userID string, email string) (string, string, error){
 
@@ -21,7 +22,7 @@ func GenerateTokens(userID string, email string) (string, string, error){
 		"exp": time.Now().Add(time.Minute * 15).Unix(),
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodPS256, accessTokenClaims)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessTokenClaims)
 	accessTokenString, err := accessToken.SignedString(jwtSecret)
 	if err != nil{
 		return "", "", err

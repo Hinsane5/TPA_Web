@@ -111,6 +111,12 @@ services:
         condition: service_started
     restart: unless-stopped
 
+    environment:
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
+
   api-gateway:
     build:
       context: .
