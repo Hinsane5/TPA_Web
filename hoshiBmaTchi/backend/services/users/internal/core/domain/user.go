@@ -23,12 +23,16 @@ type User struct{
 	Gender          string
 	ProfilePictureURL string
 
-	SubscribedToNewsletters bool `gorm:"default:false"`
+	SubscribedToNewsletter bool `gorm:"default:false"`
 	TwoFactorEnabled bool `gorm:"default:false"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 	// Generate a new UUID (version 4)
 	user.ID = uuid.New()
+
+	if user.Username == ""{
+		user.Username = user.ID.String()
+	}
 	return
 }

@@ -16,5 +16,6 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 	{
 		authGroup.POST("/register", authHandler.Register)
 		authGroup.POST("/send-otp", authHandler.SendOtp)
+		authGroup.POST("/google/login", authHandler.LoginWithGoogle)
 	}
 }

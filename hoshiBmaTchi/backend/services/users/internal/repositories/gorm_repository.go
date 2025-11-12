@@ -18,3 +18,12 @@ func (r *gormUserRepository) Save(user *domain.User) error{
 	result := r.db.Create(user)
 	return result.Error
 }
+
+func (r *gormUserRepository) FindByEmail(email string) (*domain.User, error){
+	var user domain.User
+	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil{
+		return nil, err
+	}
+
+	return &user, nil
+}

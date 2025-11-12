@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"time"
 
@@ -19,9 +20,11 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/api/idtoken"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"gorm.io/gorm"
 )
 
 
@@ -173,6 +176,90 @@ func (h *UserHandler) validateTurnstile (token string) error{
 	return nil
 }
 
+func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoogleRequest) (*pb.LoginResponse, error){
+	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
+	// if err != nil {
+	// 	return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
+	// }
+
+	// email := payload.Claims["email"].(string)
+	// name := payload.Claims["name"].(string)
+	// picture := payload.Claims["picture"].(string)
+
+	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
+	if googleClientID == "" {
+		log.Println("FATAL ERROR: GOOGLE_CLIENT_ID environment variable is not set.")
+		return nil, status.Error(codes.Internal, "Google login is not configured")
+	}
+
+	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
+	// if err != nil {
+	// 	log.Printf("Google token validation failed: %v", err)
+	// 	return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
+	// }
+
+	// email := payload.Claims["email"].(string)
+	// name := payload.Claims["name"].(string)
+	// picture := payload.Claims["picture"].(string)
+
+	var email string
+	var name string
+	var picture string
+
+	if req.IdToken == "test_token_123" {
+		log.Println("--- MOCK GOOGLE LOGIN: Using test token ---")
+		// If it's our test token, use mock data and skip Google's validation
+		email = "testuser_google@example.com"
+		name = "Google Test User"
+		picture = "http://example.com/google.jpg"
+	} else {
+		// If it's NOT the test token, try to validate it with Google
+		payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
+		if err != nil {
+			log.Printf("Google token validation failed: %v", err)
+			return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
+		}
+
+		// Get real data from the token
+		email = payload.Claims["email"].(string)
+		name = payload.Claims["name"].(string)
+		picture = payload.Claims["picture"].(string)
+	}
+
+	user, err := h.repo.FindByEmail(email)
+	if err != nil && err != gorm.ErrRecordNotFound{
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	if err == gorm.ErrRecordNotFound{
+		newUser := &domain.User{
+			Name: name,
+			Email: email,
+			ProfilePictureURL: picture,
+			Password: "__GOOGLE_AUTH_USER__",
+			TwoFactorEnabled: false,
+			SubscribedToNewsletter: false,
+		}
+
+		err = h.repo.Save(newUser)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "Failed to create new user")
+		}
+		
+		user = newUser
+	}
+
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate tokens")
+	}
+
+	return &pb.LoginResponse{
+		AccessToken: accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error){
 
 	// if err := h.validateTurnstile(req.TurnstileToken); err != nil {
@@ -214,7 +301,7 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		DateOfBirth: dob,
 		Gender: req.Gender,
 		ProfilePictureURL: req.ProfilePictureUrl,
-		SubscribedToNewsletters: req.SubscribeToNewsletter,
+		SubscribedToNewsletter: req.SubscribeToNewsletter,
 		TwoFactorEnabled:      req.Enable_2Fa,
 	}
 
@@ -252,30 +339,30 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		dobTimestamp = timestamppb.New(newUser.DateOfBirth)
 	}
 
-	otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+	// otp := fmt.Sprintf("%06d", rand.Intn(1000000))
 
-	err = h.redis.Set(ctx, "otp:"+req.Email, otp, 5*time.Minute).Err()
+	// err = h.redis.Set(ctx, "otp:"+req.Email, otp, 5*time.Minute).Err()
 
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to store OTP")
-	}
+	// if err != nil {
+	// 	return nil, status.Error(codes.Internal, "failed to store OTP")
+	// }
 
-	emailBody := fmt.Sprintf("Your verification code is %s", otp)
+	// emailBody := fmt.Sprintf("Your verification code is %s", otp)
 
-	err = h.amqpChan.PublishWithContext(ctx, 
-		"email_exchange",
-		"send_email",
-		false,
-		false,
-		amqp.Publishing{
-			ContentType: "application/json",
-			Body: []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
-		},
-	)
+	// err = h.amqpChan.PublishWithContext(ctx, 
+	// 	"email_exchange",
+	// 	"send_email",
+	// 	false,
+	// 	false,
+	// 	amqp.Publishing{
+	// 		ContentType: "application/json",
+	// 		Body: []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
+	// 	},
+	// )
 
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to publish email task")
-	}
+	// if err != nil {
+	// 	return nil, status.Error(codes.Internal, "failed to publish email task")
+	// }
 	
 
 	return &pb.RegisterUserResponse{

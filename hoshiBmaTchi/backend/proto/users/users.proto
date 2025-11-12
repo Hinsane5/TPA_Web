@@ -10,6 +10,16 @@ service UserService {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
 
   rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
+  rpc LoginWithGoogle(LoginWithGoogleRequest) returns (LoginResponse);
+}
+
+message LoginWithGoogleRequest{
+  string id_token = 1 [json_name = "id_token"];
+}
+
+message LoginResponse{
+  string access_token = 1;
+  string refresh_token = 2;
 }
 
 message SendOtpRequest{

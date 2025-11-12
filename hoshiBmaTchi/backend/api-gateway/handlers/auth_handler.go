@@ -35,6 +35,35 @@ type registerRequestJSON struct {
 	TurnstileToken	   string `json:"turnstile_token"`
 }
 
+type googleLoginJson struct {
+	IdToken string `json:"id_token" binding:"required"`
+}
+
+func (h *AuthHandler) LoginWithGoogle(c *gin.Context){
+	var jsonReq googleLoginJson
+	if err := c.ShouldBindJSON(&jsonReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "id_token is required"})
+		return
+	}
+
+	res, err := h.UserClient.LoginWithGoogle(context.Background(), &pb.LoginWithGoogleRequest{
+		IdToken: jsonReq.IdToken,
+	})
+
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.Unauthenticated {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": s.Message()})
+				return
+			}
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 func (h *AuthHandler) SendOtp(c *gin.Context){
 	var jsonReq sendOtpJSON
 	if err := c.ShouldBindJSON(&jsonReq); err != nil {

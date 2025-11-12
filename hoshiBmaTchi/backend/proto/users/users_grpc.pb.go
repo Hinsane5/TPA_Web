@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_RegisterUser_FullMethodName = "/users.UserService/RegisterUser"
-	UserService_SendOtp_FullMethodName      = "/users.UserService/SendOtp"
+	UserService_RegisterUser_FullMethodName    = "/users.UserService/RegisterUser"
+	UserService_SendOtp_FullMethodName         = "/users.UserService/SendOtp"
+	UserService_LoginWithGoogle_FullMethodName = "/users.UserService/LoginWithGoogle"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -29,6 +30,7 @@ const (
 type UserServiceClient interface {
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
 	SendOtp(ctx context.Context, in *SendOtpRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
+	LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*LoginResponse, error)
 }
 
 type userServiceClient struct {
@@ -59,12 +61,23 @@ func (c *userServiceClient) SendOtp(ctx context.Context, in *SendOtpRequest, opt
 	return out, nil
 }
 
+func (c *userServiceClient) LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginResponse)
+	err := c.cc.Invoke(ctx, UserService_LoginWithGoogle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
 type UserServiceServer interface {
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
 	SendOtp(context.Context, *SendOtpRequest) (*SendOtpResponse, error)
+	LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*LoginResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedUserServiceServer) RegisterUser(context.Context, *RegisterUse
 }
 func (UnimplementedUserServiceServer) SendOtp(context.Context, *SendOtpRequest) (*SendOtpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendOtp not implemented")
+}
+func (UnimplementedUserServiceServer) LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*LoginResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoginWithGoogle not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -138,6 +154,24 @@ func _UserService_SendOtp_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_LoginWithGoogle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginWithGoogleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).LoginWithGoogle(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_LoginWithGoogle_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).LoginWithGoogle(ctx, req.(*LoginWithGoogleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SendOtp",
 			Handler:    _UserService_SendOtp_Handler,
+		},
+		{
+			MethodName: "LoginWithGoogle",
+			Handler:    _UserService_LoginWithGoogle_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
