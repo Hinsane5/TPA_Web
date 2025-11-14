@@ -40,7 +40,7 @@ services:
       - ./infra/postgres/init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
     networks:
       - ${NETWORK_NAME}
-    ports: 
+    ports:
       - "5433:5432"
     restart: unless-stopped
     healthcheck:
@@ -87,6 +87,9 @@ services:
       context: .
       dockerfile: ./backend/services/users/Dockerfile
     container_name: ${PROJECT_NAME}-users-service
+    environment:
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - ${NETWORK_NAME}
     depends_on:
@@ -95,6 +98,24 @@ services:
       rabbitmq:
         condition: service_started
     restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: ./backend/services/notifications/Dockerfile
+    container_name: ${PROJECT_NAME}-notification-service
+    networks:
+      - hoshi-network
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    restart: unless-stopped
+
+    environment:
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - EMAIL_USER=${EMAIL_USER}
+      - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
 
   api-gateway:
     build:
