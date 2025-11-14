@@ -17,5 +17,9 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 		authGroup.POST("/register", authHandler.Register)
 		authGroup.POST("/send-otp", authHandler.SendOtp)
 		authGroup.POST("/google/login", authHandler.LoginWithGoogle)
+		authGroup.POST("/login", authHandler.LoginUser)
+		authGroup.POST("/verify-2fa", authHandler.VerifyLogin2FA)
+		authGroup.POST("/request-password-reset", authHandler.RequestPasswordReset)
+		authGroup.POST("/reset-password", authHandler.PerformPasswordReset)
 	}
 }

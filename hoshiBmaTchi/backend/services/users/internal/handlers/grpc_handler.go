@@ -17,6 +17,7 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/utils"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/redis/go-redis/v9"
@@ -28,7 +29,6 @@ import (
 )
 
 
-
 type UserHandler struct{
 	pb.UnimplementedUserServiceServer
 	repo ports.UserRepository
@@ -38,6 +38,12 @@ type UserHandler struct{
 
 type turnstileResponse struct{
 	Success bool `json:"success"`
+}
+
+type EmailTask struct {
+	Email   string `json:"email"`
+	Subject string `json:"subject"`
+	Body    string `json:"body"`
 }
 
 func NewUserHandler(repo ports.UserRepository, redis *redis.Client, amqpChan *amqp.Channel) *UserHandler{
@@ -74,6 +80,8 @@ func (h *UserHandler) SendOtp(ctx context.Context, req *pb.SendOtpRequest) (*pb.
 	}
 
 	emailBody := fmt.Sprintf("Your verification code is %s", otp)
+	task := EmailTask{Email: req.Email, Subject: "Verify your email", Body: emailBody}
+	taskBody, _ := json.Marshal(task)
 
 	err = h.amqpChan.PublishWithContext(ctx, 
 		"email_exchange",
@@ -82,7 +90,7 @@ func (h *UserHandler) SendOtp(ctx context.Context, req *pb.SendOtpRequest) (*pb.
 		false,
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
+			Body:        taskBody,
 		},
 	)
 
@@ -176,7 +184,7 @@ func (h *UserHandler) validateTurnstile (token string) error{
 	return nil
 }
 
-func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoogleRequest) (*pb.LoginResponse, error){
+func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoogleRequest) (*pb.TokenResponse, error){
 	
 	googleClientID := os.Getenv("GOOGLE_CLIENT_ID")
 	if googleClientID == "" {
@@ -254,10 +262,201 @@ func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoog
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
 
-	return &pb.LoginResponse{
+	return &pb.TokenResponse{
 		AccessToken: accessToken,
 		RefreshToken: refreshToken,
 	}, nil
+}
+
+func (h *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (*pb.LoginUserResponse, error){
+
+	user, err := h.repo.FindByEmailOrUsername(req.EmailOrUsername)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.Unauthenticated, "Invalid credentials")
+		}
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	if !user.IsActive {
+		return nil, status.Error(codes.Unauthenticated, "Your account has been deactivated.")
+	}
+	if user.IsBanned {
+		return nil, status.Error(codes.PermissionDenied, "Your account has been banned.")
+	}
+
+	if !utils.CheckPasswordHash(req.Password, user.Password) {
+		return nil, status.Error(codes.Unauthenticated, "invalid credentials")
+	}
+
+	if user.TwoFactorEnabled {
+		otp := fmt.Sprintf("%06d", rand.Intn(1000000))
+		otpKey := "2fa:" + user.Email 
+		err = h.redis.Set(ctx, otpKey, otp, 5*time.Minute).Err()
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to store 2FA code")
+		}
+
+		emailBody := fmt.Sprintf("Your 2FA login code is: %s. It expires in 5 minutes.", otp)
+		task := EmailTask{Email: user.Email, Subject: "Your Login Code", Body: emailBody}
+		taskBody, _ := json.Marshal(task)
+
+		err = h.amqpChan.PublishWithContext(ctx,
+			"email_exchange",
+			"send_email",
+			false, false,
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        taskBody,
+			},
+		)
+		if err != nil {
+			return nil, status.Error(codes.Internal, "failed to publish 2FA email")
+		}
+
+		return &pb.LoginUserResponse{
+			TwoFaRequired: true,
+			Tokens:        nil,
+		}, nil
+	}
+
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate tokens")
+	}
+
+	return &pb.LoginUserResponse{
+		TwoFaRequired: false,
+		Tokens: &pb.TokenResponse{
+			AccessToken:  accessToken,
+			RefreshToken: refreshToken,
+		},
+	}, nil
+
+}
+
+func (h *UserHandler) VerifyLogin2FA(ctx context.Context, req *pb.VerifyLogin2FARequest) (*pb.TokenResponse, error){
+	otpKey := "2fa:" + req.Email
+	storedOtp, err := h.redis.Get(ctx, otpKey).Result()
+	if err == redis.Nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid or expired 2FA code")
+	} else if err != nil {
+		return nil, status.Error(codes.Internal, "failed to get 2FA code")
+	}
+
+	if storedOtp != req.OtpCode {
+		return nil, status.Error(codes.InvalidArgument, "Invalid or expired 2FA code")
+	}
+
+	user, err := h.repo.FindByEmail(req.Email)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to find user post-2FA")
+	}
+
+	h.redis.Del(ctx, otpKey)
+
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate tokens")
+	}
+
+	return &pb.TokenResponse{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+func (h *UserHandler) RequestPasswordReset(ctx context.Context, req *pb.RequestPasswordResetRequest) (*pb.SendOtpResponse, error) {
+
+	user, err := h.repo.FindByEmail(req.Email)
+	if err != nil {
+		log.Printf("Password reset request for non-existent user: %s", req.Email)
+		return &pb.SendOtpResponse{Message: "If your account exists, a password reset link has been sent."}, nil
+	}
+
+	if user.IsBanned {
+		return nil, status.Error(codes.PermissionDenied, "Banned accounts cannot reset passwords.")
+	}
+
+	resetClaims := jwt.MapClaims{
+		"user_id": user.ID.String(),
+		"email":   user.Email,
+		"exp":     time.Now().Add(time.Minute * 15).Unix(), 
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, resetClaims)
+
+	resetToken, err := token.SignedString([]byte(os.Getenv("JWT_SECRET_KEY")))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to generate reset token")
+	}
+
+	resetLink := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", resetToken)
+	emailBody := fmt.Sprintf("Click here to reset your password: <a href=\"%s\">%s</a>. This link expires in 15 minutes.", resetLink, resetLink)
+	
+	task := EmailTask{Email: user.Email, Subject: "Reset Your Password", Body: emailBody}
+	taskBody, _ := json.Marshal(task)
+
+	err = h.amqpChan.PublishWithContext(ctx,
+		"email_exchange",
+		"send_email", 
+		false, false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        taskBody,
+		},
+	)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to publish reset email")
+	}
+
+	return &pb.SendOtpResponse{Message: "If your account exists, a password reset link has been sent."}, nil
+}
+
+func (h *UserHandler) PerformPasswordReset(ctx context.Context, req *pb.PerformPasswordResetRequest) (*pb.SendOtpResponse, error) {
+
+	if req.NewPassword != req.ConfirmPassword {
+		return nil, status.Error(codes.InvalidArgument, "New passwords do not match")
+	}
+	if len(req.NewPassword) < 8 {
+		return nil, status.Error(codes.InvalidArgument, "Password must be at least 8 characters")
+	}
+
+	token, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(os.Getenv("JWT_SECRET_KEY")), nil
+	})
+	if err != nil {
+		return nil, status.Error(codes.Unauthenticated, "Invalid or expired token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, status.Error(codes.Unauthenticated, "Invalid or expired token")
+	}
+
+	userID := claims["user_id"].(string)
+
+	user, err := h.repo.FindByID(userID) 
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	
+	if utils.CheckPasswordHash(req.NewPassword, user.Password) {
+		return nil, status.Error(codes.InvalidArgument, "New password cannot be the same as the old one")
+	}
+
+	newHashedPassword, err := utils.HashPassword(req.NewPassword)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to hash new password")
+	}
+
+	err = h.repo.UpdatePassword(userID, newHashedPassword)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "failed to update password")
+	}
+
+	return &pb.SendOtpResponse{Message: "Password has been reset successfully."}, nil
 }
 
 func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequest) (*pb.RegisterUserResponse, error){
@@ -319,6 +518,9 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	h.redis.Del(ctx, otpKey)
 
 	welcomeBody := fmt.Sprintf("Hi %s, welcome to hoshiBmaTchi!", req.Name)
+	task := EmailTask{Email: req.Email, Subject: "Welcome to hoshiBmaTchi!", Body: welcomeBody}
+	taskBody, _ := json.Marshal(task)
+
 	err = h.amqpChan.PublishWithContext(ctx, 
 		"email_exchange",
 		"email.welcome",
@@ -326,7 +528,7 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		false,
 		amqp.Publishing{
 			ContentType: "application/json",
-			Body:        []byte(fmt.Sprintf(`{"email": "%s", "subject": "Welcome to hoshiBmaTchi!", "body": "%s"}`, req.Email, welcomeBody)),
+			Body:       taskBody,
 		},
 	)	
 

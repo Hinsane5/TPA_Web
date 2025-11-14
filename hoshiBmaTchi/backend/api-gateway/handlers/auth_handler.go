@@ -39,6 +39,87 @@ type googleLoginJson struct {
 	IdToken string `json:"id_token" binding:"required"`
 }
 
+type loginUserJSON struct {
+	EmailOrUsername string `json:"email_or_username" binding:"required"`
+	Password        string `json:"password" binding:"required"`
+}
+
+type verify2FAJSON struct {
+	Email   string `json:"email" binding:"required"`
+	OtpCode string `json:"otp_code" binding:"required"`
+}
+
+type requestPasswordResetJSON struct {
+	Email string `json:"email" binding:"required"`
+}
+
+type performPasswordResetJSON struct {
+	Token           string `json:"token" binding:"required"`
+	NewPassword     string `json:"new_password" binding:"required"`
+	ConfirmPassword string `json:"confirm_password" binding:"required"`
+}
+
+func (h *AuthHandler) LoginUser(c *gin.Context){
+	var jsonReq loginUserJSON
+	if err := c.ShouldBindJSON(&jsonReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email and Password are required"})
+		return;
+	}
+
+	res, err := h.UserClient.LoginUser(context.Background(), &pb.LoginUserRequest{
+		EmailOrUsername:    jsonReq.EmailOrUsername,
+		Password: jsonReq.Password,
+	})
+
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			switch s.Code() {
+				case codes.Unauthenticated:
+					c.JSON(http.StatusUnauthorized, gin.H{"error": s.Message()})
+					return
+				case codes.PermissionDenied:
+					c.JSON(http.StatusForbidden, gin.H{"error": s.Message()})
+					return
+			}
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	if res.TwoFaRequired {
+		c.JSON(http.StatusOK, gin.H{"message": "2FA code sent to your email."})
+		return
+	}
+
+	c.JSON(http.StatusOK, res.Tokens)
+}
+
+func (h *AuthHandler) VerifyLogin2FA(c *gin.Context) {
+	var jsonReq verify2FAJSON
+	if err := c.ShouldBindJSON(&jsonReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email and OTP code are required"})
+		return
+	}
+
+	res, err := h.UserClient.VerifyLogin2FA(context.Background(), &pb.VerifyLogin2FARequest{
+		Email:   jsonReq.Email,
+		OtpCode: jsonReq.OtpCode,
+	})
+
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.InvalidArgument {
+				c.JSON(http.StatusBadRequest, gin.H{"error": s.Message()})
+				return
+			}
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
 func (h *AuthHandler) LoginWithGoogle(c *gin.Context){
 	var jsonReq googleLoginJson
 	if err := c.ShouldBindJSON(&jsonReq); err != nil {
@@ -153,4 +234,54 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, res)
+}
+
+func (h *AuthHandler) RequestPasswordReset(c *gin.Context) {
+	var jsonReq requestPasswordResetJSON
+	if err := c.ShouldBindJSON(&jsonReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email is required"})
+		return
+	}
+
+	_, err := h.UserClient.RequestPasswordReset(context.Background(), &pb.RequestPasswordResetRequest{
+		Email: jsonReq.Email,
+	})
+
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.PermissionDenied {
+				c.JSON(http.StatusForbidden, gin.H{"error": s.Message()})
+				return
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "If your account exists, a password reset link has been sent."})
+}
+
+func (h *AuthHandler) PerformPasswordReset(c *gin.Context) {
+	var jsonReq performPasswordResetJSON
+	if err := c.ShouldBindJSON(&jsonReq); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Token and new password are required"})
+		return
+	}
+
+	res, err := h.UserClient.PerformPasswordReset(context.Background(), &pb.PerformPasswordResetRequest{
+		Token:           jsonReq.Token,
+		NewPassword:     jsonReq.NewPassword,
+		ConfirmPassword: jsonReq.ConfirmPassword,
+	})
+
+	if err != nil {
+		if s, ok := status.FromError(err); ok {
+			if s.Code() == codes.InvalidArgument || s.Code() == codes.Unauthenticated {
+				c.JSON(http.StatusBadRequest, gin.H{"error": s.Message()})
+				return
+			}
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, res)
 }

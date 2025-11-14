@@ -25,6 +25,9 @@ type User struct{
 
 	SubscribedToNewsletter bool `gorm:"default:false"`
 	TwoFactorEnabled bool `gorm:"default:false"`
+
+	IsActive bool `gorm:"default:true"` 
+	IsBanned bool `gorm:"default:false"`
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

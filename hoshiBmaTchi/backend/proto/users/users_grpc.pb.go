@@ -19,9 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_RegisterUser_FullMethodName    = "/users.UserService/RegisterUser"
-	UserService_SendOtp_FullMethodName         = "/users.UserService/SendOtp"
-	UserService_LoginWithGoogle_FullMethodName = "/users.UserService/LoginWithGoogle"
+	UserService_RegisterUser_FullMethodName         = "/users.UserService/RegisterUser"
+	UserService_SendOtp_FullMethodName              = "/users.UserService/SendOtp"
+	UserService_LoginWithGoogle_FullMethodName      = "/users.UserService/LoginWithGoogle"
+	UserService_LoginUser_FullMethodName            = "/users.UserService/LoginUser"
+	UserService_VerifyLogin2FA_FullMethodName       = "/users.UserService/VerifyLogin2FA"
+	UserService_RequestPasswordReset_FullMethodName = "/users.UserService/RequestPasswordReset"
+	UserService_PerformPasswordReset_FullMethodName = "/users.UserService/PerformPasswordReset"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -30,7 +34,11 @@ const (
 type UserServiceClient interface {
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
 	SendOtp(ctx context.Context, in *SendOtpRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
-	LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*LoginResponse, error)
+	LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error)
+	VerifyLogin2FA(ctx context.Context, in *VerifyLogin2FARequest, opts ...grpc.CallOption) (*TokenResponse, error)
+	RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
+	PerformPasswordReset(ctx context.Context, in *PerformPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
 }
 
 type userServiceClient struct {
@@ -61,10 +69,50 @@ func (c *userServiceClient) SendOtp(ctx context.Context, in *SendOtpRequest, opt
 	return out, nil
 }
 
-func (c *userServiceClient) LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*LoginResponse, error) {
+func (c *userServiceClient) LoginWithGoogle(ctx context.Context, in *LoginWithGoogleRequest, opts ...grpc.CallOption) (*TokenResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(LoginResponse)
+	out := new(TokenResponse)
 	err := c.cc.Invoke(ctx, UserService_LoginWithGoogle_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) LoginUser(ctx context.Context, in *LoginUserRequest, opts ...grpc.CallOption) (*LoginUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(LoginUserResponse)
+	err := c.cc.Invoke(ctx, UserService_LoginUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) VerifyLogin2FA(ctx context.Context, in *VerifyLogin2FARequest, opts ...grpc.CallOption) (*TokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TokenResponse)
+	err := c.cc.Invoke(ctx, UserService_VerifyLogin2FA_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendOtpResponse)
+	err := c.cc.Invoke(ctx, UserService_RequestPasswordReset_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) PerformPasswordReset(ctx context.Context, in *PerformPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendOtpResponse)
+	err := c.cc.Invoke(ctx, UserService_PerformPasswordReset_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +125,11 @@ func (c *userServiceClient) LoginWithGoogle(ctx context.Context, in *LoginWithGo
 type UserServiceServer interface {
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
 	SendOtp(context.Context, *SendOtpRequest) (*SendOtpResponse, error)
-	LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*LoginResponse, error)
+	LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*TokenResponse, error)
+	LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error)
+	VerifyLogin2FA(context.Context, *VerifyLogin2FARequest) (*TokenResponse, error)
+	RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*SendOtpResponse, error)
+	PerformPasswordReset(context.Context, *PerformPasswordResetRequest) (*SendOtpResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -94,8 +146,20 @@ func (UnimplementedUserServiceServer) RegisterUser(context.Context, *RegisterUse
 func (UnimplementedUserServiceServer) SendOtp(context.Context, *SendOtpRequest) (*SendOtpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SendOtp not implemented")
 }
-func (UnimplementedUserServiceServer) LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*LoginResponse, error) {
+func (UnimplementedUserServiceServer) LoginWithGoogle(context.Context, *LoginWithGoogleRequest) (*TokenResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method LoginWithGoogle not implemented")
+}
+func (UnimplementedUserServiceServer) LoginUser(context.Context, *LoginUserRequest) (*LoginUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method LoginUser not implemented")
+}
+func (UnimplementedUserServiceServer) VerifyLogin2FA(context.Context, *VerifyLogin2FARequest) (*TokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method VerifyLogin2FA not implemented")
+}
+func (UnimplementedUserServiceServer) RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*SendOtpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestPasswordReset not implemented")
+}
+func (UnimplementedUserServiceServer) PerformPasswordReset(context.Context, *PerformPasswordResetRequest) (*SendOtpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PerformPasswordReset not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -172,6 +236,78 @@ func _UserService_LoginWithGoogle_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_LoginUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LoginUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).LoginUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_LoginUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).LoginUser(ctx, req.(*LoginUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_VerifyLogin2FA_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VerifyLogin2FARequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).VerifyLogin2FA(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_VerifyLogin2FA_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).VerifyLogin2FA(ctx, req.(*VerifyLogin2FARequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RequestPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RequestPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RequestPasswordReset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RequestPasswordReset(ctx, req.(*RequestPasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_PerformPasswordReset_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PerformPasswordResetRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).PerformPasswordReset(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_PerformPasswordReset_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).PerformPasswordReset(ctx, req.(*PerformPasswordResetRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +326,22 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "LoginWithGoogle",
 			Handler:    _UserService_LoginWithGoogle_Handler,
+		},
+		{
+			MethodName: "LoginUser",
+			Handler:    _UserService_LoginUser_Handler,
+		},
+		{
+			MethodName: "VerifyLogin2FA",
+			Handler:    _UserService_VerifyLogin2FA_Handler,
+		},
+		{
+			MethodName: "RequestPasswordReset",
+			Handler:    _UserService_RequestPasswordReset_Handler,
+		},
+		{
+			MethodName: "PerformPasswordReset",
+			Handler:    _UserService_PerformPasswordReset_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

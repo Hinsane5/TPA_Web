@@ -10,16 +10,35 @@ service UserService {
   rpc RegisterUser(RegisterUserRequest) returns (RegisterUserResponse);
 
   rpc SendOtp(SendOtpRequest) returns (SendOtpResponse);
-  rpc LoginWithGoogle(LoginWithGoogleRequest) returns (LoginResponse);
+  rpc LoginWithGoogle(LoginWithGoogleRequest) returns (TokenResponse);
+  rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
+  rpc VerifyLogin2FA(VerifyLogin2FARequest) returns (TokenResponse);
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (SendOtpResponse); // Re-use SendOtpResponse
+  rpc PerformPasswordReset(PerformPasswordResetRequest) returns (SendOtpResponse);
 }
 
 message LoginWithGoogleRequest{
   string id_token = 1 [json_name = "id_token"];
 }
 
-message LoginResponse{
-  string access_token = 1;
-  string refresh_token = 2;
+message TokenResponse{
+  string access_token = 1 [json_name = "access_token"];
+  string refresh_token = 2 [json_name = "refresh_token"];
+}
+
+message LoginUserRequest{
+  string email_or_username = 1;
+  string password = 2;
+}
+
+message LoginUserResponse {
+  bool two_fa_required = 1 [json_name = "two_fa_required"];
+  TokenResponse tokens = 2 [json_name = "tokens"]; 
+}
+
+message VerifyLogin2FARequest {
+  string email = 1;
+  string otp_code = 2 [json_name = "otp_code"];
 }
 
 message SendOtpRequest{
@@ -28,6 +47,16 @@ message SendOtpRequest{
 
 message SendOtpResponse{
   string message = 1;
+}
+
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+message PerformPasswordResetRequest {
+  string token = 1;
+  string new_password = 2 [json_name = "new_password"];
+  string confirm_password = 3 [json_name = "confirm_password"];
 }
 
 message RegisterUserRequest {
