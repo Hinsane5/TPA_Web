@@ -81,6 +81,12 @@ services:
     networks:
       - ${NETWORK_NAME}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   users-service:
     build:
@@ -93,14 +99,14 @@ services:
     networks:
       - ${NETWORK_NAME}
     volumes:
-      - ./backend:/app/backend
-    command: air -c /app/.air.toml -- -c /app/backend/services/users/.air.toml
+      - .:/app
+    command: air
     working_dir: /app/backend/services/users
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   notification-service:
@@ -109,14 +115,14 @@ services:
       dockerfile: ./backend/Dockerfile.dev
     container_name: ${PROJECT_NAME}-notification-service
     volumes:
-      - ./backend:/app/backend
-    command: air -c /app/.air.toml -- -c /app/backend/services/notifications/.air.toml
+      - .:/app
+    command: air
     working_dir: /app/backend/services/notifications
     networks:
       - ${NETWORK_NAME}
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
     environment:
@@ -131,8 +137,8 @@ services:
       dockerfile: ./backend/Dockerfile.dev
     container_name: ${PROJECT_NAME}-api-gateway
     volumes:
-      - ./backend:/app/backend
-    command: air -c /app/.air.toml -- -c /app/backend/api-gateway/.air.toml
+      - .:/app
+    command: air
     working_dir: /app/backend/api-gateway
     networks:
       - ${NETWORK_NAME}

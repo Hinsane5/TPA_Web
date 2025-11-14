@@ -1,15 +1,16 @@
-root = "."
-tmp_dir = "tmp"
+root = "/app"
+working_dir = "/app/backend/services/users"
 
 [build]
 cmd = "go build -o ./tmp/users-service ./cmd/main.go"
 bin = "./tmp/users-service"
+
 include_ext = ["go", "toml", "proto"]
-exclude_dir = ["tmp", "vendor"]
-include_dir = ["."]
+exclude_dir = ["tmp"]
+
+include_dir = ["backend/services/users", "backend/proto"]
 
 [log]
 color = true
-
 [misc]
 reload_on_config_change = true
