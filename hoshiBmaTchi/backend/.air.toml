@@ -1,0 +1,16 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/main ./cmd/main.go"
+bin = "./tmp/main"
+
+include_ext = ["go", "toml", "proto"]
+exclude_dir = ["tmp", "vendor"]
+include_dir = ["."]
+
+[log]
+color = true
+
+[misc]
+reload_on_config_change = true

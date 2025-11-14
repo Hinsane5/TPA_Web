@@ -12,6 +12,7 @@ import (
 
 func main(){
 	conn, err := grpc.NewClient("users-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	
 	if err != nil{
 		log.Fatalf("Did not connect: %v", err)
 	}

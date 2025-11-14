@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/users-service ./cmd/main.go"
+bin = "./tmp/users-service"
+include_ext = ["go", "toml", "proto"]
+exclude_dir = ["tmp", "vendor"]
+include_dir = ["."]
+
+[log]
+color = true
+
+[misc]
+reload_on_config_change = true

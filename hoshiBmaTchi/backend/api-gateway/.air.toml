@@ -1,0 +1,16 @@
+# Config for api-gateway
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/api-gateway ./cmd/main.go"
+bin = "./tmp/api-gateway"
+include_ext = ["go", "toml", "proto"]
+exclude_dir = ["tmp", "vendor"]
+include_dir = ["."]
+
+[log]
+color = true
+
+[misc]
+reload_on_config_change = true
