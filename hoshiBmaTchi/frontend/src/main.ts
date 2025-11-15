@@ -1,6 +1,7 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
+
 import GoogleSignInPlugin from "vue3-google-signin";
 
 const app = createApp(App);

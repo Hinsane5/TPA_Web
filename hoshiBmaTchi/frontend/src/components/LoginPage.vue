@@ -33,7 +33,7 @@
       <button type="submit" class="btn btn-primary">Log in</button>
     </form>
 
-    <button type="button" class="btn btn-google" @click="loginWithGoogle">
+    <button type="button" class="btn btn-google" @click="">
       <span class="google-icon">G</span>
       Log in with Google
     </button>
@@ -62,10 +62,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
 import { authApi } from "../services/apiService";
-import useGoogleSignIn from 'vue3-google-signin'
+// import { useGoogleSignIn } from 'vue3-google-signin'
 
 const router = useRouter();
 
@@ -106,43 +106,42 @@ const handleLogin = async () => {
   }
 };
 
-const { signIn, onSignInSuccess, onSignInError } = useGoogleSignIn() 
+// const Vue3GoogleOauth: any = inject('Vue3GoogleOauth');
 
-onSignInSuccess(async (response: any) => {
-  try {
-    const id_token = response.credential
-    isLoading.value = true;
-    error.value = "";
+// Vue3GoogleOauth.onSignInSuccess(async (googleUser: any) => {
+//   try {
+//     const id_token = googleUser.getAuthResponse().id_token;
+//     isLoading.value = true;
+//     error.value = "";
 
-    if (id_token) {
-      const apiResponse = await authApi.loginWithGoogle(id_token)
+//     if (id_token) {
+//       const apiResponse = await authApi.loginWithGoogle(id_token);
 
-      console.log('Google Login successful, tokens:', apiResponse.data)
-      
-      router.push('/home') 
-    } else {
-      error.value = 'Failed to retrieve Google ID token. Please try again.'
-    }
+//       console.log("Google Login successful, tokens:", apiResponse.data);
 
-  } catch (err: any) {
-    console.error("Google Login failed:", err);
-    if (err.response && err.response.data.error) {
-      error.value = err.response.data.error;
-    } else {
-      error.value = "An unknown error occurred during Google Sign-In.";
-    }
-  } finally {
-    isLoading.value = false;
-  }
-});
+//       router.push("/home");
+//     } else {
+//       error.value = "Failed to retrieve Google ID token. Please try again.";
+//     }
+//   } catch (err: any) {
+//     console.error("Google Login failed:", err);
+//     if (err.response && err.response.data.error) {
+//       error.value = err.response.data.error;
+//     } else {
+//       error.value = "An unknown error occurred during Google Sign-In.";
+//     }
+//   } finally {
+//     isLoading.value = false;
+//   }
+// });
 
-onSignInError(() => {
-  error.value = "Google Sign-In process was cancelled or failed.";
-});
+// Vue3GoogleOauth.onSignInError(() => {
+//   error.value = "Google Sign-In process was cancelled or failed.";
+// });
 
-const loginWithGoogle = () => {
-  signIn();
-};
+// const loginWithGoogle = () => {
+//   Vue3GoogleOauth.signIn();
+// };
 
 const navigateToRegister = () => {
   router.push("/register");
