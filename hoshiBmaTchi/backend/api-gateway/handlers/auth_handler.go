@@ -86,12 +86,12 @@ func (h *AuthHandler) LoginUser(c *gin.Context){
 		return
 	}
 
-	if res.TwoFaRequired {
-		c.JSON(http.StatusOK, gin.H{"message": "2FA code sent to your email."})
-		return
-	}
+	// if res.TwoFaRequired {
+	// 	c.JSON(http.StatusOK, gin.H{"message": "2FA code sent to your email."})
+	// 	return
+	// }
 
-	c.JSON(http.StatusOK, res.Tokens)
+	c.JSON(http.StatusOK, res)
 }
 
 func (h *AuthHandler) VerifyLogin2FA(c *gin.Context) {
