@@ -38,14 +38,14 @@
       <span>OR</span>
     </div>
 
-    <button type="button" class="forgot-password-link" @click="navigateTo('forgot-password')">
+    <button type="button" class="forgot-password-link" @click="navigateToForgot">
       Forgot password?
     </button>
 
     <div class="signup-section">
       <p class="signup-text">
         Don't have an account? 
-        <button type="button" class="link-button" @click="navigateTo('register')">
+        <button type="button" class="link-button" @click="navigateToRegister">
           Sign up
         </button>
       </p>
@@ -56,27 +56,27 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { AuthPage } from '../types'
+import { useRouter } from 'vue-router'
 
-const emit = defineEmits<{
-  navigate: [page: AuthPage]
-}>()
+const router = useRouter()
 
 const email = ref('')
 const password = ref('')
 
 const handleLogin = () => {
   console.log('Login attempt:', { email: email.value, password: password.value })
-  // Add login logic here
 }
 
 const handleGoogleLogin = () => {
   console.log('Google login initiated')
-  // In a real app, integrate with Google OAuth
-  // window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?...'
 }
 
-const navigateTo = (page: AuthPage) => {
-  emit('navigate', page)
+const navigateToRegister = () => {
+  router.push('/register')
+}
+
+const navigateToForgot = () => {
+  router.push('/forgot-password')
 }
 </script>
 

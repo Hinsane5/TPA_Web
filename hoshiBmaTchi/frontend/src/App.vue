@@ -1,28 +1,13 @@
 <template>
   <div class="app-container">
-    <div class="auth-wrapper">
-      <LoginPage v-if="currentPage === 'login'" @navigate="handleNavigate" />
-      <RegisterPage v-else-if="currentPage === 'register'" @navigate="handleNavigate" />
-      <ForgotPasswordPage v-else-if="currentPage === 'forgot-password'" @navigate="handleNavigate" />
-      <!-- added 2FA verification page -->
-      <TwoFAVerificationPage v-else-if="currentPage === '2fa-verification'" @navigate="handleNavigate" />
+    <div class="form-wrapper">
+      <router-view />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { AuthPage } from './types'
-import LoginPage from './components/LoginPage.vue'
-import RegisterPage from './components/RegisterPage.vue'
-import ForgotPasswordPage from './components/ForgotPasswordPage.vue'
-import TwoFAVerificationPage from './components/TwoFAVerificationPage.vue'
 
-const currentPage = ref<AuthPage>('login')
-
-const handleNavigate = (page: AuthPage) => {
-  currentPage.value = page
-}
 </script>
 
 <style>

@@ -33,11 +33,11 @@
       <span>OR</span>
     </div>
 
-    <button type="button" class="create-account-link" @click="navigateTo('register')">
+    <button type="button" class="create-account-link" @click="navigateToRegister">
       Create new account
     </button>
 
-    <button type="button" class="back-button" @click="navigateTo('login')">
+    <button type="button" class="back-button" @click="navigateToLogin">
       Back to login
     </button>
   </div>
@@ -47,10 +47,9 @@
 import { ref } from 'vue'
 import type { AuthPage } from '../types'
 import { validate2FACode } from '../utils/validation'
+import { useRouter } from 'vue-router'
 
-const emit = defineEmits<{
-  navigate: [page: AuthPage]
-}>()
+const router = useRouter()
 
 const twoFACode = ref('')
 const error = ref('')
@@ -66,13 +65,17 @@ const handleVerify2FA = () => {
   validate2FA()
   if (!error.value) {
     console.log('2FA verification attempt:', { twoFACode: twoFACode.value })
-    // Add 2FA verification logic here
   }
 }
 
-const navigateTo = (page: AuthPage) => {
-  emit('navigate', page)
+const navigateToRegister = () => {
+  router.push('/register') 
 }
+
+const navigateToLogin = () => {
+  router.push('/login') 
+}
+
 </script>
 
 <style scoped>

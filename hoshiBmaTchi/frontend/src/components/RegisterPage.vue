@@ -32,7 +32,6 @@
         <span v-if="errors.username" class="error-message">{{ errors.username }}</span>
       </div>
 
-      <!-- Email -->
       <div class="form-group">
         <label class="form-label">Email</label>
         <input 
@@ -45,7 +44,6 @@
         <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
       </div>
 
-      <!-- Password -->
       <div class="form-group">
         <label class="form-label">Password</label>
         <input 
@@ -83,7 +81,6 @@
         <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
       </div>
 
-      <!-- Confirm Password -->
       <div class="form-group">
         <label class="form-label">Confirm Password</label>
         <input 
@@ -180,7 +177,7 @@
     <div class="login-section">
       <p class="login-text">
         Have an account? 
-        <button type="button" class="link-button" @click="navigateTo('login')">
+        <button type="button" class="link-button" @click="navigateToLogin">
           Log in
         </button>
       </p>
@@ -191,6 +188,8 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import type { AuthPage } from '../types'
+import { useRouter } from 'vue-router'
+
 import {
   validateName,
   validateUsername as validateUsernameUtil,
@@ -203,9 +202,7 @@ import {
 } from '../utils/validation'
 import type { PasswordStrength } from '../utils/validation'
 
-const emit = defineEmits<{
-  navigate: [page: AuthPage]
-}>()
+const router = useRouter()
 
 const formData = reactive({
   fullName: '',
@@ -291,11 +288,9 @@ const handleProfilePictureUpload = (event: Event) => {
 
 const sendOTP = () => {
   console.log('OTP sent to:', formData.email)
-  // In a real app, send OTP via email
 }
 
 const handleRegister = () => {
-  // Validate all fields
   validateFullName()
   validateUsernameFn()
   validateEmailFn()
@@ -305,7 +300,6 @@ const handleRegister = () => {
   validateGenderFn()
   validateOTPFn()
 
-  // Check if all validations passed
   const hasErrors = Object.values(errors).some(error => error !== '')
   if (hasErrors) {
     console.log('Validation errors found')
@@ -313,7 +307,6 @@ const handleRegister = () => {
   }
 
   console.log('Registration attempt:', formData)
-  // Add registration logic here
 }
 
 const getCriterionText = (key: string): string => {
@@ -327,7 +320,6 @@ const getCriterionText = (key: string): string => {
   return texts[key] || key
 }
 
-// Alias methods for template
 const validateUsername = validateUsernameFn
 const validateEmail = validateEmailFn
 const validatePassword = validatePasswordFn
@@ -336,9 +328,10 @@ const validateAge = validateAgeFn
 const validateGender = validateGenderFn
 const validateOTP = validateOTPFn
 
-const navigateTo = (page: AuthPage) => {
-  emit('navigate', page)
+const navigateToLogin = () => {
+  router.push('/login') 
 }
+
 </script>
 
 <style scoped>

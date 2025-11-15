@@ -1,7 +1,6 @@
 <template>
   <div class="forgot-password-container">
     <div class="lock-icon-section">
-      <!-- replaced hardcoded SVG with image file -->
       <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
     </div>
 
@@ -30,11 +29,11 @@
       <span>OR</span>
     </div>
 
-    <button type="button" class="action-button" @click="navigateTo('register')">
+    <button type="button" class="action-button" @click="navigateToRegister">
       Create new account
     </button>
 
-    <button type="button" class="back-button" @click="navigateTo('login')">
+    <button type="button" class="back-button" @click="navigateToLogin">
       Back to login
     </button>
   </div>
@@ -43,10 +42,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { AuthPage } from '../types'
+import { useRouter } from 'vue-router'
 
-const emit = defineEmits<{
-  navigate: [page: AuthPage]
-}>()
+const router = useRouter()
 
 const emailOrPhoneOrUsername = ref('')
 
@@ -54,11 +52,14 @@ const handleResetPassword = () => {
   console.log('Reset password attempt:', { 
     emailOrPhoneOrUsername: emailOrPhoneOrUsername.value 
   })
-  // Add password reset logic here
 }
 
-const navigateTo = (page: AuthPage) => {
-  emit('navigate', page)
+const navigateToRegister = () => {
+  router.push('/register') 
+}
+
+const navigateToLogin = () => {
+  router.push('/login')
 }
 </script>
 
