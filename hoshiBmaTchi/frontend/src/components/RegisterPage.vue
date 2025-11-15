@@ -2,72 +2,93 @@
   <div class="register-container">
     <div class="logo-section">
       <h1 class="brand-name">hoshiBmatchi</h1>
-      <p class="subtitle">Sign up to see photos and videos from your friends.</p>
+      <p class="subtitle">
+        Sign up to see photos and videos from your friends.
+      </p>
     </div>
 
     <form @submit.prevent="handleRegister" class="form">
       <!-- Full Name -->
       <div class="form-group">
         <label class="form-label">Full Name</label>
-        <input 
+        <input
           v-model="formData.fullName"
-          type="text" 
-          placeholder="Enter your full name" 
+          type="text"
+          placeholder="Enter your full name"
           class="input-field"
           @blur="validateFullName"
         />
-        <span v-if="errors.fullName" class="error-message">{{ errors.fullName }}</span>
+        <span v-if="errors.fullName" class="error-message">{{
+          errors.fullName
+        }}</span>
       </div>
 
       <!-- Username -->
       <div class="form-group">
         <label class="form-label">Username</label>
-        <input 
+        <input
           v-model="formData.username"
-          type="text" 
-          placeholder="Choose a username" 
+          type="text"
+          placeholder="Choose a username"
           class="input-field"
           @blur="validateUsername"
         />
-        <span v-if="errors.username" class="error-message">{{ errors.username }}</span>
+        <span v-if="errors.username" class="error-message">{{
+          errors.username
+        }}</span>
       </div>
 
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input 
+        <input
           v-model="formData.email"
-          type="email" 
-          placeholder="Enter your email" 
+          type="email"
+          placeholder="Enter your email"
           class="input-field"
           @blur="validateEmail"
         />
-        <span v-if="errors.email" class="error-message">{{ errors.email }}</span>
+        <span v-if="errors.email" class="error-message">{{
+          errors.email
+        }}</span>
       </div>
 
       <div class="form-group">
         <label class="form-label">Password</label>
-        <input 
+        <input
           v-model="formData.password"
-          type="password" 
-          placeholder="Create a password" 
+          type="password"
+          placeholder="Create a password"
           class="input-field"
           @input="validatePassword"
         />
         <div v-if="passwordStrength" class="password-strength">
           <div class="strength-bar">
-            <div 
-              class="strength-fill" 
+            <div
+              class="strength-fill"
               :class="`strength-${passwordStrength.strength}`"
-              :style="{ width: `${(Object.values(passwordStrength.criteria).filter(Boolean).length / 5) * 100}%` }"
+              :style="{
+                width: `${
+                  (Object.values(passwordStrength.criteria).filter(Boolean)
+                    .length /
+                    5) *
+                  100
+                }%`,
+              }"
             ></div>
           </div>
-          <span class="strength-text" :class="`text-${passwordStrength.strength}`">
+          <span
+            class="strength-text"
+            :class="`text-${passwordStrength.strength}`"
+          >
             {{ passwordStrength.message }}
           </span>
 
-          <div v-if="Object.keys(passwordStrength?.criteria || {}).length > 0" class="criteria-list">
-            <div 
-              v-for="(value, key) in passwordStrength.criteria" 
+          <div
+            v-if="Object.keys(passwordStrength?.criteria || {}).length > 0"
+            class="criteria-list"
+          >
+            <div
+              v-for="(value, key) in passwordStrength.criteria"
               :key="key"
               class="criteria-item"
               :class="{ met: value }"
@@ -77,38 +98,44 @@
             </div>
           </div>
         </div>
-        
-        <span v-if="errors.password" class="error-message">{{ errors.password }}</span>
+
+        <span v-if="errors.password" class="error-message">{{
+          errors.password
+        }}</span>
       </div>
 
       <div class="form-group">
         <label class="form-label">Confirm Password</label>
-        <input 
+        <input
           v-model="formData.confirmPassword"
-          type="password" 
-          placeholder="Confirm your password" 
+          type="password"
+          placeholder="Confirm your password"
           class="input-field"
           @blur="validateConfirmPassword"
         />
-        <span v-if="errors.confirmPassword" class="error-message">{{ errors.confirmPassword }}</span>
+        <span v-if="errors.confirmPassword" class="error-message">{{
+          errors.confirmPassword
+        }}</span>
       </div>
 
       <!-- Date of Birth -->
       <div class="form-group">
         <label class="form-label">Date of Birth</label>
-        <input 
+        <input
           v-model="formData.dateOfBirth"
-          type="date" 
+          type="date"
           class="input-field"
           @blur="validateAge"
         />
-        <span v-if="errors.dateOfBirth" class="error-message">{{ errors.dateOfBirth }}</span>
+        <span v-if="errors.dateOfBirth" class="error-message">{{
+          errors.dateOfBirth
+        }}</span>
       </div>
 
       <!-- Gender -->
       <div class="form-group">
         <label class="form-label">Gender</label>
-        <select 
+        <select
           v-model="formData.gender"
           class="input-field"
           @blur="validateGender"
@@ -117,58 +144,70 @@
           <option value="male">Male</option>
           <option value="female">Female</option>
         </select>
-        <span v-if="errors.gender" class="error-message">{{ errors.gender }}</span>
+        <span v-if="errors.gender" class="error-message">{{
+          errors.gender
+        }}</span>
       </div>
 
       <!-- Profile Picture -->
       <div class="form-group">
         <label class="form-label">Profile Picture</label>
-        <input 
-          type="file" 
+        <input
+          type="file"
           accept="image/*"
           class="input-field file-input"
           @change="handleProfilePictureUpload"
         />
-        <span v-if="errors.profilePicture" class="error-message">{{ errors.profilePicture }}</span>
+        <span v-if="errors.profilePicture" class="error-message">{{
+          errors.profilePicture
+        }}</span>
       </div>
 
       <!-- OTP Code -->
       <div class="form-group">
         <label class="form-label">OTP Code (6-digit)</label>
         <div class="otp-input-group">
-          <input 
+          <input
             v-model="formData.otpCode"
-            type="text" 
-            placeholder="000000" 
+            type="text"
+            placeholder="000000"
             maxlength="6"
             class="input-field otp-input"
             @blur="validateOTP"
           />
-          <button type="button" class="btn btn-otp" @click="sendOTP">Send OTP</button>
+          <button type="button" class="btn btn-otp" @click="sendOTP">
+            Send OTP
+          </button>
         </div>
-        <span v-if="errors.otpCode" class="error-message">{{ errors.otpCode }}</span>
+        <span v-if="errors.otpCode" class="error-message">{{
+          errors.otpCode
+        }}</span>
       </div>
 
       <!-- Newsletter Checkbox -->
       <div class="checkbox-group">
-        <input 
+        <input
           v-model="formData.subscribeNewsletter"
-          type="checkbox" 
+          type="checkbox"
           id="newsletter"
           class="checkbox-input"
         />
-        <label for="newsletter" class="checkbox-label">Subscribe to our newsletter</label>
+        <label for="newsletter" class="checkbox-label"
+          >Subscribe to our newsletter</label
+        >
       </div>
 
       <!-- 2FA Checkbox -->
       <div class="checkbox-group">
-        <input 
+        <input
           v-model="formData.enable2FA"
-          type="checkbox" 
+          type="checkbox"
           id="twofa"
           class="checkbox-input"
         />
-        <label for="twofa" class="checkbox-label">Enable Two-Factor Authentication (2FA)</label>
+        <label for="twofa" class="checkbox-label"
+          >Enable Two-Factor Authentication (2FA)</label
+        >
       </div>
 
       <button type="submit" class="btn btn-primary">Sign up</button>
@@ -176,7 +215,7 @@
 
     <div class="login-section">
       <p class="login-text">
-        Have an account? 
+        Have an account?
         <button type="button" class="link-button" @click="navigateToLogin">
           Log in
         </button>
@@ -186,9 +225,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import type { AuthPage } from '../types'
-import { useRouter } from 'vue-router'
+import { ref, reactive } from "vue";
+import { useRouter } from "vue-router";
+import { authApi } from "../services/apiService";
 
 import {
   validateName,
@@ -199,139 +238,203 @@ import {
   validateAge as validateAgeUtil,
   validateGender as validateGenderUtil,
   validateOTP as validateOTPUtil,
-} from '../utils/validation'
-import type { PasswordStrength } from '../utils/validation'
+} from "../utils/validation";
+import type { PasswordStrength } from "../utils/validation";
 
-const router = useRouter()
+const router = useRouter();
+
+const isLoading = ref(false);
+const globalError = ref("");
+
+const isSendingOtp = ref(false)
+const otpMessage = ref('')
 
 const formData = reactive({
-  fullName: '',
-  username: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  dateOfBirth: '',
-  gender: '',
+  fullName: "",
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  dateOfBirth: "",
+  gender: "",
   profilePicture: null as File | null,
-  otpCode: '',
+  otpCode: "",
   subscribeNewsletter: false,
   enable2FA: false,
-})
+});
 
 const errors = reactive({
-  fullName: '',
-  username: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-  dateOfBirth: '',
-  gender: '',
-  profilePicture: '',
-  otpCode: '',
-})
+  fullName: "",
+  username: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  dateOfBirth: "",
+  gender: "",
+  profilePicture: "",
+  otpCode: "",
+});
 
-const passwordStrength = ref<PasswordStrength | null>(null)
+const passwordStrength = ref<PasswordStrength | null>(null);
 
 const validateFullName = () => {
-  const result = validateName(formData.fullName)
-  errors.fullName = result.message
-}
+  const result = validateName(formData.fullName);
+  errors.fullName = result.isValid ? '' : result.message
+};
 
 const validateUsernameFn = () => {
-  const result = validateUsernameUtil(formData.username)
-  errors.username = result.message
-}
+  const result = validateUsernameUtil(formData.username);
+  errors.username = result.isValid ? '' : result.message
+};
 
 const validateEmailFn = () => {
-  const result = validateEmailUtil(formData.email)
-  errors.email = result.message
-}
+  const result = validateEmailUtil(formData.email);
+  errors.email = result.isValid ? '' : result.message
+};
 
 const validatePasswordFn = () => {
-  const result = validatePasswordUtil(formData.password)
-  passwordStrength.value = result
-  errors.password = result.message
-}
+  const result = validatePasswordUtil(formData.password);
+  passwordStrength.value = result;
+  errors.password = result.isValid ? '' : result.message
+};
 
 const validateConfirmPasswordFn = () => {
-  const result = validateConfirmPasswordUtil(formData.password, formData.confirmPassword)
-  errors.confirmPassword = result.message
-}
+  const result = validateConfirmPasswordUtil(
+    formData.password,
+    formData.confirmPassword
+  );
+  errors.confirmPassword = result.isValid ? '' : result.message
+};
 
 const validateAgeFn = () => {
-  const result = validateAgeUtil(formData.dateOfBirth)
-  errors.dateOfBirth = result.message
-}
+  const result = validateAgeUtil(formData.dateOfBirth);
+  errors.dateOfBirth = result.isValid ? '' : result.message
+};
 
 const validateGenderFn = () => {
-  const result = validateGenderUtil(formData.gender)
-  errors.gender = result.message
-}
+  const result = validateGenderUtil(formData.gender);
+  errors.gender = result.isValid ? '' : result.message
+};
 
 const validateOTPFn = () => {
-  const result = validateOTPUtil(formData.otpCode)
-  errors.otpCode = result.message
-}
+  const result = validateOTPUtil(formData.otpCode);
+  errors.otpCode = result.isValid ? '' : result.message
+};
 
 const handleProfilePictureUpload = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
   if (file) {
     if (file.size > 5 * 1024 * 1024) {
-      errors.profilePicture = 'File size must be less than 5MB'
-      return
+      errors.profilePicture = "File size must be less than 5MB";
+      return;
     }
-    formData.profilePicture = file
-    errors.profilePicture = ''
+    formData.profilePicture = file;
+    errors.profilePicture = "";
   }
-}
+};
 
-const sendOTP = () => {
-  console.log('OTP sent to:', formData.email)
-}
+const sendOTP = async () => {
+  otpMessage.value = ''
+  isSendingOtp.value = true
 
-const handleRegister = () => {
-  validateFullName()
-  validateUsernameFn()
   validateEmailFn()
-  validatePasswordFn()
-  validateConfirmPasswordFn()
-  validateAgeFn()
-  validateGenderFn()
-  validateOTPFn()
-
-  const hasErrors = Object.values(errors).some(error => error !== '')
-  if (hasErrors) {
-    console.log('Validation errors found')
+  if (errors.email) {
+    isSendingOtp.value = false
     return
   }
 
-  console.log('Registration attempt:', formData)
+  try {
+    const response = await authApi.sendOtp(formData.email)
+    otpMessage.value = response.data.message
+  } catch (error: any) {
+    console.error('Failed to send OTP:', error)
+    if (error.response && error.response.data.error) {
+      otpMessage.value = error.response.data.error
+    } else {
+      otpMessage.value = 'Failed to send OTP. Please try again.'
+    }
+  } finally {
+    isSendingOtp.value = false
+  }
+
 }
+
+const handleRegister = async () => {
+  globalError.value = "";
+
+  validateFullName();
+  validateUsernameFn();
+  validateEmailFn();
+  validatePasswordFn();
+  validateConfirmPasswordFn();
+  validateAgeFn();
+  validateGenderFn();
+  validateOTPFn();
+
+  const hasErrors = Object.values(errors).some((error) => error !== "");
+  if (hasErrors) {
+    console.log("Validation errors found");
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    const apiData = {
+      name: formData.fullName,
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      confirm_password: formData.confirmPassword,
+      date_of_birth: new Date(formData.dateOfBirth).toISOString(),
+      gender: formData.gender,
+      profile_picture_url: "", // Placeholder, implement upload logic
+      subscribe_to_newsletter: formData.subscribeNewsletter,
+      enable_2fa: formData.enable2FA,
+      otp_code: formData.otpCode,
+      turnstile_token: "dummy_token", // Placeholder, integrate with Cloudflare Turnstile
+    };
+
+    const response = await authApi.register(apiData);
+    console.log("Registration successful:", response.data);
+    router.push("/login");
+  } catch (error: any) {
+    console.error("Registration failed:", error);
+    if (error.response && error.response.data.error) {
+      globalError.value = error.response.data.error;
+    } else {
+      globalError.value = "An unknown error occurred. Please try again.";
+    }
+  } finally {
+    isLoading.value = false;
+  }
+
+  console.log("Registration attempt:", formData);
+};
 
 const getCriterionText = (key: string): string => {
   const texts: Record<string, string> = {
-    length: '8+ characters',
-    uppercase: 'Uppercase letter',
-    lowercase: 'Lowercase letter',
-    number: 'Number',
-    special: 'Special character',
-  }
-  return texts[key] || key
-}
+    length: "8+ characters",
+    uppercase: "Uppercase letter",
+    lowercase: "Lowercase letter",
+    number: "Number",
+    special: "Special character",
+  };
+  return texts[key] || key;
+};
 
-const validateUsername = validateUsernameFn
-const validateEmail = validateEmailFn
-const validatePassword = validatePasswordFn
-const validateConfirmPassword = validateConfirmPasswordFn
-const validateAge = validateAgeFn
-const validateGender = validateGenderFn
-const validateOTP = validateOTPFn
+const validateUsername = validateUsernameFn;
+const validateEmail = validateEmailFn;
+const validatePassword = validatePasswordFn;
+const validateConfirmPassword = validateConfirmPasswordFn;
+const validateAge = validateAgeFn;
+const validateGender = validateGenderFn;
+const validateOTP = validateOTPFn;
 
 const navigateToLogin = () => {
-  router.push('/login') 
-}
-
+  router.push("/login");
+};
 </script>
 
 <style scoped>

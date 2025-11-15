@@ -8,7 +8,7 @@
     <form @submit.prevent="handleLogin" class="form">
       <div class="form-group">
         <input 
-          v-model="email"
+          v-model="emailOrUsername"
           type="text" 
           placeholder="Phone number, username, or email" 
           class="input-field"
@@ -29,7 +29,7 @@
       <button type="submit" class="btn btn-primary">Log in</button>
     </form>
 
-    <button type="button" class="btn btn-google" @click="handleGoogleLogin">
+    <button type="button" class="btn btn-google" @click="loginWithGoogle">
       <span class="google-icon">G</span>
       Log in with Google
     </button>
@@ -55,20 +55,51 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { AuthPage } from '../types'
 import { useRouter } from 'vue-router'
+import { authApi } from '../services/apiService'
 
 const router = useRouter()
 
-const email = ref('')
+const emailOrUsername = ref('')
 const password = ref('')
+const isLoading = ref(false)
+const error = ref('')
 
-const handleLogin = () => {
-  console.log('Login attempt:', { email: email.value, password: password.value })
+const handleLogin = async () => {
+  error.value = ''
+  isLoading.value = true
+
+  try {
+    const data = {
+      email_or_username: emailOrUsername.value.trim(),
+      password: password.value
+    }
+    const response = await authApi.login(data)
+
+    if (response.data.two_fa_required) {
+      router.push({ 
+        name: 'verify-2fa', 
+        query: { email: emailOrUsername.value.trim() } 
+      })
+    } else {
+      console.log('Login successful, tokens:', response.data)
+      router.push('/home') 
+    }
+
+  }catch (err: any) {
+    console.error('Login failed:', err)
+    if (err.response && err.response.data.error) {
+      error.value = err.response.data.error
+    } else {
+      error.value = 'An unknown error occurred. Please try again.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const handleGoogleLogin = () => {
-  console.log('Google login initiated')
+const loginWithGoogle = () => {
+  console.log('Login with Google clicked')
 }
 
 const navigateToRegister = () => {

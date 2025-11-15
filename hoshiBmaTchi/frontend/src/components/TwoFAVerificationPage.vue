@@ -11,17 +11,16 @@
       </p>
     </div>
 
-    <form @submit.prevent="handleVerify2FA" class="form">
+    <form @submit.prevent="handleSubmit" class="form">
       <div class="form-group">
         <label class="form-label">2FA Code</label>
         <input 
-          v-model="twoFACode"
+          v-model="otpCode"
           type="text" 
           placeholder="000000" 
           maxlength="6"
           inputmode="numeric"
           class="input-field twofa-input"
-          @blur="validate2FA"
         />
         <span v-if="error" class="error-message">{{ error }}</span>
       </div>
@@ -44,27 +43,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import type { AuthPage } from '../types'
+import { ref, onMounted } from 'vue'
+import { authApi } from '../services/apiService'
 import { validate2FACode } from '../utils/validation'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
-const twoFACode = ref('')
+const otpCode = ref('')
+const email = ref('')
+const isLoading = ref(false)
 const error = ref('')
 
-const validate2FA = () => {
-  if (twoFACode.value) {
-    const result = validate2FACode(twoFACode.value)
-    error.value = result.message
+onMounted(() => {
+  email.value = route.query.email as string || ''
+  if (!email.value) {
+    router.push('/login')
   }
-}
+})
 
-const handleVerify2FA = () => {
-  validate2FA()
-  if (!error.value) {
-    console.log('2FA verification attempt:', { twoFACode: twoFACode.value })
+const handleSubmit = async () => {
+  error.value = ''
+  isLoading.value = true
+
+  try {
+    const data = {
+      email: email.value,
+      otp_code: otpCode.value.trim()
+    }
+
+    const response = await authApi.verify2FA(data)
+
+    console.log('2FA successful, tokens:', response.data)
+    
+    router.push('/home')
+
+  } catch (err: any) {
+    console.error('2FA verification failed:', err)
+    if (err.response && err.response.data.error) {
+      error.value = err.response.data.error
+    } else {
+      error.value = 'An unknown error occurred. Please try again.'
+    }
+  } finally {
+    isLoading.value = false
   }
 }
 

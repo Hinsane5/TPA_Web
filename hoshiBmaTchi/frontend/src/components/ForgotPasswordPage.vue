@@ -14,9 +14,9 @@
     <form @submit.prevent="handleResetPassword" class="form">
       <div class="form-group">
         <input 
-          v-model="emailOrPhoneOrUsername"
-          type="text" 
-          placeholder="Email, Phone, or Username" 
+          v-model="email"
+          type="email" 
+          placeholder="Enter your email" 
           class="input-field"
           required
         />
@@ -41,17 +41,52 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { AuthPage } from '../types'
 import { useRouter } from 'vue-router'
+import { authApi } from '../services/apiService' 
+import { validateEmail as validateEmailUtil } from '../utils/validation' 
 
 const router = useRouter()
 
-const emailOrPhoneOrUsername = ref('')
+const email = ref('')
+const isLoading = ref(false)
+const error = ref('')
+const message = ref('')
 
-const handleResetPassword = () => {
-  console.log('Reset password attempt:', { 
-    emailOrPhoneOrUsername: emailOrPhoneOrUsername.value 
-  })
+const validateEmail = () => {
+  error.value = '' // Hapus error lama
+  const validation = validateEmailUtil(email.value.trim())
+  if (!validation.isValid) {
+    error.value = validation.message
+    return false
+  }
+  return true
+}
+
+const handleResetPassword = async () => {
+  error.value = ''
+  message.value = ''
+  
+  if (!validateEmail()) {
+    return
+  }
+
+  const trimmedEmail = email.value.trim() 
+
+  isLoading.value = true
+  try {
+    const response = await authApi.forgotPassword(trimmedEmail) 
+    console.log('RequestPasswordReset successful', response.data)
+    message.value = response.data.message
+  } catch (err: any) {
+    console.error('Failed to send reset link:', err)
+    if (err.response && err.response.data.error) {
+      error.value = err.response.data.error
+    } else {
+      error.value = 'An unknown error occurred.'
+    }
+  } finally {
+    isLoading.value = false
+  }
 }
 
 const navigateToRegister = () => {
