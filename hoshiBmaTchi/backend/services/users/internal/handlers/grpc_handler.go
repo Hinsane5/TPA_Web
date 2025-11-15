@@ -391,6 +391,11 @@ func (h *UserHandler) RequestPasswordReset(ctx context.Context, req *pb.RequestP
 		return nil, status.Error(codes.Internal, "failed to generate reset token")
 	}
 
+	frontendURL := os.Getenv("FRONTEND_URL")
+	if frontendURL == "" {
+		frontendURL = "http://localhost:5173"
+	}
+
 	resetLink := fmt.Sprintf("http://localhost:5173/reset-password?token=%s", resetToken)
 	emailBody := fmt.Sprintf("Click here to reset your password: <a href=\"%s\">%s</a>. This link expires in 15 minutes.", resetLink, resetLink)
 	

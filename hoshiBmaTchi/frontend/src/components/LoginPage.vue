@@ -1,26 +1,30 @@
 <template>
   <div class="login-container">
     <div class="logo-section">
-      <img src="/icons/instagram-icon.png" alt="Instagram" class="instagram-logo" />
+      <img
+        src="/icons/instagram-icon.png"
+        alt="Instagram"
+        class="instagram-logo"
+      />
       <h1 class="brand-name">hoshiBmatchi</h1>
     </div>
 
     <form @submit.prevent="handleLogin" class="form">
       <div class="form-group">
-        <input 
+        <input
           v-model="emailOrUsername"
-          type="text" 
-          placeholder="Phone number, username, or email" 
+          type="text"
+          placeholder="Phone number, username, or email"
           class="input-field"
           required
         />
       </div>
 
       <div class="form-group">
-        <input 
+        <input
           v-model="password"
-          type="password" 
-          placeholder="Password" 
+          type="password"
+          placeholder="Password"
           class="input-field"
           required
         />
@@ -38,13 +42,17 @@
       <span>OR</span>
     </div>
 
-    <button type="button" class="forgot-password-link" @click="navigateToForgot">
+    <button
+      type="button"
+      class="forgot-password-link"
+      @click="navigateToForgot"
+    >
       Forgot password?
     </button>
 
     <div class="signup-section">
       <p class="signup-text">
-        Don't have an account? 
+        Don't have an account?
         <button type="button" class="link-button" @click="navigateToRegister">
           Sign up
         </button>
@@ -54,61 +62,95 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { authApi } from '../services/apiService'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { authApi } from "../services/apiService";
+import useGoogleSignIn from 'vue3-google-signin'
 
-const router = useRouter()
+const router = useRouter();
 
-const emailOrUsername = ref('')
-const password = ref('')
-const isLoading = ref(false)
-const error = ref('')
+const emailOrUsername = ref("");
+const password = ref("");
+const isLoading = ref(false);
+const error = ref("");
 
 const handleLogin = async () => {
-  error.value = ''
-  isLoading.value = true
+  error.value = "";
+  isLoading.value = true;
 
   try {
     const data = {
       email_or_username: emailOrUsername.value.trim(),
-      password: password.value
-    }
-    const response = await authApi.login(data)
+      password: password.value,
+    };
+    const response = await authApi.login(data);
 
     if (response.data.two_fa_required) {
-      router.push({ 
-        name: 'verify-2fa', 
-        query: { email: emailOrUsername.value.trim() } 
-      })
+      router.push({
+        name: "verify-2fa",
+        query: { email: emailOrUsername.value.trim() },
+      });
     } else {
-      console.log('Login successful, tokens:', response.data)
-      router.push('/home') 
+      console.log("Login successful, tokens:", response.data);
+      router.push("/home");
     }
-
-  }catch (err: any) {
-    console.error('Login failed:', err)
+  } catch (err: any) {
+    console.error("Login failed:", err);
     if (err.response && err.response.data.error) {
-      error.value = err.response.data.error
+      error.value = err.response.data.error;
     } else {
-      error.value = 'An unknown error occurred. Please try again.'
+      error.value = "An unknown error occurred. Please try again.";
     }
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
+
+const { signIn, onSignInSuccess, onSignInError } = useGoogleSignIn() 
+
+onSignInSuccess(async (response: any) => {
+  try {
+    const id_token = response.credential
+    isLoading.value = true;
+    error.value = "";
+
+    if (id_token) {
+      const apiResponse = await authApi.loginWithGoogle(id_token)
+
+      console.log('Google Login successful, tokens:', apiResponse.data)
+      
+      router.push('/home') 
+    } else {
+      error.value = 'Failed to retrieve Google ID token. Please try again.'
+    }
+
+  } catch (err: any) {
+    console.error("Google Login failed:", err);
+    if (err.response && err.response.data.error) {
+      error.value = err.response.data.error;
+    } else {
+      error.value = "An unknown error occurred during Google Sign-In.";
+    }
+  } finally {
+    isLoading.value = false;
+  }
+});
+
+onSignInError(() => {
+  error.value = "Google Sign-In process was cancelled or failed.";
+});
 
 const loginWithGoogle = () => {
-  console.log('Login with Google clicked')
-}
+  signIn();
+};
 
 const navigateToRegister = () => {
-  router.push('/register')
-}
+  router.push("/register");
+};
 
 const navigateToForgot = () => {
-  router.push('/forgot-password')
-}
+  router.push("/forgot-password");
+};
 </script>
 
 <style scoped>
@@ -229,7 +271,7 @@ const navigateToForgot = () => {
 
 .divider::before,
 .divider::after {
-  content: '';
+  content: "";
   flex: 1;
   height: 1px;
   background-color: var(--border-color);
@@ -275,7 +317,6 @@ const navigateToForgot = () => {
 .link-button:hover {
   color: var(--primary-hover);
 }
-
 
 @media (max-width: 480px) {
   .login-container {

@@ -20,6 +20,10 @@ export const authApi = {
     return apiClient.post("/auth/login", data);
   },
 
+  loginWithGoogle(idToken: string) {
+    return apiClient.post("/auth/google-login", { id_token: idToken });
+  },
+
   verify2FA(data: any) {
     return apiClient.post("/auth/verify-2fa", data);
   },
@@ -31,5 +35,4 @@ export const authApi = {
   resetPassword(data: any) {
     return apiClient.post("/auth/reset-password", data);
   },
-
 };
