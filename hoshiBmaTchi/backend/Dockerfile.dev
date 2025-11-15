@@ -1,0 +1,16 @@
+FROM golang:1.25 AS base
+WORKDIR /app
+
+RUN go install github.com/air-verse/air@latest
+
+COPY go.work go.work.sum ./
+
+COPY backend/proto/go.mod backend/proto/go.sum ./backend/proto/
+COPY backend/api-gateway/go.mod backend/api-gateway/go.sum ./backend/api-gateway/
+COPY backend/services/users/go.mod backend/services/users/go.sum ./backend/services/users/
+COPY backend/services/notifications/go.mod backend/services/notifications/go.sum ./backend/services/notifications/
+
+RUN go mod download
+
+FROM base AS final
+WORKDIR /app

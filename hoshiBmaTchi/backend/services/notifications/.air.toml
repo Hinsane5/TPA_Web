@@ -1,0 +1,16 @@
+root = "/app"
+working_dir = "/app/backend/services/notifications"
+
+[build]
+cmd = "go build -o ./tmp/notification-service ./cmd/main.go"
+bin = "./tmp/notification-service"
+
+include_ext = ["go", "toml", "proto"]
+exclude_dir = ["tmp"]
+
+include_dir = ["backend/services/notifications", "backend/proto"]
+
+[log]
+color = true
+[misc]
+reload_on_config_change = true

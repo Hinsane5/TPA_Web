@@ -81,34 +81,48 @@ services:
     networks:
       - ${NETWORK_NAME}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   users-service:
     build:
       context: .
-      dockerfile: ./backend/services/users/Dockerfile
+      dockerfile: ./backend/Dockerfile.dev
     container_name: ${PROJECT_NAME}-users-service
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     networks:
       - ${NETWORK_NAME}
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/users
     depends_on:
       postgres:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   notification-service:
     build:
       context: .
-      dockerfile: ./backend/services/notifications/Dockerfile
+      dockerfile: ./backend/Dockerfile.dev
     container_name: ${PROJECT_NAME}-notification-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/notifications
     networks:
-      - hoshi-network
+      - ${NETWORK_NAME}
     depends_on:
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
     environment:
@@ -120,8 +134,12 @@ services:
   api-gateway:
     build:
       context: .
-      dockerfile: ./backend/api-gateway/Dockerfile
+      dockerfile: ./backend/Dockerfile.dev
     container_name: ${PROJECT_NAME}-api-gateway
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/api-gateway
     networks:
       - ${NETWORK_NAME}
     ports:
