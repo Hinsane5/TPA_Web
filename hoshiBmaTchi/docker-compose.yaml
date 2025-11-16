@@ -146,6 +146,8 @@ services:
       - "8081:8080"
     depends_on:
       - users-service
+      - posts-service
+      - notification-service
     restart: unless-stopped
     labels:
       - "traefik.enable=true"
@@ -155,6 +157,39 @@ services:
       - "traefik.http.routers.api-secure.entrypoints=websecure"
       - "traefik.http.routers.api-secure.tls=true"
       - "traefik.http.services.api-service.loadbalancer.server.port=8080"
+
+  posts-service:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: ${PROJECT_NAME}-posts-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/posts
+    networks:
+      - ${NETWORK_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq: 
+        condition: service_healthy
+    restart: unless-stopped
+    
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=hoshi_posts_db
+
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=posts
+
+      - GRPC_PORT=50052
 
 volumes:
   redis_data:

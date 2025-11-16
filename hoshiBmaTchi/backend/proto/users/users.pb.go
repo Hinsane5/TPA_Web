@@ -690,6 +690,102 @@ func (x *RegisterUserResponse) GetProfilePictureUrl() string {
 	return ""
 }
 
+type ValidateTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateTokenRequest) Reset() {
+	*x = ValidateTokenRequest{}
+	mi := &file_users_users_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateTokenRequest) ProtoMessage() {}
+
+func (x *ValidateTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateTokenRequest.ProtoReflect.Descriptor instead.
+func (*ValidateTokenRequest) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ValidateTokenRequest) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+type ValidateTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Valid         bool                   `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ValidateTokenResponse) Reset() {
+	*x = ValidateTokenResponse{}
+	mi := &file_users_users_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ValidateTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ValidateTokenResponse) ProtoMessage() {}
+
+func (x *ValidateTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ValidateTokenResponse.ProtoReflect.Descriptor instead.
+func (*ValidateTokenResponse) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *ValidateTokenResponse) GetValid() bool {
+	if x != nil {
+		return x.Valid
+	}
+	return false
+}
+
+func (x *ValidateTokenResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_users_users_proto protoreflect.FileDescriptor
 
 const file_users_users_proto_rawDesc = "" +
@@ -742,7 +838,12 @@ const file_users_users_proto_rawDesc = "" +
 	"\x05email\x18\x04 \x01(\tR\x05email\x12@\n" +
 	"\rdate_of_birth\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\rdate_of_birth\x12\x16\n" +
 	"\x06gender\x18\x06 \x01(\tR\x06gender\x120\n" +
-	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url2\x86\x04\n" +
+	"\x13profile_picture_url\x18\a \x01(\tR\x13profile_picture_url\",\n" +
+	"\x14ValidateTokenRequest\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\"F\n" +
+	"\x15ValidateTokenResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId2\xd2\x04\n" +
 	"\vUserService\x12G\n" +
 	"\fRegisterUser\x12\x1a.users.RegisterUserRequest\x1a\x1b.users.RegisterUserResponse\x128\n" +
 	"\aSendOtp\x12\x15.users.SendOtpRequest\x1a\x16.users.SendOtpResponse\x12F\n" +
@@ -750,7 +851,8 @@ const file_users_users_proto_rawDesc = "" +
 	"\tLoginUser\x12\x17.users.LoginUserRequest\x1a\x18.users.LoginUserResponse\x12D\n" +
 	"\x0eVerifyLogin2FA\x12\x1c.users.VerifyLogin2FARequest\x1a\x14.users.TokenResponse\x12R\n" +
 	"\x14RequestPasswordReset\x12\".users.RequestPasswordResetRequest\x1a\x16.users.SendOtpResponse\x12R\n" +
-	"\x14PerformPasswordReset\x12\".users.PerformPasswordResetRequest\x1a\x16.users.SendOtpResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
+	"\x14PerformPasswordReset\x12\".users.PerformPasswordResetRequest\x1a\x16.users.SendOtpResponse\x12J\n" +
+	"\rValidateToken\x12\x1b.users.ValidateTokenRequest\x1a\x1c.users.ValidateTokenResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
 
 var (
 	file_users_users_proto_rawDescOnce sync.Once
@@ -764,7 +866,7 @@ func file_users_users_proto_rawDescGZIP() []byte {
 	return file_users_users_proto_rawDescData
 }
 
-var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_users_users_proto_goTypes = []any{
 	(*LoginWithGoogleRequest)(nil),      // 0: users.LoginWithGoogleRequest
 	(*TokenResponse)(nil),               // 1: users.TokenResponse
@@ -777,12 +879,14 @@ var file_users_users_proto_goTypes = []any{
 	(*PerformPasswordResetRequest)(nil), // 8: users.PerformPasswordResetRequest
 	(*RegisterUserRequest)(nil),         // 9: users.RegisterUserRequest
 	(*RegisterUserResponse)(nil),        // 10: users.RegisterUserResponse
-	(*timestamppb.Timestamp)(nil),       // 11: google.protobuf.Timestamp
+	(*ValidateTokenRequest)(nil),        // 11: users.ValidateTokenRequest
+	(*ValidateTokenResponse)(nil),       // 12: users.ValidateTokenResponse
+	(*timestamppb.Timestamp)(nil),       // 13: google.protobuf.Timestamp
 }
 var file_users_users_proto_depIdxs = []int32{
 	1,  // 0: users.LoginUserResponse.tokens:type_name -> users.TokenResponse
-	11, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
-	11, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
+	13, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
+	13, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
 	9,  // 3: users.UserService.RegisterUser:input_type -> users.RegisterUserRequest
 	5,  // 4: users.UserService.SendOtp:input_type -> users.SendOtpRequest
 	0,  // 5: users.UserService.LoginWithGoogle:input_type -> users.LoginWithGoogleRequest
@@ -790,15 +894,17 @@ var file_users_users_proto_depIdxs = []int32{
 	4,  // 7: users.UserService.VerifyLogin2FA:input_type -> users.VerifyLogin2FARequest
 	7,  // 8: users.UserService.RequestPasswordReset:input_type -> users.RequestPasswordResetRequest
 	8,  // 9: users.UserService.PerformPasswordReset:input_type -> users.PerformPasswordResetRequest
-	10, // 10: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
-	6,  // 11: users.UserService.SendOtp:output_type -> users.SendOtpResponse
-	1,  // 12: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
-	3,  // 13: users.UserService.LoginUser:output_type -> users.LoginUserResponse
-	1,  // 14: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
-	6,  // 15: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
-	6,  // 16: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
-	10, // [10:17] is the sub-list for method output_type
-	3,  // [3:10] is the sub-list for method input_type
+	11, // 10: users.UserService.ValidateToken:input_type -> users.ValidateTokenRequest
+	10, // 11: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
+	6,  // 12: users.UserService.SendOtp:output_type -> users.SendOtpResponse
+	1,  // 13: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
+	3,  // 14: users.UserService.LoginUser:output_type -> users.LoginUserResponse
+	1,  // 15: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
+	6,  // 16: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
+	6,  // 17: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
+	12, // 18: users.UserService.ValidateToken:output_type -> users.ValidateTokenResponse
+	11, // [11:19] is the sub-list for method output_type
+	3,  // [3:11] is the sub-list for method input_type
 	3,  // [3:3] is the sub-list for extension type_name
 	3,  // [3:3] is the sub-list for extension extendee
 	0,  // [0:3] is the sub-list for field type_name
@@ -815,7 +921,7 @@ func file_users_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_users_proto_rawDesc), len(file_users_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

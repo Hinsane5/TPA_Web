@@ -1,0 +1,14 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  
+  cmd = "go build -o tmp/posts-service ./cmd"
+  
+  bin = "tmp/posts-service"
+
+[log]
+  level = "error"
+
+[misc]
+  clean_on_exit = true

@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -285,3 +286,50 @@ func (h *AuthHandler) PerformPasswordReset(c *gin.Context) {
 
 	c.JSON(http.StatusOK, res)
 }
+
+func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header diperlukan"})
+			c.Abort()
+			return
+		}
+
+		parts := strings.Split(authHeader, " ")
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Format header tidak valid"})
+			c.Abort()
+			return
+		}
+
+		tokenString := parts[1]
+
+		res, err := h.UserClient.ValidateToken(context.Background(), &pb.ValidateTokenRequest{
+			Token: tokenString,
+		})
+		
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token or internal error", "details": err.Error()})
+			c.Abort()
+			return
+		}
+
+		if !res.Valid {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			c.Abort()
+			return
+		}
+
+		c.Set("userID", res.UserId)
+
+		c.Next()
+	}
+}
+
+func NewAuthHandler(userClient pb.UserServiceClient) *AuthHandler {
+	return &AuthHandler{
+		UserClient: userClient,
+	}
+}
+

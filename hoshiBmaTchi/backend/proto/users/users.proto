@@ -13,8 +13,9 @@ service UserService {
   rpc LoginWithGoogle(LoginWithGoogleRequest) returns (TokenResponse);
   rpc LoginUser(LoginUserRequest) returns (LoginUserResponse);
   rpc VerifyLogin2FA(VerifyLogin2FARequest) returns (TokenResponse);
-  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (SendOtpResponse); // Re-use SendOtpResponse
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (SendOtpResponse);
   rpc PerformPasswordReset(PerformPasswordResetRequest) returns (SendOtpResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -83,4 +84,13 @@ message RegisterUserResponse {
   google.protobuf.Timestamp date_of_birth = 5 [json_name = "date_of_birth"];
   string gender = 6;
   string profile_picture_url = 7 [json_name = "profile_picture_url"];
+}
+
+message ValidateTokenRequest{
+  string token = 1;
+}
+
+message ValidateTokenResponse{
+  bool valid = 1;
+  string user_id = 2;
 }

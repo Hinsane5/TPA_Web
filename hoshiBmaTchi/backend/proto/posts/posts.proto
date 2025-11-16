@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package posts;
+
+option go_package = "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts";
+
+service PostsService {
+    rpc GenerateUploadURL(GenerateUploadURLRequest) returns (GenerateUploadURLResponse);
+    rpc CreatePost(CreatePostRequest) returns (CreatePostResponse);
+    rpc GetPostsByUserID(GetPostsByUserIDRequest) returns (GetPostsResponse);
+    rpc GetPostByID(GetPostByIDRequest) returns (PostResponse);
+    rpc LikePost(LikePostRequest) returns (LikePostResponse);
+    rpc UnlikePost(UnlikePostRequest) returns (UnlikePostResponse);
+    rpc CreateComment(CreateCommentRequest) returns (CommentResponse);
+    rpc GetCommentsForPost(GetCommentsForPostRequest) returns (GetCommentsForPostResponse);
+}
+
+message GenerateUploadURLRequest {
+    string file_name = 1;
+    string file_type = 2; // misal: "image/jpeg"
+}
+
+message GenerateUploadURLResponse {
+    string upload_url = 1;     // URL Presigned untuk diunggah
+    string object_name = 2;    // Nama file unik yang akan disimpan di DB
+}
+
+message CreatePostRequest {
+    string user_id = 1;
+    string media_object_name = 2; // Nama yang didapat dari GenerateUploadURLResponse
+    string media_type = 3;
+    string caption = 4;
+    string location = 5;
+}
+
+message CreatePostResponse {
+    PostResponse post = 1;
+}
+
+message GetPostsByUserIDRequest {
+    string user_id = 1;
+}
+
+message GetPostsResponse {
+    repeated PostResponse posts = 1;
+}
+
+message GetPostByIDRequest {
+    string post_id = 1;
+}
+
+message PostResponse {
+    string id = 1;
+    string user_id = 2;
+    string media_url = 3; // Ini akan menjadi URL Presigned untuk *melihat*
+    string media_type = 4;
+    string caption = 5;
+    string location = 6;
+    string created_at = 7;
+}
+
+message LikePostRequest{
+    string user_id = 1;
+    string post_id = 2;
+}
+
+message LikePostResponse{
+    string message = 1;
+}
+
+message UnlikePostRequest{
+    string user_id = 1;
+    string post_id = 2;
+}
+
+message UnlikePostResponse{
+    string message = 1;
+}
+
+message CreateCommentRequest {
+    string user_id = 1; 
+    string post_id = 2;
+    string content = 3;
+}
+
+message GetCommentsForPostRequest {
+    string post_id = 1;
+}
+
+message GetCommentsForPostResponse {
+    repeated CommentResponse comments = 1;
+}
+
+message CommentResponse {
+    string id = 1;
+    string post_id = 2;
+    string user_id = 3; 
+    string content = 4;
+    string created_at = 5;
+}

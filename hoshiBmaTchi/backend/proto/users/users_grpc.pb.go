@@ -26,6 +26,7 @@ const (
 	UserService_VerifyLogin2FA_FullMethodName       = "/users.UserService/VerifyLogin2FA"
 	UserService_RequestPasswordReset_FullMethodName = "/users.UserService/RequestPasswordReset"
 	UserService_PerformPasswordReset_FullMethodName = "/users.UserService/PerformPasswordReset"
+	UserService_ValidateToken_FullMethodName        = "/users.UserService/ValidateToken"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -39,6 +40,7 @@ type UserServiceClient interface {
 	VerifyLogin2FA(ctx context.Context, in *VerifyLogin2FARequest, opts ...grpc.CallOption) (*TokenResponse, error)
 	RequestPasswordReset(ctx context.Context, in *RequestPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
 	PerformPasswordReset(ctx context.Context, in *PerformPasswordResetRequest, opts ...grpc.CallOption) (*SendOtpResponse, error)
+	ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error)
 }
 
 type userServiceClient struct {
@@ -119,6 +121,16 @@ func (c *userServiceClient) PerformPasswordReset(ctx context.Context, in *Perfor
 	return out, nil
 }
 
+func (c *userServiceClient) ValidateToken(ctx context.Context, in *ValidateTokenRequest, opts ...grpc.CallOption) (*ValidateTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ValidateTokenResponse)
+	err := c.cc.Invoke(ctx, UserService_ValidateToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -130,6 +142,7 @@ type UserServiceServer interface {
 	VerifyLogin2FA(context.Context, *VerifyLogin2FARequest) (*TokenResponse, error)
 	RequestPasswordReset(context.Context, *RequestPasswordResetRequest) (*SendOtpResponse, error)
 	PerformPasswordReset(context.Context, *PerformPasswordResetRequest) (*SendOtpResponse, error)
+	ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -160,6 +173,9 @@ func (UnimplementedUserServiceServer) RequestPasswordReset(context.Context, *Req
 }
 func (UnimplementedUserServiceServer) PerformPasswordReset(context.Context, *PerformPasswordResetRequest) (*SendOtpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PerformPasswordReset not implemented")
+}
+func (UnimplementedUserServiceServer) ValidateToken(context.Context, *ValidateTokenRequest) (*ValidateTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateToken not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -308,6 +324,24 @@ func _UserService_PerformPasswordReset_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ValidateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ValidateTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ValidateToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ValidateToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ValidateToken(ctx, req.(*ValidateTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +376,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PerformPasswordReset",
 			Handler:    _UserService_PerformPasswordReset_Handler,
+		},
+		{
+			MethodName: "ValidateToken",
+			Handler:    _UserService_ValidateToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
