@@ -6,6 +6,6 @@ use (
 	// ./backend/services/admin
 	// ./backend/services/chat
 	./backend/services/notifications
-	// ./backend/services/posts
+	./backend/services/posts
 	./backend/services/users
 )

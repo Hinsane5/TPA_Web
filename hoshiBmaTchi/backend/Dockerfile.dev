@@ -9,6 +9,7 @@ COPY backend/proto/go.mod backend/proto/go.sum ./backend/proto/
 COPY backend/api-gateway/go.mod backend/api-gateway/go.sum ./backend/api-gateway/
 COPY backend/services/users/go.mod backend/services/users/go.sum ./backend/services/users/
 COPY backend/services/notifications/go.mod backend/services/notifications/go.sum ./backend/services/notifications/
+COPY backend/services/posts/go.mod backend/services/posts/go.sum ./backend/services/posts/
 
 RUN go mod download
 

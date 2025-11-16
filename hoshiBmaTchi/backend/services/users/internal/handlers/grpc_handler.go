@@ -297,7 +297,7 @@ func (h *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 			return nil, status.Error(codes.Internal, "failed to store 2FA code")
 		}
 
-		emailBody := fmt.Sprintf("Your 2FA login code is: %s. It expires in 5 minutes.", otp)
+		emailBody := fmt.Sprintf("Your 2FA login code is: %s It expires in 5 minutes.", otp)
 		task := EmailTask{Email: user.Email, Subject: "Your Login Code", Body: emailBody}
 		taskBody, _ := json.Marshal(task)
 
@@ -570,7 +570,6 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 	// if err != nil {
 	// 	return nil, status.Error(codes.Internal, "failed to publish email task")
 	// }
-	
 
 	return &pb.RegisterUserResponse{
 		UserId:            newUser.ID.String(),
@@ -580,6 +579,30 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		DateOfBirth:       dobTimestamp,
 		Gender:            newUser.Gender,
 		ProfilePictureUrl: newUser.ProfilePictureURL,
+	}, nil
+}
+
+func (h *UserHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest) (*pb.ValidateTokenResponse, error) {
+	if req.Token == "" {
+		return nil, status.Errorf(codes.InvalidArgument, "Token diperlukan")
+	}
+
+	claims, err := utils.ValidateToken(req.Token)
+	if err != nil {
+		return &pb.ValidateTokenResponse{
+			Valid:  false,
+			UserId: "",
+		}, nil 
+	}
+
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return nil, status.Errorf(codes.Internal, "Token claims tidak valid")
+	}
+
+	return &pb.ValidateTokenResponse{
+		Valid:  true,
+		UserId: userID,
 	}, nil
 }
 
