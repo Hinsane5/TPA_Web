@@ -36,3 +36,75 @@ export const authApi = {
     return apiClient.post("/auth/reset-password", data);
   },
 };
+
+export const setAuthHeader = (token: string) => {
+  if (token) {
+    apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  } else{
+    delete apiClient.defaults.headers.common["Authorization"];
+  }
+}
+
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("accessToken");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+)
+
+export const postsApi = {
+  generateUploadUrl: (fileName: string, fileType: string) => {
+    return apiClient.get("/posts/generate-upload-url", {
+      params : {
+        file_name: fileName,
+        file_type: fileType,
+      },
+    });
+  },
+
+  uploadFileToMinio: (uploadUrl: string, file: File) => {
+    return axios.put(uploadUrl, file, {
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
+  },
+
+  createPost: (data: {
+    media_object_name: string;
+    media_type: string;
+    caption: string;
+    location: string;
+  }) => {
+    return apiClient.post("/posts", data);
+  },
+
+  getPostByUserID: (userId: string) => {
+    return apiClient.get(`/posts/user/${userId}`)
+  },
+  
+  likePost: (postId: string) => {
+    return apiClient.post(`/posts/${postId}/like`);
+  },
+
+  unlikePost: (postId: string) => {
+    return apiClient.delete(`/posts/${postId}/like`);
+  },
+
+  createComment: (postId: string, content: string) => {
+    return apiClient.post(`/posts/${postId}/comments`, {content});
+  },
+
+  getCommentForPost: (postId: string) => {
+    return apiClient.get(`/posts/${postId}/comments`)
+  }
+
+
+}

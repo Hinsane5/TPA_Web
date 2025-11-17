@@ -92,7 +92,11 @@ const handleLogin = async () => {
       });
     } else {
       console.log("Login successful, tokens:", response.data);
-      router.push("/home");
+
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("refreshToken", response.data.refresh_token);
+
+      router.push("/dashboard");
     }
   } catch (err: any) {
     console.error("Login failed:", err);

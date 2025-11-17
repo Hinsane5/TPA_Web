@@ -31,7 +31,6 @@ func main(){
 	postsClient := postsProto.NewPostsServiceClient(postsConn)
 	log.Println("Connected to gRPC posts-service")
 
-
 	router := gin.Default()
 
 	authHandler := handlers.NewAuthHandler(userClient)
