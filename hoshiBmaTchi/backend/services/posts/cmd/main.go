@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/clients"
@@ -12,6 +13,7 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/repositories"
 	"google.golang.org/grpc"
+	"github.com/minio/minio-go/v7"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -39,9 +41,25 @@ func main() {
 
 	log.Println("Automigrate successfully")
 
-	minioClient, err := clients.NewMinIOClient()
-	if err != nil {
-		log.Fatalf("Failed to initialize MinIO client: %v", err)
+	var minioClient *minio.Client // Use the *minio.Client type
+	var minioErr error
+	
+	const maxRetries = 10
+	for i := 0; i < maxRetries; i++ {
+		// This calls the code you just posted
+		minioClient, minioErr = clients.NewMinIOClient()
+		if minioErr == nil {
+			// Success!
+			break
+		}
+		
+		log.Printf("Gagal terhubung ke MinIO (attempt %d/%d): %v. Retrying in 5 seconds...", i+1, maxRetries, minioErr)
+		time.Sleep(5 * time.Second)
+	}
+	
+	// If it still failed after all retries, then exit
+	if minioErr != nil {
+		log.Fatalf("Failed to initialize MinIO client after multiple retries: %v", minioErr)
 	}
 
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")

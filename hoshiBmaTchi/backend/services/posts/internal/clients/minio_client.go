@@ -7,6 +7,7 @@ import (
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/minio/minio-go/v7/pkg/cors"
 )
 
 func NewMinIOClient() (*minio.Client, error) {
@@ -21,7 +22,7 @@ func NewMinIOClient() (*minio.Client, error) {
 		Secure: useSSL,
 	})
 	if err != nil {
-		log.Printf("Gagal terhubung ke MinIO: %v", err)
+		log.Printf("Gagal terhubung ke MinIO (attempt): %v", err)
 		return nil, err
 	}
 	
@@ -34,12 +35,37 @@ func NewMinIOClient() (*minio.Client, error) {
 		if errBucketExists == nil && exists {
 			log.Printf("Bucket '%s' sudah ada, tidak perlu dibuat", bucketName)
 		} else {
-			log.Fatalf("Gagal membuat/memeriksa bucket: %v", err)
+			log.Printf("Gagal membuat/memeriksa bucket: %v", err)
 			return nil, err
 		}
 	} else {
 		log.Printf("Berhasil membuat bucket '%s'", bucketName)
 	}
+
+	log.Printf("Menetapkan CORS policy untuk bucket: %s", bucketName)
+
+	// Define the CORS rule
+	// This allows PUT/GET/POST/DELETE from your frontend's origin
+	corsRule := cors.Rule{
+		AllowedOrigin: []string{"http://localhost:5173"},
+		AllowedMethod: []string{"PUT", "GET", "POST", "DELETE"},
+		AllowedHeader: []string{"Content-Type", "Authorization", "Origin"},
+		ExposeHeader:  []string{"ETag"},
+		MaxAgeSeconds:  3600,
+	}
+
+	config := cors.Config{
+		CORSRules: []cors.Rule{corsRule}, 
+	}
+
+	err = minioClient.SetBucketCors(ctx, bucketName, &config)
+	if err != nil {
+		log.Printf("Failed to set CORS: %v", err)
+		return nil, err
+	}
+
+	log.Println("Berhasil menetapkan CORS policy untuk bucket:", bucketName)
+	// --- END OF ADDED SECTION ---
 
 	return minioClient, nil
 }
