@@ -148,12 +148,12 @@ interface Post {
 }
 
 const currentUser = ref ({
-  fullName: 'John Doe',
-  username: 'XXXXXXX',
-  bio: 'I love photography!',
-  postsCount: 10,
-  followers: 100,
-  following: 50,
+  fullName: 'Loading...',
+  username: 'loading...',
+  bio: 'Loading...',
+  postsCount: 0, 
+  followers: 0,
+  following: 0,
   profileImage: '',
 })
 
@@ -201,15 +201,34 @@ const openPostDetail = (post: Post) => {
   console.log("Opening post detail for:", post.id)
 }
 
-const fetchUserPosts = async () => {
+const fetchUserProfile = async (userId: string, accessToken: string) => {
+  try{
+    const response = await axios.get(`/api/v1/users/${userId}`, {
+       headers: { Authorization: `Bearer ${accessToken}` }
+    })
+
+    const data = response.data
+
+    currentUser.value = {
+      fullName: data.name,
+      username: data.username,
+      bio: data.bio || 'No bio yet.', 
+      profileImage: data.profile_picture_url,
+      followers: data.followers_count, 
+      following: data.following_count, 
+      postsCount: currentUser.value.postsCount,
+    }
+  } catch (error){
+    console.error("Failed to fetch profile info:", error)
+  }
+}
+
+const fetchUserPosts = async (userId: string, accessToken: string) => {
   try {
-    const accessToken = localStorage.getItem('accessToken')
     if (!accessToken){
       console.error("No access token found")
       return
     }
-
-    const userId = getUserIdFromToken(accessToken)
 
     if(!userId){
       console.error("Could not extract User ID from token")
@@ -230,8 +249,16 @@ const fetchUserPosts = async () => {
   }
 }
 
-onMounted(() => {
-  fetchUserPosts()
+onMounted(async () => {
+  const accessToken = localStorage.getItem('accessToken')
+  if (!accessToken) return;
+
+  const userId = getUserIdFromToken(accessToken)
+  if (!userId) return;
+
+  await fetchUserPosts(userId, accessToken) 
+  
+  await fetchUserProfile(userId, accessToken)
 })
 </script>
 
