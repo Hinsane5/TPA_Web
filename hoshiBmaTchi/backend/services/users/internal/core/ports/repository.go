@@ -8,4 +8,8 @@ type UserRepository interface{
 	FindByEmailOrUsername(identifier string) (*domain.User, error)
 	FindByID(userID string) (*domain.User, error)
 	UpdatePassword(userID string, newPassword string) error
+	GetUserProfileWithStats(userID string) (*domain.User, int64, int64, error)
+	CreateFollow(followerID, followingID string) error
+    DeleteFollow(followerID, followingID string) error
+    IsFollowing(followerID, followingID string) (bool, error)
 }

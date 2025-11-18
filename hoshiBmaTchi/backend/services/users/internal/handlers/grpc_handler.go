@@ -201,39 +201,6 @@ func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoog
 	name := payload.Claims["name"].(string)
 	picture := payload.Claims["picture"].(string)
 
-	
-
-	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-	// if err != nil {
-	// 	log.Printf("Google token validation failed: %v", err)
-	// 	return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-	// }
-
-	// email := payload.Claims["email"].(string)
-	// name := payload.Claims["name"].(string)
-	// picture := payload.Claims["picture"].(string)
-
-	// var email string
-	// var name string
-	// var picture string
-
-	// if req.IdToken == "test_token_123" {
-	// 	log.Println("--- MOCK GOOGLE LOGIN: Using test token ---")
-	// 	email = "testuser_google@example.com"
-	// 	name = "Google Test User"
-	// 	picture = "http://example.com/google.jpg"
-	// } else {
-	// 	payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-	// 	if err != nil {
-	// 		log.Printf("Google token validation failed: %v", err)
-	// 		return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-	// 	}
-
-	// 	email = payload.Claims["email"].(string)
-	// 	name = payload.Claims["name"].(string)
-	// 	picture = payload.Claims["picture"].(string)
-	// }
-
 	user, err := h.repo.FindByEmail(email)
 	if err != nil && err != gorm.ErrRecordNotFound{
 		return nil, status.Error(codes.Internal, "failed to find user")
@@ -546,31 +513,6 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		dobTimestamp = timestamppb.New(newUser.DateOfBirth)
 	}
 
-	// otp := fmt.Sprintf("%06d", rand.Intn(1000000))
-
-	// err = h.redis.Set(ctx, "otp:"+req.Email, otp, 5*time.Minute).Err()
-
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, "failed to store OTP")
-	// }
-
-	// emailBody := fmt.Sprintf("Your verification code is %s", otp)
-
-	// err = h.amqpChan.PublishWithContext(ctx, 
-	// 	"email_exchange",
-	// 	"send_email",
-	// 	false,
-	// 	false,
-	// 	amqp.Publishing{
-	// 		ContentType: "application/json",
-	// 		Body: []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
-	// 	},
-	// )
-
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, "failed to publish email task")
-	// }
-
 	return &pb.RegisterUserResponse{
 		UserId:            newUser.ID.String(),
 		Name:              newUser.Name,
@@ -606,5 +548,54 @@ func (h *UserHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 	}, nil
 }
 
+func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.GetUserProfileResponse, error){
+	if req.UserId == ""{
+		return nil, status.Error(codes.InvalidArgument, "User ID is required")
+	}
 
+	user, followers, following, err := h.repo.GetUserProfileWithStats(req.UserId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound{
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
 
+		return nil, status.Error(codes.Internal, "Failed to fetch user profile")
+	}
+
+	return &pb.GetUserProfileResponse{
+        Id:                user.ID.String(),
+        Username:          user.Username,
+        Name:              user.Name,
+        Bio:               user.Bio,
+        ProfilePictureUrl: user.ProfilePictureURL,
+        FollowersCount:    followers,
+        FollowingCount:    following,
+        IsFollowing:       false, 
+    }, nil
+}
+
+func (h *UserHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
+    if req.FollowerId == req.FollowingId {
+        return nil, status.Error(codes.InvalidArgument, "You cannot follow yourself")
+    }
+
+    exists, _ := h.repo.IsFollowing(req.FollowerId, req.FollowingId)
+    if exists {
+        return &pb.FollowUserResponse{Message: "Already following"}, nil
+    }
+
+    err := h.repo.CreateFollow(req.FollowerId, req.FollowingId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to follow user")
+    }
+
+    return &pb.FollowUserResponse{Message: "Successfully followed user"}, nil
+}
+
+func (h *UserHandler) UnfollowUser(ctx context.Context, req *pb.UnfollowUserRequest) (*pb.UnfollowUserResponse, error) {
+    err := h.repo.DeleteFollow(req.FollowerId, req.FollowingId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to unfollow user")
+    }
+    return &pb.UnfollowUserResponse{Message: "Successfully unfollowed user"}, nil
+}

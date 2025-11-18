@@ -333,3 +333,55 @@ func NewAuthHandler(userClient pb.UserServiceClient) *AuthHandler {
 	}
 }
 
+func (h *AuthHandler) GetUserProfile(c *gin.Context) {
+    userID := c.Param("id")
+
+    res, err := h.UserClient.GetUserProfile(context.Background(), &pb.GetUserProfileRequest{
+        UserId: userID,
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            if s.Code() == codes.NotFound {
+                c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+                return
+            }
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}
+
+func (h *AuthHandler) FollowUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, _ := c.Get("userID") // From AuthMiddleware
+
+    _, err := h.UserClient.FollowUser(context.Background(), &pb.FollowUserRequest{
+        FollowerId:  currentUserID.(string),
+        FollowingId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Followed successfully"})
+}
+
+func (h *AuthHandler) UnfollowUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, _ := c.Get("userID")
+
+    _, err := h.UserClient.UnfollowUser(context.Background(), &pb.UnfollowUserRequest{
+        FollowerId:  currentUserID.(string),
+        FollowingId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Unfollowed successfully"})
+}
