@@ -49,8 +49,14 @@ func main() {
 		log.Fatal("FATAL: MINIO_BUCKET_NAME environment variable is not set.")
 	}
 
+	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+	if publicEndpoint == "" {
+		log.Fatal("FATAL: MINIO_PUBLIC_ENDPOINT environment variable is not set.")
+	}
+	
+
 	postRepo := repositories.NewGormPostRepository(db)
-	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, bucketName)
+	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, bucketName, publicEndpoint)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

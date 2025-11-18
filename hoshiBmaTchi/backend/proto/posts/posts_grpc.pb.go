@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	PostsService_GenerateUploadURL_FullMethodName  = "/posts.PostsService/GenerateUploadURL"
+	PostsService_UploadFile_FullMethodName         = "/posts.PostsService/UploadFile"
 	PostsService_CreatePost_FullMethodName         = "/posts.PostsService/CreatePost"
 	PostsService_GetPostsByUserID_FullMethodName   = "/posts.PostsService/GetPostsByUserID"
 	PostsService_GetPostByID_FullMethodName        = "/posts.PostsService/GetPostByID"
@@ -34,6 +35,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostsServiceClient interface {
 	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
+	UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*UploadFileResponse, error)
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
 	GetPostsByUserID(ctx context.Context, in *GetPostsByUserIDRequest, opts ...grpc.CallOption) (*GetPostsResponse, error)
 	GetPostByID(ctx context.Context, in *GetPostByIDRequest, opts ...grpc.CallOption) (*PostResponse, error)
@@ -55,6 +57,16 @@ func (c *postsServiceClient) GenerateUploadURL(ctx context.Context, in *Generate
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GenerateUploadURLResponse)
 	err := c.cc.Invoke(ctx, PostsService_GenerateUploadURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*UploadFileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UploadFileResponse)
+	err := c.cc.Invoke(ctx, PostsService_UploadFile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -136,6 +148,7 @@ func (c *postsServiceClient) GetCommentsForPost(ctx context.Context, in *GetComm
 // for forward compatibility.
 type PostsServiceServer interface {
 	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
+	UploadFile(context.Context, *UploadFileRequest) (*UploadFileResponse, error)
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
 	GetPostsByUserID(context.Context, *GetPostsByUserIDRequest) (*GetPostsResponse, error)
 	GetPostByID(context.Context, *GetPostByIDRequest) (*PostResponse, error)
@@ -155,6 +168,9 @@ type UnimplementedPostsServiceServer struct{}
 
 func (UnimplementedPostsServiceServer) GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateUploadURL not implemented")
+}
+func (UnimplementedPostsServiceServer) UploadFile(context.Context, *UploadFileRequest) (*UploadFileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UploadFile not implemented")
 }
 func (UnimplementedPostsServiceServer) CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
@@ -212,6 +228,24 @@ func _PostsService_GenerateUploadURL_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PostsServiceServer).GenerateUploadURL(ctx, req.(*GenerateUploadURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_UploadFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UploadFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).UploadFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_UploadFile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).UploadFile(ctx, req.(*UploadFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -352,6 +386,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateUploadURL",
 			Handler:    _PostsService_GenerateUploadURL_Handler,
+		},
+		{
+			MethodName: "UploadFile",
+			Handler:    _PostsService_UploadFile_Handler,
 		},
 		{
 			MethodName: "CreatePost",

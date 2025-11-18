@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
@@ -20,14 +21,16 @@ type Server struct {
 	pb.UnimplementedPostsServiceServer 
 	repo ports.PostRepository         
 	minio *minio.Client   
-	bucketName string           
+	bucketName string  
+	publicEndPoint string         
 }
 
-func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, bucketName string) *Server {
+func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, bucketName string, publicEndPoint string) *Server {
 	return &Server{
 		repo:  repo,
 		minio: minio,
 		bucketName: bucketName,
+		publicEndPoint: publicEndPoint,
 	}
 }
 
@@ -44,8 +47,13 @@ func (s *Server) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadUR
 		return nil, status.Error(codes.Internal, "Failed to generate posts url")
 	}
 
+	internalEndpoint := s.minio.EndpointURL().String()
+
+	publicURL := strings.Replace(presignedURL.String(), internalEndpoint, s.publicEndPoint, 1)
+
+
 	return &pb.GenerateUploadURLResponse{
-		UploadUrl: presignedURL.String(),
+		UploadUrl: publicURL,
 		ObjectName: objectName,
 	}, nil
 }

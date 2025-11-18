@@ -61,8 +61,8 @@ apiClient.interceptors.request.use(
 
 export const postsApi = {
   generateUploadUrl: (fileName: string, fileType: string) => {
-    return apiClient.get("/posts/generate-upload-url", {
-      params : {
+    return apiClient.get("/v1/posts/generate-upload-url", {
+      params: {
         file_name: fileName,
         file_type: fileType,
       },
@@ -83,27 +83,27 @@ export const postsApi = {
     caption: string;
     location: string;
   }) => {
-    return apiClient.post("/posts", data);
+    return apiClient.post("/v1/posts", data);
   },
 
   getPostByUserID: (userId: string) => {
-    return apiClient.get(`/posts/user/${userId}`)
+    return apiClient.get(`/v1/posts/user/${userId}`)
   },
   
   likePost: (postId: string) => {
-    return apiClient.post(`/posts/${postId}/like`);
+    return apiClient.post(`/v1/posts/${postId}/like`);
   },
 
   unlikePost: (postId: string) => {
-    return apiClient.delete(`/posts/${postId}/like`);
+    return apiClient.delete(`/v1/posts/${postId}/like`);
   },
 
   createComment: (postId: string, content: string) => {
-    return apiClient.post(`/posts/${postId}/comments`, {content});
+    return apiClient.post(`/v1/posts/${postId}/comments`, {content});
   },
 
   getCommentForPost: (postId: string) => {
-    return apiClient.get(`/posts/${postId}/comments`)
+    return apiClient.get(`/v1/posts/${postId}/comments`)
   }
 
 

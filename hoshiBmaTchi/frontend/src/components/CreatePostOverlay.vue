@@ -197,7 +197,7 @@ const handleSharePost = async () => {
     const postData = {
       media_object_name: object_name,
       media_type: mediaType,
-      caption: caption.value,
+      caption: postDescription.value,
       location: location.value,
     };
 
