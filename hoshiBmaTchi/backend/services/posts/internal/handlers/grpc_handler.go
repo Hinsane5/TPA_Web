@@ -122,8 +122,8 @@ func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDR
 		reqParams := make(url.Values)
 		reqParams.Set("response-content-type", post.MediaType)
 
-		presignedURL, err := s.minio.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, reqParams)
-
+		presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, reqParams)
+		
 		if err != nil {
 			log.Printf("Failed to to make Presigned GET URL for %s: %v", post.MediaObjectName, err)
 			presignedURL = nil

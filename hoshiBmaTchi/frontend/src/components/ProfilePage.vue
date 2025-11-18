@@ -67,12 +67,16 @@
       <!-- Posts Tab -->
       <div v-if="activeTab === 'posts'" class="posts-grid">
         <!-- Posts will be populated from backend via prop/API -->
-        <div class="grid-item post-placeholder" v-for="n in 6" :key="`post-${n}`">
-          <div class="placeholder-image">
-            <span>📸</span>
-          </div>
+        <div 
+          class="grid-item" 
+          v-for="post in posts" 
+          :key="post.id"
+          @click="openPostDetail(post)" 
+        >
+          <img :src="post.mediaUrl" :alt="post.caption" class="post-image" loading="lazy" />
         </div>
-        <div v-if="!hasContent" class="empty-state">
+
+        <div v-if="posts.length === 0" class="empty-state">
           <p>No posts yet. Start sharing your content!</p>
         </div>
       </div>
@@ -135,12 +139,53 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { User } from '../types'
+import axios from 'axios'
 
-const currentUser = ref<User | null>(null)
+interface Post {
+  id: string
+  mediaUrl: string
+  caption: string
+}
+
+const currentUser = ref ({
+  fullName: 'John Doe',
+  username: 'XXXXXXX',
+  bio: 'I love photography!',
+  postsCount: 10,
+  followers: 100,
+  following: 50,
+  profileImage: '',
+})
+
+const posts = ref<Post[]>([])
 const activeTab = ref<'posts' | 'reels' | 'saved' | 'mentions'>('posts')
 const showProfileImageModal = ref(false)
 const hasContent = ref(false)
 const tabs = ['posts', 'reels', 'saved', 'mentions'] as const
+
+const getUserIdFromToken = (token: string): string | null => {
+  try{
+    const parts = token.split('.')
+    
+    // FIX: Check if we actually got 3 parts (Header.Payload.Signature)
+    if (parts.length < 2 || !parts[1]) {
+        console.error("Invalid token format")
+        return null
+    }
+
+    const base64Url = parts[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+    }).join(''))
+
+    const payload = JSON.parse(jsonPayload)
+    return payload.user_id || payload.sub || payload.id
+  } catch (e){
+    console.error('Error decoding token:', e)
+    return null
+  }
+}
 
 const getTabIconPath = (tab: string): string => {
   const icons: Record<string, string> = {
@@ -152,9 +197,41 @@ const getTabIconPath = (tab: string): string => {
   return icons[tab] || ''
 }
 
+const openPostDetail = (post: Post) => {
+  console.log("Opening post detail for:", post.id)
+}
+
+const fetchUserPosts = async () => {
+  try {
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken){
+      console.error("No access token found")
+      return
+    }
+
+    const userId = getUserIdFromToken(accessToken)
+
+    if(!userId){
+      console.error("Could not extract User ID from token")
+      return
+    }
+
+    console.log("Fetching posts for User ID:", userId)
+
+    const response = await axios.get(`/api/v1/posts/user/${userId}`, {
+       headers: { Authorization: `Bearer ${accessToken}` }
+    })
+
+    posts.value = response.data || []
+    currentUser.value.postsCount = posts.value.length
+    hasContent.value = posts.value.length > 0
+  } catch (error){
+    console.error("Failed to fetch posts:", error)
+  }
+}
+
 onMounted(() => {
-  // TODO: Fetch current user profile from backend
-  // TODO: Fetch user posts, reels, saved collections, and mentions from backend
+  fetchUserPosts()
 })
 </script>
 
