@@ -73,7 +73,7 @@
           :key="post.id"
           @click="openPostDetail(post)" 
         >
-          <img :src="post.mediaUrl" :alt="post.caption" class="post-image" loading="lazy" />
+          <img :src="post.media_url" :alt="post.caption" class="post-image" loading="lazy" />
         </div>
 
         <div v-if="posts.length === 0" class="empty-state">
@@ -143,7 +143,7 @@ import axios from 'axios'
 
 interface Post {
   id: string
-  mediaUrl: string
+  media_url: string
   caption: string
 }
 
