@@ -120,6 +120,9 @@ func setBucketPolicy(client *minio.Client, bucketName string) error {
 		return fmt.Errorf("failed to set bucket policy: %w", err)
 	}
 
+	
+
 	log.Printf("Successfully set bucket policy for '%s'", bucketName)
 	return nil
 }
+

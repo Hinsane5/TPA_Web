@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -12,8 +13,9 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/repositories"
-	"google.golang.org/grpc"
 	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
+	"google.golang.org/grpc"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -71,10 +73,23 @@ func main() {
 	if publicEndpoint == "" {
 		log.Fatal("FATAL: MINIO_PUBLIC_ENDPOINT environment variable is not set.")
 	}
-	
 
+	publicURL, err := url.Parse(publicEndpoint)
+	if err != nil {
+		log.Fatalf("Failed to parse MINIO_PUBLIC_ENDPOINT: %v", err)
+	}
+
+	presignClient, err := minio.New(publicURL.Host, &minio.Options{
+		Creds:  credentials.NewStaticV4(os.Getenv("MINIO_ACCESS_KEY_ID"), os.Getenv("MINIO_SECRET_ACCESS_KEY"), ""),
+		Secure: publicURL.Scheme == "https",
+		Region: "us-east-1",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create presign MinIO client: %v", err)
+	}
+	
 	postRepo := repositories.NewGormPostRepository(db)
-	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, bucketName, publicEndpoint)
+	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, presignClient, bucketName, publicEndpoint)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

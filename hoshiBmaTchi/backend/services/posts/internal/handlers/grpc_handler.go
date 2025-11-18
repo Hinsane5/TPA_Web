@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"log"
-	"strings"
+	"net/http"
+	"net/url"
+	// "strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
@@ -20,16 +22,18 @@ import (
 type Server struct {
 	pb.UnimplementedPostsServiceServer 
 	repo ports.PostRepository         
-	minio *minio.Client   
+	minio *minio.Client 
+	presignClient  *minio.Client  
 	bucketName string  
 	publicEndPoint string         
 }
 
-func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, bucketName string, publicEndPoint string) *Server {
+func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string) *Server {
 	return &Server{
-		repo:  repo,
-		minio: minio,
-		bucketName: bucketName,
+		repo:           repo,
+		minio:          minio,
+		presignClient:  presignClient,
+		bucketName:     bucketName,
 		publicEndPoint: publicEndPoint,
 	}
 }
@@ -41,19 +45,26 @@ func (s *Server) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadUR
 
 	expiry := 15 * time.Minute
 
-	presignedURL, err := s.minio.PresignedPutObject(ctx, bucketName, objectName, expiry)
+	headers := make(http.Header)
+	if req.GetFileType() != "" {
+		headers.Set("Content-Type", req.GetFileType())
+	}
+
+	reqParams := make(url.Values)
+
+	presignedURL, err := s.presignClient.PresignHeader(ctx, "PUT", bucketName, objectName, expiry, reqParams, headers)
 	if err != nil {
 		log.Printf("Failed to generate presigned URL: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to generate posts url")
 	}
 
-	internalEndpoint := s.minio.EndpointURL().String()
+	// internalEndpoint := s.minio.EndpointURL().String()
 
-	publicURL := strings.Replace(presignedURL.String(), internalEndpoint, s.publicEndPoint, 1)
+	// publicURL := strings.Replace(presignedURL.String(), internalEndpoint, s.publicEndPoint, 1)
 
 
 	return &pb.GenerateUploadURLResponse{
-		UploadUrl: publicURL,
+		UploadUrl: presignedURL.String(),
 		ObjectName: objectName,
 	}, nil
 }
@@ -108,7 +119,10 @@ func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDR
 	expiry := time.Hour * 1
 
 	for _, post := range posts{
-		presignedURL, err := s.minio.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, nil)
+		reqParams := make(url.Values)
+		reqParams.Set("response-content-type", post.MediaType)
+
+		presignedURL, err := s.minio.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, reqParams)
 
 		if err != nil {
 			log.Printf("Failed to to make Presigned GET URL for %s: %v", post.MediaObjectName, err)
