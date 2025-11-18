@@ -101,6 +101,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { DashboardPage, User } from '../types'
+import { useAuth } from '../composables/useAuth'
 
 interface NavItem {
   id: DashboardPage
@@ -125,6 +126,7 @@ const emit = defineEmits<{
 
 const isMoreMenuOpen = ref(false)
 const currentUser = ref<User | null>(null)
+const { logout } = useAuth()
 
 const navItems: NavItem[] = [
   { id: 'home', label: 'Home', iconPath: '/icons/home-icon.png' },
@@ -154,7 +156,7 @@ const toggleTheme = () => {
 }
 
 const handleLogout = () => {
-  emit('logout')
+  logout()
 }
 
 // Fetch current user from backend

@@ -8,24 +8,14 @@
           <button class="close-btn" @click="closeCreate">✕</button>
         </div>
         <div class="modal-body">
-          <div
-            class="upload-area"
-            @dragover.prevent="dragOver = true"
-            @dragleave="dragOver = false"
-            @drop.prevent="handleDrop"
-          >
+          <div class="upload-area" @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="handleDrop">
             <div :class="['upload-content', { dragover: dragOver }]">
-              <div class="upload-icon">
-                <!-- <img src="/icons/upload-placeholder.png" alt="Upload" /> -->
-              </div>
               <p class="upload-text">Drag photos and videos here</p>
-              <button class="select-btn" @click="triggerFileInput">
-                Select from computer
-              </button>
+              <button class="select-btn" @click="triggerFileInput">Select from computer</button>
             </div>
-            <input
+            <input 
               ref="fileInput"
-              type="file"
+              type="file" 
               accept="image/*,video/*"
               style="display: none"
               @change="handleFileSelect"
@@ -39,29 +29,24 @@
         <div class="modal-header">
           <button class="back-btn" @click="goBack">← Back</button>
           <h2>Create new post</h2>
-          <button
-            class="share-btn"
+          <button 
+            class="share-btn" 
             @click="handleSharePost"
-            :disabled="isLoading"
+            :disabled="isUploading"
           >
-            {{ isLoading ? "Sharing..." : "Share" }}
+            {{ isUploading ? 'Sharing...' : 'Share' }}
           </button>
         </div>
-
+        
         <div class="edit-container">
           <!-- Image Preview -->
           <div class="preview-area">
-            <img
-              v-if="filePreview"
-              :src="filePreview"
-              :alt="selectedFile?.name"
-              class="preview-image"
-            />
+            <img v-if="filePreview" :src="filePreview" :alt="selectedFile?.name" class="preview-image" />
           </div>
 
           <!-- Caption Area -->
           <div class="caption-area">
-            <textarea
+            <textarea 
               v-model="postDescription"
               placeholder="Write a caption..."
               class="caption-input"
@@ -72,7 +57,25 @@
             </div>
 
             <!-- Add Location -->
-            <button class="add-option">Add location</button>
+            <input 
+              v-model="location"
+              type="text"
+              placeholder="Add location"
+              class="location-input"
+            />
+
+            <!-- Upload Progress -->
+            <div v-if="isUploading" class="upload-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+              </div>
+              <p class="progress-text">{{ uploadProgress }}% uploaded</p>
+            </div>
+
+            <!-- Error Message -->
+            <div v-if="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
           </div>
         </div>
       </div>
@@ -81,136 +84,193 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-import { postsApi } from "../services/apiService";
+import { ref } from 'vue'
+import axios from 'axios'
 
 const props = defineProps<{
-  isOpen: boolean;
-}>();
+  isOpen: boolean
+}>()
 
 const emit = defineEmits<{
-  close: [];
-  upload: [file: File, description: string];
-}>();
+  close: []
+  success: []
+}>()
 
-const fileInput = ref<HTMLInputElement>();
-const dragOver = ref(false);
-const selectedFile = ref<File | null>(null);
-const filePreview = ref<string>("");
-const postDescription = ref("");
-const wordCount = ref(0);
-const caption = ref("");
-const location = ref("");
-
-const isLoading = ref(false);
-const error = ref("");
+const fileInput = ref<HTMLInputElement>()
+const dragOver = ref(false)
+const selectedFile = ref<File | null>(null)
+const filePreview = ref<string>('')
+const postDescription = ref('')
+const location = ref('')
+const wordCount = ref(0)
+const isUploading = ref(false)
+const uploadProgress = ref(0)
+const errorMessage = ref('')
 
 const closeCreate = () => {
-  resetForm();
-  emit("close");
-};
+  if (!isUploading.value) {
+    resetForm()
+    emit('close')
+  }
+}
 
 const goBack = () => {
-  selectedFile.value = null;
-  filePreview.value = "";
-  postDescription.value = "";
-  wordCount.value = 0;
-};
+  if (!isUploading.value) {
+    selectedFile.value = null
+    filePreview.value = ''
+    postDescription.value = ''
+    location.value = ''
+    wordCount.value = 0
+    errorMessage.value = ''
+  }
+}
 
 const resetForm = () => {
-  selectedFile.value = null;
-  filePreview.value = "";
-  postDescription.value = "";
-  wordCount.value = 0;
+  selectedFile.value = null
+  filePreview.value = ''
+  postDescription.value = ''
+  location.value = ''
+  wordCount.value = 0
+  isUploading.value = false
+  uploadProgress.value = 0
+  errorMessage.value = ''
   if (fileInput.value) {
-    fileInput.value.value = "";
+    fileInput.value.value = ''
   }
-};
+}
 
 const triggerFileInput = () => {
-  fileInput.value?.click();
-};
+  fileInput.value?.click()
+}
 
 const updateWordCount = () => {
-  const description = postDescription.value;
-  wordCount.value = description
-    .trim()
-    .split(/\s+/)
-    .filter((word) => word.length > 0).length;
-};
+  const description = postDescription.value
+  const words = description.trim().split(/\s+/).filter(word => word.length > 0)
+  wordCount.value = words.length
+}
 
 const handleFileSelect = (event: Event) => {
-  const input = event.target as HTMLInputElement;
+  const input = event.target as HTMLInputElement
   if (input.files?.[0]) {
-    selectFile(input.files[0]);
+    selectFile(input.files[0])
   }
-};
+}
 
 const handleDrop = (event: DragEvent) => {
-  dragOver.value = false;
-  const file = event.dataTransfer?.files?.[0];
-  if (
-    file &&
-    (file.type.startsWith("image/") || file.type.startsWith("video/"))
-  ) {
-    selectFile(file);
+  dragOver.value = false
+  const file = event.dataTransfer?.files?.[0]
+  if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
+    selectFile(file)
   }
-};
+}
 
 const selectFile = (file: File) => {
-  selectedFile.value = file;
-
+  selectedFile.value = file
+  
   // Create preview
-  const reader = new FileReader();
+  const reader = new FileReader()
   reader.onload = (e) => {
-    filePreview.value = e.target?.result as string;
-  };
-  reader.readAsDataURL(file);
-};
+    filePreview.value = e.target?.result as string
+  }
+  reader.readAsDataURL(file)
+}
 
 const handleSharePost = async () => {
   if (!selectedFile.value) {
-    error.value = "File tidak ditemukan. Harap kembali.";
-    return;
+    errorMessage.value = 'Please select a file to upload'
+    return
   }
-
-  isLoading.value = true;
-  error.value = "";
 
   try {
-    const file = selectedFile.value;
-    const { data: uploadData } = await postsApi.generateUploadUrl(
-      file.name,
-      file.type
-    );
+    isUploading.value = true
+    errorMessage.value = ''
+    uploadProgress.value = 0
 
-    const { upload_url, object_name } = uploadData;
-
-    await postsApi.uploadFileToMinio(upload_url, file);
-
-    const mediaType = file.type.split("/")[0];
-
-    if (!mediaType) {
-      throw new Error("File type not valid.");
+    // Get auth token from localStorage
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      errorMessage.value = 'You must be logged in to create a post'
+      return
     }
 
-    const postData = {
+    // Step 1: Generate presigned upload URL
+    const fileName = selectedFile.value.name
+    const fileType = selectedFile.value.type
+
+    console.log('Requesting upload URL for:', fileName, fileType)
+
+    const urlResponse = await axios.get('/api/v1/posts/generate-upload-url', {
+      params: {
+        file_name: fileName,
+        file_type: fileType
+      },
+      headers: {
+        'Authorization': `Bearer ${accessToken}`
+      }
+    })
+
+    const { upload_url, object_name } = urlResponse.data
+    console.log('Got upload URL:', upload_url)
+    console.log('Object name:', object_name)
+
+    // Step 2: Upload file directly to MinIO using presigned URL
+    uploadProgress.value = 25
+    
+    await axios.put(upload_url, selectedFile.value, {
+      headers: {
+        'Content-Type': fileType
+      },
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
+          uploadProgress.value = 25 + (progress * 0.5) // 25% to 75%
+        }
+      }
+    })
+
+    console.log('File uploaded to MinIO successfully')
+    uploadProgress.value = 75
+
+    // Step 3: Create post record in database
+    const createPostResponse = await axios.post('/api/v1/posts', {
       media_object_name: object_name,
-      media_type: mediaType,
-      caption: postDescription.value,
-      location: location.value,
-    };
+      media_type: fileType,
+      caption: postDescription.value.trim(),
+      location: location.value.trim()
+    }, {
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      }
+    })
 
-    await postsApi.createPost(postData);
+    console.log('Post created successfully:', createPostResponse.data)
+    uploadProgress.value = 100
 
-    isLoading.value = false;
-    emit("close");
-  } catch (err: any) {
-    console.error("Failed to make post:", err);
-    error.value = "Failed to make post, try again later";
-    isLoading.value = false;
+    // Success! Close modal and emit success
+    setTimeout(() => {
+      resetForm()
+      emit('success')
+      emit('close')
+    }, 500)
+
+  } catch (error: any) {
+    console.error('Failed to make post:', error)
+    
+    if (error.response) {
+      errorMessage.value = error.response.data?.error || 'Failed to create post. Please try again.'
+    } else if (error.request) {
+      errorMessage.value = 'Network error. Please check your connection.'
+    } else {
+      errorMessage.value = 'An unexpected error occurred. Please try again.'
+    }
+  } finally {
+    if (errorMessage.value) {
+      isUploading.value = false
+      uploadProgress.value = 0
+    }
   }
-};
+}
 </script>
 
 <style scoped>

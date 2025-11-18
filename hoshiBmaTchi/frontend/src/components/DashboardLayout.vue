@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { DashboardPage } from '../types'
 import Sidebar from './Sidebar.vue'
@@ -35,6 +35,7 @@ import SearchPanel from './SearchPanel.vue'
 import NotificationPanel from './NotificationPanel.vue'
 import CreatePostOverlay from './CreatePostOverlay.vue'
 import MiniMessagesComponent from './MiniMessagesComponent.vue'
+import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
@@ -43,6 +44,8 @@ const isSearchOpen = ref(false)
 const isNotificationOpen = ref(false)
 const isCreateOpen = ref(false)
 const notificationCount = ref(0)
+
+const { checkLoginState } = useAuth()
 
 const currentPage = computed(() => {
   const pageName = route.path.split('/').pop()
@@ -68,6 +71,10 @@ const handlePostUpload = (file: File, description: string) => {
   // TODO: Implement post upload to backend with description
   isCreateOpen.value = false
 }
+
+onMounted(() => {
+  checkLoginState()
+})
 </script>
 
 <style scoped>

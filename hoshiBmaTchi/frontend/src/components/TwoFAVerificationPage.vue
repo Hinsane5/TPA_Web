@@ -78,8 +78,10 @@ const handleSubmit = async () => {
     if (response.data.access_token) {
         console.log("2FA successful, tokens:", response.data);
 
-        localStorage.setItem("accessToken", response.data.access_token);
-        localStorage.setItem("refreshToken", response.data.refresh_token);
+        if (response.data.access_token && response.data.refresh_token) {
+          localStorage.setItem('accessToken', response.data.access_token)
+          localStorage.setItem('refreshToken', response.data.refresh_token)
+        }
 
         router.push("/dashboard");
 
