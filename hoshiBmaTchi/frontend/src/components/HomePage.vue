@@ -13,51 +13,30 @@
 
     <div class="feed-container">
       <div class="feed-section">
-        <div class="post-item" v-for="n in 5" :key="`post-${n}`">
-          <div class="post-header">
-            <div class="post-author">
-              <div class="author-avatar">👤</div>
-              <div class="author-info">
-                <p class="author-name">Username {{ n }}</p>
-                <p class="post-time">2 hours ago</p>
-              </div>
-            </div>
-            <button class="more-btn">⋯</button>
-          </div>
-
-          <div class="post-image">
-            <span>📸</span>
-          </div>
-
-          <div class="post-actions">
-            <button class="action-icon">❤️</button>
-            <button class="action-icon">💬</button>
-            <button class="action-icon">📤</button>
-            <button class="action-icon bookmark">🔖</button>
-          </div>
-
-          <div class="post-stats">
-            <p class="likes">100 likes</p>
-          </div>
-
-          <div class="post-caption">
-            <p>
-              <strong>username{{ n }}</strong> Amazing moment with friends!
-              #nofilter
-            </p>
-          </div>
-
-          <p class="view-comments">View all 20 comments</p>
-
-          <div class="post-input">
-            <input type="text" placeholder="Add a comment..." />
-            <button>Post</button>
-          </div>
+        
+        <div v-if="posts.length > 0" class="posts-list">
+          <PostComponent 
+            v-for="post in posts" 
+            :key="post.id" 
+            :post="post" 
+          />
         </div>
 
-        <div v-if="!hasPosts" class="empty-state">
+        <div v-else-if="!isLoading && posts.length === 0" class="empty-state">
           <p>No posts yet. Follow users to see their posts!</p>
         </div>
+
+        <div v-if="isLoading" class="skeleton-loader">
+          <div class="skeleton-card" v-for="n in 2" :key="n">
+            <div class="skeleton-header">
+              <div class="skeleton-avatar"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-media"></div>
+          </div>
+        </div>
+
+        <div ref="scrollTrigger" class="scroll-trigger"></div>
       </div>
 
       <div class="suggested-section">
@@ -81,12 +60,59 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import PostComponent from './PostComponent.vue';
+import { postsApi } from '../services/apiService';
 
-const hasPosts = ref(false);
+interface Post {
+  id: string;
+  username: string;
+  profile_picture?: string;
+  media_url: string;
+  media_type: string;
+  caption: string;
+  likes_count: number;
+  comments_count: number;
+  created_at: string;
+}
+
+const posts = ref<Post[]>([]);
+const isLoading = ref(false)
+const page = ref(0)
+const limit = 5
+const scrollTrigger = ref<HTMLElement | null>(null);
+
+const fetchFeed = async () => {
+  if (isLoading.value) return;
+  isLoading.value = true;
+
+  try {
+    const offset = page.value * limit;
+    const response = await postsApi.getHomeFeed(limit, offset);
+
+    if (response.data.data && response.data.data.length > 0){
+      posts.value.push(...response.data.data);
+      page.value++;
+    }
+  } catch(error){
+    console.error("Failed to fetch feed:", error);
+  } finally {
+    isLoading.value = false;
+  }
+};
 
 onMounted(() => {
-  // TODO: Fetch feed posts from backend
-  // TODO: Fetch suggested users from backend
+  fetchFeed();
+
+  const observer = new IntersectionObserver((entries) => {
+    if (entries[0]?.isIntersecting){
+      fetchFeed();
+    }
+  }, {threshold: 1.0});
+
+  if(scrollTrigger.value){
+    observer.observe(scrollTrigger.value);
+  }
+
 });
 </script>
 

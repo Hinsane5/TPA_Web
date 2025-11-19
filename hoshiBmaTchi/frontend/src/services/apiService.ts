@@ -87,9 +87,15 @@ export const postsApi = {
   },
 
   getPostByUserID: (userId: string) => {
-    return apiClient.get(`/v1/posts/user/${userId}`)
+    return apiClient.get(`/v1/posts/user/${userId}`);
   },
-  
+
+  getHomeFeed: (limit: number, offset: number) => {
+    return apiClient.get(`/v1/posts/feed`, {
+      params: { limit, offset },
+    });
+  },
+
   likePost: (postId: string) => {
     return apiClient.post(`/v1/posts/${postId}/like`);
   },
@@ -99,12 +105,10 @@ export const postsApi = {
   },
 
   createComment: (postId: string, content: string) => {
-    return apiClient.post(`/v1/posts/${postId}/comments`, {content});
+    return apiClient.post(`/v1/posts/${postId}/comments`, { content });
   },
 
   getCommentForPost: (postId: string) => {
-    return apiClient.get(`/v1/posts/${postId}/comments`)
-  }
-
-
-}
+    return apiClient.get(`/v1/posts/${postId}/comments`);
+  },
+};

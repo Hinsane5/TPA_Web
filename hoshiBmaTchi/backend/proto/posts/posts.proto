@@ -13,6 +13,7 @@ service PostsService {
     rpc UnlikePost(UnlikePostRequest) returns (UnlikePostResponse);
     rpc CreateComment(CreateCommentRequest) returns (CommentResponse);
     rpc GetCommentsForPost(GetCommentsForPostRequest) returns (GetCommentsForPostResponse);
+    rpc GetHomeFeed(GetHomeFeedRequest) returns (GetHomeFeedResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -97,4 +98,14 @@ message CommentResponse {
     string user_id = 3; 
     string content = 4;
     string created_at = 5;
+}
+
+message GetHomeFeedRequest {
+  string user_id = 1; 
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetHomeFeedResponse {
+  repeated PostResponse posts = 1;
 }

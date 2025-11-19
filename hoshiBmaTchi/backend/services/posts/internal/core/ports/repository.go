@@ -16,4 +16,5 @@ type PostRepository interface {
 
 	CreateComment(ctx context.Context, comment *domain.PostComment) error
     GetCommentsForPost(ctx context.Context, postID string) ([]*domain.PostComment, error)
+	GetFeedPosts(ctx context.Context, userIDs []string, limit, offset int) ([]*domain.Post, error)
 }

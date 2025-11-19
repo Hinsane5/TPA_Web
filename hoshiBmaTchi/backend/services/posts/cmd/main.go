@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
+	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/handlers"
@@ -16,6 +17,7 @@ import (
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -87,9 +89,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create presign MinIO client: %v", err)
 	}
+
+	userServiceAddr := "users-service:50052" 
+	userConn, err := grpc.Dial(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to users-service: %v", err)
+	}
+	defer userConn.Close()
 	
+	userClient := userPb.NewUserServiceClient(userConn)
+
 	postRepo := repositories.NewGormPostRepository(db)
-	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, presignClient, bucketName, publicEndpoint)
+	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, presignClient, bucketName, publicEndpoint, userClient)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

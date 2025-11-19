@@ -10,6 +10,7 @@ import (
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
+	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
 	"github.com/google/uuid"
@@ -25,16 +26,18 @@ type Server struct {
 	minio *minio.Client 
 	presignClient  *minio.Client  
 	bucketName string  
-	publicEndPoint string         
+	publicEndPoint string    
+	userClient userPb.UserServiceClient     
 }
 
-func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string) *Server {
+func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string, userClient userPb.UserServiceClient) *Server {
 	return &Server{
 		repo:           repo,
 		minio:          minio,
 		presignClient:  presignClient,
 		bucketName:     bucketName,
 		publicEndPoint: publicEndPoint,
+		userClient: userClient,
 	}
 }
 
@@ -241,4 +244,53 @@ func (s *Server) GetCommentsForPost(ctx context.Context, req *pb.GetCommentsForP
 	}
 
 	return &pb.GetCommentsForPostResponse{Comments: pbComments}, nil
+}
+
+func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*pb.GetHomeFeedResponse, error){
+	userRes, err := s.userClient.GetFollowingList(ctx, &userPb.GetFollowingListRequest{
+		UserId: req.UserId,
+	})
+
+	if err != nil {
+		log.Printf("Failed to get following list from user service: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to fetch feed configuration")
+	}
+
+	authorIDs := append(userRes.FollowingIds, req.UserId)
+
+	posts, err := s.repo.GetFeedPosts(ctx, authorIDs, int(req.Limit), int(req.Offset))
+	if err != nil {
+		log.Printf("Failed to fetch feed posts from DB: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to fetch posts")
+	}
+
+	// 4. Convert to Protobuf response
+	var pbPosts []*pb.PostResponse
+	expiry := time.Hour * 1
+
+	for _, post := range posts {
+		// Generate Presigned URL for viewing
+		reqParams := make(url.Values)
+		reqParams.Set("response-content-type", post.MediaType)
+
+		presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, reqParams)
+		mediaURLString := ""
+		if err == nil {
+			mediaURLString = presignedURL.String()
+		}
+
+		pbPosts = append(pbPosts, &pb.PostResponse{
+			Id:        post.ID.String(),
+			UserId:    post.UserID.String(),
+			MediaUrl:  mediaURLString,
+			MediaType: post.MediaType,
+			Caption:   post.Caption,
+			Location:  post.Location,
+			CreatedAt: post.CreatedAt.Format(time.RFC3339),
+		})
+	}
+
+	return &pb.GetHomeFeedResponse{Posts: pbPosts}, nil
+
+
 }

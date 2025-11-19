@@ -89,3 +89,18 @@ func (r *gormUserRepository) IsFollowing(followerID, followingID string) (bool, 
         Count(&count).Error
     return count > 0, err
 }
+
+func (r *gormUserRepository) GetFollowing(userID string) ([]string, error){
+	var followingIDs []string
+
+	err := r.db.Table("follows").
+        Where("follower_id = ?", userID).
+        Pluck("following_id", &followingIDs).
+        Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return followingIDs, nil
+}

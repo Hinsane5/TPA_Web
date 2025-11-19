@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	// Impor yang diperlukan: "net/http", "github.com/gin-gonic/gin",
-	// "google.golang.org/grpc/status", "google.golang.org/grpc/codes"
 	"context"
 	"net/http"
+	"strconv"
 
 	postsProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	usersProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -199,4 +198,44 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, res.Comments)
+}
+
+func (h *PostsHandler) GetHomeFeed (c *gin.Context){
+    userID, exists := c.Get("userID")
+
+    if !exists{
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    limitStr := c.DefaultQuery("limit", "10")
+    offsetStr := c.DefaultQuery("offset", "0")
+
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil{
+        limit = 10;
+    }
+
+    offset, err := strconv.Atoi(offsetStr)
+    if err != nil {
+        offset = 0;
+    }
+
+    res, err := h.postsClient.GetHomeFeed(context.Background(), &postsProto.GetHomeFeedRequest{
+        UserId: userID.(string),
+        Limit: int32(limit),
+        Offset: int32(offset),
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
+        }else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch feed: " + err.Error()})
+		}
+
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": res.Posts})
 }

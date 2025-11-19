@@ -61,3 +61,19 @@ func (r *GormPostRepository) GetCommentsForPost(ctx context.Context, postID stri
 	return comments, err
 }
 
+func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string, limit, offset int) ([]*domain.Post, error) {
+	var posts []*domain.Post
+	
+	err := r.db.WithContext(ctx).
+		Where("user_id IN ?", userIDs).
+		Order("created_at desc").
+		Limit(limit).
+		Offset(offset).
+		Find(&posts).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return posts, nil
+}

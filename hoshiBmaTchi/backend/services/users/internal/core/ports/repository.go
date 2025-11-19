@@ -12,4 +12,5 @@ type UserRepository interface{
 	CreateFollow(followerID, followingID string) error
     DeleteFollow(followerID, followingID string) error
     IsFollowing(followerID, followingID string) (bool, error)
+	GetFollowing(userID string) ([]string, error)
 }

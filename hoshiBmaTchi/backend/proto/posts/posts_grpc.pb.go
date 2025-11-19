@@ -20,7 +20,6 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	PostsService_GenerateUploadURL_FullMethodName  = "/posts.PostsService/GenerateUploadURL"
-	PostsService_UploadFile_FullMethodName         = "/posts.PostsService/UploadFile"
 	PostsService_CreatePost_FullMethodName         = "/posts.PostsService/CreatePost"
 	PostsService_GetPostsByUserID_FullMethodName   = "/posts.PostsService/GetPostsByUserID"
 	PostsService_GetPostByID_FullMethodName        = "/posts.PostsService/GetPostByID"
@@ -28,6 +27,7 @@ const (
 	PostsService_UnlikePost_FullMethodName         = "/posts.PostsService/UnlikePost"
 	PostsService_CreateComment_FullMethodName      = "/posts.PostsService/CreateComment"
 	PostsService_GetCommentsForPost_FullMethodName = "/posts.PostsService/GetCommentsForPost"
+	PostsService_GetHomeFeed_FullMethodName        = "/posts.PostsService/GetHomeFeed"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -35,7 +35,6 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PostsServiceClient interface {
 	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
-	UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*UploadFileResponse, error)
 	CreatePost(ctx context.Context, in *CreatePostRequest, opts ...grpc.CallOption) (*CreatePostResponse, error)
 	GetPostsByUserID(ctx context.Context, in *GetPostsByUserIDRequest, opts ...grpc.CallOption) (*GetPostsResponse, error)
 	GetPostByID(ctx context.Context, in *GetPostByIDRequest, opts ...grpc.CallOption) (*PostResponse, error)
@@ -43,6 +42,7 @@ type PostsServiceClient interface {
 	UnlikePost(ctx context.Context, in *UnlikePostRequest, opts ...grpc.CallOption) (*UnlikePostResponse, error)
 	CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*CommentResponse, error)
 	GetCommentsForPost(ctx context.Context, in *GetCommentsForPostRequest, opts ...grpc.CallOption) (*GetCommentsForPostResponse, error)
+	GetHomeFeed(ctx context.Context, in *GetHomeFeedRequest, opts ...grpc.CallOption) (*GetHomeFeedResponse, error)
 }
 
 type postsServiceClient struct {
@@ -57,16 +57,6 @@ func (c *postsServiceClient) GenerateUploadURL(ctx context.Context, in *Generate
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GenerateUploadURLResponse)
 	err := c.cc.Invoke(ctx, PostsService_GenerateUploadURL_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *postsServiceClient) UploadFile(ctx context.Context, in *UploadFileRequest, opts ...grpc.CallOption) (*UploadFileResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(UploadFileResponse)
-	err := c.cc.Invoke(ctx, PostsService_UploadFile_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -143,12 +133,21 @@ func (c *postsServiceClient) GetCommentsForPost(ctx context.Context, in *GetComm
 	return out, nil
 }
 
+func (c *postsServiceClient) GetHomeFeed(ctx context.Context, in *GetHomeFeedRequest, opts ...grpc.CallOption) (*GetHomeFeedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetHomeFeedResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetHomeFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
 type PostsServiceServer interface {
 	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
-	UploadFile(context.Context, *UploadFileRequest) (*UploadFileResponse, error)
 	CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error)
 	GetPostsByUserID(context.Context, *GetPostsByUserIDRequest) (*GetPostsResponse, error)
 	GetPostByID(context.Context, *GetPostByIDRequest) (*PostResponse, error)
@@ -156,6 +155,7 @@ type PostsServiceServer interface {
 	UnlikePost(context.Context, *UnlikePostRequest) (*UnlikePostResponse, error)
 	CreateComment(context.Context, *CreateCommentRequest) (*CommentResponse, error)
 	GetCommentsForPost(context.Context, *GetCommentsForPostRequest) (*GetCommentsForPostResponse, error)
+	GetHomeFeed(context.Context, *GetHomeFeedRequest) (*GetHomeFeedResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -168,9 +168,6 @@ type UnimplementedPostsServiceServer struct{}
 
 func (UnimplementedPostsServiceServer) GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GenerateUploadURL not implemented")
-}
-func (UnimplementedPostsServiceServer) UploadFile(context.Context, *UploadFileRequest) (*UploadFileResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UploadFile not implemented")
 }
 func (UnimplementedPostsServiceServer) CreatePost(context.Context, *CreatePostRequest) (*CreatePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePost not implemented")
@@ -192,6 +189,9 @@ func (UnimplementedPostsServiceServer) CreateComment(context.Context, *CreateCom
 }
 func (UnimplementedPostsServiceServer) GetCommentsForPost(context.Context, *GetCommentsForPostRequest) (*GetCommentsForPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCommentsForPost not implemented")
+}
+func (UnimplementedPostsServiceServer) GetHomeFeed(context.Context, *GetHomeFeedRequest) (*GetHomeFeedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHomeFeed not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -228,24 +228,6 @@ func _PostsService_GenerateUploadURL_Handler(srv interface{}, ctx context.Contex
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PostsServiceServer).GenerateUploadURL(ctx, req.(*GenerateUploadURLRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _PostsService_UploadFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadFileRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PostsServiceServer).UploadFile(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PostsService_UploadFile_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PostsServiceServer).UploadFile(ctx, req.(*UploadFileRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -376,6 +358,24 @@ func _PostsService_GetCommentsForPost_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetHomeFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHomeFeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetHomeFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetHomeFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetHomeFeed(ctx, req.(*GetHomeFeedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -386,10 +386,6 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GenerateUploadURL",
 			Handler:    _PostsService_GenerateUploadURL_Handler,
-		},
-		{
-			MethodName: "UploadFile",
-			Handler:    _PostsService_UploadFile_Handler,
 		},
 		{
 			MethodName: "CreatePost",
@@ -418,6 +414,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCommentsForPost",
 			Handler:    _PostsService_GetCommentsForPost_Handler,
+		},
+		{
+			MethodName: "GetHomeFeed",
+			Handler:    _PostsService_GetHomeFeed_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

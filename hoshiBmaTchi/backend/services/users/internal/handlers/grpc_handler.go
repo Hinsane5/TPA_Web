@@ -599,3 +599,21 @@ func (h *UserHandler) UnfollowUser(ctx context.Context, req *pb.UnfollowUserRequ
     }
     return &pb.UnfollowUserResponse{Message: "Successfully unfollowed user"}, nil
 }
+
+func (h *UserHandler) GetFollowingList (ctx context.Context, req *pb.GetFollowingListRequest) (*pb.GetFollowingListResponse, error){
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User ID is required")
+	}
+
+	followingIDs, err := h.repo.GetFollowing(req.UserId)
+
+	if err != nil {
+		log.Printf("Failed to fetch following list for user %s: %v", req.UserId, err)
+        return nil, status.Error(codes.Internal, "Failed to fetch following list")
+	}
+
+	return &pb.GetFollowingListResponse{
+		FollowingIds: followingIDs,
+	}, nil
+}
+
