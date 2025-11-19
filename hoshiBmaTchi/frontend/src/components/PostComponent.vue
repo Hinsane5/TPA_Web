@@ -56,7 +56,7 @@
         :title="isSaved ? 'Unsave' : 'Save'"
       >
         <img 
-          :src="isSaved ? '/icons/save-icon-filled.png' : '/icons/save-icon.png'"
+          :src="isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
           alt="Save"
           class="action-icon"
           :class="{ saved: isSaved }"
@@ -101,8 +101,23 @@ const emit = defineEmits(['open-detail', 'toggle-like']);
 // 2. Local State initialized from Props
 const isSaved = ref(false);
 
-const toggleSave = () => {
-  isSaved.value = !isSaved.value;
+const toggleSave = async () => {
+  try {
+    // Optimistic UI update
+    isSaved.value = !isSaved.value;
+    
+    // Call API
+    await postsApi.toggleSavePost(props.post.id);
+    
+    // Note: If you want to save to a specific collection, you would need to 
+    // open a modal here instead of immediately calling the API. 
+    // For now, this saves to the default "All Posts" collection.
+    
+  } catch (error) {
+    // Revert on error
+    isSaved.value = !isSaved.value;
+    console.error("Failed to save post", error);
+  }
 };
 
 // Helper: Generate initials for avatar placeholder

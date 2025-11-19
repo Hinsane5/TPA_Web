@@ -14,6 +14,9 @@ service PostsService {
     rpc CreateComment(CreateCommentRequest) returns (CommentResponse);
     rpc GetCommentsForPost(GetCommentsForPostRequest) returns (GetCommentsForPostResponse);
     rpc GetHomeFeed(GetHomeFeedRequest) returns (GetHomeFeedResponse);
+    rpc ToggleSavePost(ToggleSavePostRequest) returns (ToggleSavePostResponse);
+    rpc CreateCollection(CreateCollectionRequest) returns (CollectionResponse);
+    rpc GetUserCollections(GetUserCollectionsRequest) returns (GetUserCollectionsResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -112,3 +115,35 @@ message GetHomeFeedRequest {
 message GetHomeFeedResponse {
   repeated PostResponse posts = 1;
 }
+
+message ToggleSavePostRequest {
+    string user_id = 1;
+    string post_id = 2;
+    string collection_id = 3;
+}
+
+message ToggleSavePostResponse {
+    bool is_saved = 1; 
+    string message = 2;
+}
+
+message CreateCollectionRequest {
+    string user_id = 1;
+    string name = 2;
+}
+
+message CollectionResponse {
+    string id = 1;
+    string name = 2;
+    string user_id = 3;
+    repeated string cover_images = 4; // For the profile grid preview
+}
+
+message GetUserCollectionsRequest {
+    string user_id = 1;
+}
+
+message GetUserCollectionsResponse {
+    repeated CollectionResponse collections = 1;
+}
+

@@ -17,4 +17,10 @@ type PostRepository interface {
 	CreateComment(ctx context.Context, comment *domain.PostComment) error
     GetCommentsForPost(ctx context.Context, postID string) ([]*domain.PostComment, error)
 	GetFeedPosts(ctx context.Context, userIDs []string, currentUserID string, limit, offset int) ([]*domain.Post, error)
+
+	CreateCollection(ctx context.Context, collection *domain.Collection) error
+    GetUserCollections(ctx context.Context, userID string) ([]*domain.Collection, error)
+    
+
+    ToggleSavePost(ctx context.Context, userID, postID, collectionID string) (bool, error)
 }

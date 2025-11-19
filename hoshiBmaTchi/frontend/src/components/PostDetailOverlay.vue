@@ -78,7 +78,7 @@
                </button>
              </div>
              <button class="icon-button" @click="toggleSave">
-                <img :src="isSaved ? '/icons/save-icon-filled.png' : '/icons/save-icon.png'" class="icon" />
+                <img :src="isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'" class="icon" />
              </button>
            </div>
            <p class="likes-text">{{ post.likes_count }} likes</p>

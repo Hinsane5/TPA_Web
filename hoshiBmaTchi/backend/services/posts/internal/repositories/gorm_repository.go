@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -93,4 +94,97 @@ func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string,
     }
 
 	return posts, nil
+}
+
+func (r *GormPostRepository) CreateCollection(ctx context.Context, collection *domain.Collection) error {
+	return r.db.WithContext(ctx).Create(collection).Error
+}
+
+func (r *GormPostRepository) GetUserCollections(ctx context.Context, userID string) ([]*domain.Collection, error) {
+	var collections []*domain.Collection
+	
+	if err := r.db.WithContext(ctx).
+		Where("user_id = ?", userID).
+		Order("created_at desc").
+		Find(&collections).Error; err != nil {
+		return nil, err
+	}
+
+	for _, coll := range collections {
+		var savedPosts []domain.SavedPost
+		r.db.WithContext(ctx).
+			Preload("Post").
+			Where("collection_id = ?", coll.ID).
+			Order("created_at desc").
+			Limit(4).
+			Find(&savedPosts)
+		
+		coll.SavedPosts = savedPosts
+	}
+
+	return collections, nil
+}
+
+func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID, collectionID string) (bool, error) {
+	var savedPost domain.SavedPost
+	
+	// Check if the post is already saved by this user
+	query := r.db.WithContext(ctx).Where("user_id = ? AND post_id = ?", userID, postID)
+	
+	// If a specific collection is targeted, refine the check
+	if collectionID != "" {
+		query = query.Where("collection_id = ?", collectionID)
+	}
+
+	result := query.First(&savedPost)
+
+	// 1. IF EXISTS: Delete it (Unsave)
+	if result.Error == nil {
+		if err := r.db.WithContext(ctx).Delete(&savedPost).Error; err != nil {
+			return true, err
+		}
+		return false, nil // Post is now UNSAVED
+	}
+
+	// 2. IF NOT EXISTS: Create it (Save)
+	newSave := domain.SavedPost{
+		UserID: uuid.MustParse(userID),
+		PostID: uuid.MustParse(postID),
+	}
+
+	// Handle Collection Logic
+	if collectionID != "" {
+		// Case A: User selected a specific collection
+		newSave.CollectionID = uuid.MustParse(collectionID)
+	} else {
+		// Case B: User just clicked "Save" (Default behavior)
+		// We must find or create the "All Posts" collection for this user
+		var defaultCollection domain.Collection
+		
+		err := r.db.WithContext(ctx).
+			Where("user_id = ? AND name = ?", userID, "All Posts").
+			First(&defaultCollection).Error
+
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				// Create "All Posts" collection if it doesn't exist
+				defaultCollection = domain.Collection{
+					UserID: uuid.MustParse(userID),
+					Name:   "All Posts",
+				}
+				if createErr := r.db.WithContext(ctx).Create(&defaultCollection).Error; createErr != nil {
+					return false, createErr
+				}
+			} else {
+				return false, err // Database error
+			}
+		}
+		newSave.CollectionID = defaultCollection.ID
+	}
+
+	if err := r.db.WithContext(ctx).Create(&newSave).Error; err != nil {
+		return false, err
+	}
+
+	return true, nil // Post is now SAVED
 }

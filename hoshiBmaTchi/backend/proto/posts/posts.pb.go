@@ -1013,6 +1013,326 @@ func (x *GetHomeFeedResponse) GetPosts() []*PostResponse {
 	return nil
 }
 
+type ToggleSavePostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	PostId        string                 `protobuf:"bytes,2,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	CollectionId  string                 `protobuf:"bytes,3,opt,name=collection_id,json=collectionId,proto3" json:"collection_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleSavePostRequest) Reset() {
+	*x = ToggleSavePostRequest{}
+	mi := &file_posts_posts_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleSavePostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleSavePostRequest) ProtoMessage() {}
+
+func (x *ToggleSavePostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleSavePostRequest.ProtoReflect.Descriptor instead.
+func (*ToggleSavePostRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *ToggleSavePostRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ToggleSavePostRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *ToggleSavePostRequest) GetCollectionId() string {
+	if x != nil {
+		return x.CollectionId
+	}
+	return ""
+}
+
+type ToggleSavePostResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsSaved       bool                   `protobuf:"varint,1,opt,name=is_saved,json=isSaved,proto3" json:"is_saved,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleSavePostResponse) Reset() {
+	*x = ToggleSavePostResponse{}
+	mi := &file_posts_posts_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleSavePostResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleSavePostResponse) ProtoMessage() {}
+
+func (x *ToggleSavePostResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleSavePostResponse.ProtoReflect.Descriptor instead.
+func (*ToggleSavePostResponse) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *ToggleSavePostResponse) GetIsSaved() bool {
+	if x != nil {
+		return x.IsSaved
+	}
+	return false
+}
+
+func (x *ToggleSavePostResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type CreateCollectionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCollectionRequest) Reset() {
+	*x = CreateCollectionRequest{}
+	mi := &file_posts_posts_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCollectionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCollectionRequest) ProtoMessage() {}
+
+func (x *CreateCollectionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCollectionRequest.ProtoReflect.Descriptor instead.
+func (*CreateCollectionRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CreateCollectionRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *CreateCollectionRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type CollectionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	UserId        string                 `protobuf:"bytes,3,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	CoverImages   []string               `protobuf:"bytes,4,rep,name=cover_images,json=coverImages,proto3" json:"cover_images,omitempty"` // For the profile grid preview
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CollectionResponse) Reset() {
+	*x = CollectionResponse{}
+	mi := &file_posts_posts_proto_msgTypes[21]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CollectionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CollectionResponse) ProtoMessage() {}
+
+func (x *CollectionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[21]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CollectionResponse.ProtoReflect.Descriptor instead.
+func (*CollectionResponse) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{21}
+}
+
+func (x *CollectionResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CollectionResponse) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CollectionResponse) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *CollectionResponse) GetCoverImages() []string {
+	if x != nil {
+		return x.CoverImages
+	}
+	return nil
+}
+
+type GetUserCollectionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCollectionsRequest) Reset() {
+	*x = GetUserCollectionsRequest{}
+	mi := &file_posts_posts_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCollectionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCollectionsRequest) ProtoMessage() {}
+
+func (x *GetUserCollectionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCollectionsRequest.ProtoReflect.Descriptor instead.
+func (*GetUserCollectionsRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *GetUserCollectionsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetUserCollectionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Collections   []*CollectionResponse  `protobuf:"bytes,1,rep,name=collections,proto3" json:"collections,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserCollectionsResponse) Reset() {
+	*x = GetUserCollectionsResponse{}
+	mi := &file_posts_posts_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserCollectionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserCollectionsResponse) ProtoMessage() {}
+
+func (x *GetUserCollectionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserCollectionsResponse.ProtoReflect.Descriptor instead.
+func (*GetUserCollectionsResponse) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *GetUserCollectionsResponse) GetCollections() []*CollectionResponse {
+	if x != nil {
+		return x.Collections
+	}
+	return nil
+}
+
 var File_posts_posts_proto protoreflect.FileDescriptor
 
 const file_posts_posts_proto_rawDesc = "" +
@@ -1086,7 +1406,26 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offset\"@\n" +
 	"\x13GetHomeFeedResponse\x12)\n" +
-	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts2\x9c\x05\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\"n\n" +
+	"\x15ToggleSavePostRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
+	"\apost_id\x18\x02 \x01(\tR\x06postId\x12#\n" +
+	"\rcollection_id\x18\x03 \x01(\tR\fcollectionId\"M\n" +
+	"\x16ToggleSavePostResponse\x12\x19\n" +
+	"\bis_saved\x18\x01 \x01(\bR\aisSaved\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"F\n" +
+	"\x17CreateCollectionRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"t\n" +
+	"\x12CollectionResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x17\n" +
+	"\auser_id\x18\x03 \x01(\tR\x06userId\x12!\n" +
+	"\fcover_images\x18\x04 \x03(\tR\vcoverImages\"4\n" +
+	"\x19GetUserCollectionsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"Y\n" +
+	"\x1aGetUserCollectionsResponse\x12;\n" +
+	"\vcollections\x18\x01 \x03(\v2\x19.posts.CollectionResponseR\vcollections2\x95\a\n" +
 	"\fPostsService\x12V\n" +
 	"\x11GenerateUploadURL\x12\x1f.posts.GenerateUploadURLRequest\x1a .posts.GenerateUploadURLResponse\x12A\n" +
 	"\n" +
@@ -1098,7 +1437,10 @@ const file_posts_posts_proto_rawDesc = "" +
 	"UnlikePost\x12\x18.posts.UnlikePostRequest\x1a\x19.posts.UnlikePostResponse\x12D\n" +
 	"\rCreateComment\x12\x1b.posts.CreateCommentRequest\x1a\x16.posts.CommentResponse\x12Y\n" +
 	"\x12GetCommentsForPost\x12 .posts.GetCommentsForPostRequest\x1a!.posts.GetCommentsForPostResponse\x12D\n" +
-	"\vGetHomeFeed\x12\x19.posts.GetHomeFeedRequest\x1a\x1a.posts.GetHomeFeedResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
+	"\vGetHomeFeed\x12\x19.posts.GetHomeFeedRequest\x1a\x1a.posts.GetHomeFeedResponse\x12M\n" +
+	"\x0eToggleSavePost\x12\x1c.posts.ToggleSavePostRequest\x1a\x1d.posts.ToggleSavePostResponse\x12M\n" +
+	"\x10CreateCollection\x12\x1e.posts.CreateCollectionRequest\x1a\x19.posts.CollectionResponse\x12Y\n" +
+	"\x12GetUserCollections\x12 .posts.GetUserCollectionsRequest\x1a!.posts.GetUserCollectionsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
 
 var (
 	file_posts_posts_proto_rawDescOnce sync.Once
@@ -1112,7 +1454,7 @@ func file_posts_posts_proto_rawDescGZIP() []byte {
 	return file_posts_posts_proto_rawDescData
 }
 
-var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_posts_posts_proto_goTypes = []any{
 	(*GenerateUploadURLRequest)(nil),   // 0: posts.GenerateUploadURLRequest
 	(*GenerateUploadURLResponse)(nil),  // 1: posts.GenerateUploadURLResponse
@@ -1132,35 +1474,48 @@ var file_posts_posts_proto_goTypes = []any{
 	(*CommentResponse)(nil),            // 15: posts.CommentResponse
 	(*GetHomeFeedRequest)(nil),         // 16: posts.GetHomeFeedRequest
 	(*GetHomeFeedResponse)(nil),        // 17: posts.GetHomeFeedResponse
+	(*ToggleSavePostRequest)(nil),      // 18: posts.ToggleSavePostRequest
+	(*ToggleSavePostResponse)(nil),     // 19: posts.ToggleSavePostResponse
+	(*CreateCollectionRequest)(nil),    // 20: posts.CreateCollectionRequest
+	(*CollectionResponse)(nil),         // 21: posts.CollectionResponse
+	(*GetUserCollectionsRequest)(nil),  // 22: posts.GetUserCollectionsRequest
+	(*GetUserCollectionsResponse)(nil), // 23: posts.GetUserCollectionsResponse
 }
 var file_posts_posts_proto_depIdxs = []int32{
 	7,  // 0: posts.CreatePostResponse.post:type_name -> posts.PostResponse
 	7,  // 1: posts.GetPostsResponse.posts:type_name -> posts.PostResponse
 	15, // 2: posts.GetCommentsForPostResponse.comments:type_name -> posts.CommentResponse
 	7,  // 3: posts.GetHomeFeedResponse.posts:type_name -> posts.PostResponse
-	0,  // 4: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
-	2,  // 5: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
-	4,  // 6: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
-	6,  // 7: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
-	8,  // 8: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
-	10, // 9: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
-	12, // 10: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
-	13, // 11: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
-	16, // 12: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
-	1,  // 13: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
-	3,  // 14: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
-	5,  // 15: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
-	7,  // 16: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
-	9,  // 17: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
-	11, // 18: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
-	15, // 19: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
-	14, // 20: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
-	17, // 21: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
-	13, // [13:22] is the sub-list for method output_type
-	4,  // [4:13] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	21, // 4: posts.GetUserCollectionsResponse.collections:type_name -> posts.CollectionResponse
+	0,  // 5: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
+	2,  // 6: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
+	4,  // 7: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
+	6,  // 8: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
+	8,  // 9: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
+	10, // 10: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
+	12, // 11: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
+	13, // 12: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
+	16, // 13: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
+	18, // 14: posts.PostsService.ToggleSavePost:input_type -> posts.ToggleSavePostRequest
+	20, // 15: posts.PostsService.CreateCollection:input_type -> posts.CreateCollectionRequest
+	22, // 16: posts.PostsService.GetUserCollections:input_type -> posts.GetUserCollectionsRequest
+	1,  // 17: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
+	3,  // 18: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
+	5,  // 19: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
+	7,  // 20: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
+	9,  // 21: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
+	11, // 22: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
+	15, // 23: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
+	14, // 24: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
+	17, // 25: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
+	19, // 26: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
+	21, // 27: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
+	23, // 28: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
+	17, // [17:29] is the sub-list for method output_type
+	5,  // [5:17] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_posts_posts_proto_init() }
@@ -1174,7 +1529,7 @@ func file_posts_posts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_posts_posts_proto_rawDesc), len(file_posts_posts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   24,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

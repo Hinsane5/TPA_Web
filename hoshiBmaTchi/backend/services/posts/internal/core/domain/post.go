@@ -18,3 +18,23 @@ type Post struct {
     CommentsCount int32 `gorm:"-"`
     IsLiked       bool  `gorm:"-"` 
 }
+
+type SavedPost struct {
+    ID           uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+    UserID       uuid.UUID `gorm:"type:uuid;not null"`
+    PostID       uuid.UUID `gorm:"type:uuid;not null"`
+    CollectionID uuid.UUID `gorm:"type:uuid;not null"`
+    CreatedAt    time.Time `gorm:"autoCreateTime"`
+    
+    Post Post `gorm:"foreignKey:PostID"`
+}
+
+type Collection struct {
+    ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+    UserID    uuid.UUID `gorm:"type:uuid;not null"`
+    Name      string    `gorm:"type:varchar(100);not null"`
+    CreatedAt time.Time `gorm:"autoCreateTime"`
+    
+    // Relationships
+    SavedPosts []SavedPost `gorm:"foreignKey:CollectionID"`
+}

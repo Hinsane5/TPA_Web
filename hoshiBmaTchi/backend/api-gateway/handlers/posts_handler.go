@@ -34,6 +34,14 @@ type createCommentJSON struct {
 	Content string `json:"content" binding:"required"`
 }
 
+type toggleSaveJSON struct {
+    CollectionID string `json:"collection_id"`
+}
+
+type createCollectionJSON struct {
+    Name string `json:"name" binding:"required"`
+}
+
 func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
     fileName := c.Query("file_name")
 	fileType := c.Query("file_type")
@@ -258,4 +266,59 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     }
 
     c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
+}
+
+func (h *PostsHandler) ToggleSavePost(c *gin.Context) {
+    postID := c.Param("postID")
+    userID, _ := c.Get("userID")
+    
+    var req toggleSaveJSON
+    c.ShouldBindJSON(&req)
+
+    res, err := h.postsClient.ToggleSavePost(context.Background(), &postsProto.ToggleSavePostRequest{
+        UserId:       userID.(string),
+        PostId:       postID,
+        CollectionId: req.CollectionID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}
+
+func (h *PostsHandler) CreateCollection(c *gin.Context) {
+    userID, _ := c.Get("userID")
+    var req createCollectionJSON
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    res, err := h.postsClient.CreateCollection(context.Background(), &postsProto.CreateCollectionRequest{
+        UserId: userID.(string),
+        Name:   req.Name,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusCreated, res)
+}
+
+func (h *PostsHandler) GetUserCollections(c *gin.Context) {
+    userID, _ := c.Get("userID")
+
+    res, err := h.postsClient.GetUserCollections(context.Background(), &postsProto.GetUserCollectionsRequest{
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, res.Collections)
 }

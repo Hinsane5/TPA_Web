@@ -291,6 +291,62 @@ func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*
 	}
 
 	return &pb.GetHomeFeedResponse{Posts: pbPosts}, nil
+}
 
+func (h *Server) CreateCollection(ctx context.Context, req *pb.CreateCollectionRequest) (*pb.CollectionResponse, error) {
+	collection := &domain.Collection{
+		UserID: uuid.MustParse(req.UserId),
+		Name:   req.Name,
+	}
 
+	if err := h.repo.CreateCollection(ctx, collection); err != nil {
+		return nil, err
+	}
+
+	return &pb.CollectionResponse{
+		Id:     collection.ID.String(),
+		Name:   collection.Name,
+		UserId: collection.UserID.String(),
+	}, nil
+}
+
+func (h *Server) GetUserCollections(ctx context.Context, req *pb.GetUserCollectionsRequest) (*pb.GetUserCollectionsResponse, error) {
+	collections, err := h.repo.GetUserCollections(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	var protoCollections []*pb.CollectionResponse
+	for _, c := range collections {
+		var covers []string
+		for _, sp := range c.SavedPosts {
+			covers = append(covers, sp.Post.MediaObjectName) 
+		}
+
+		protoCollections = append(protoCollections, &pb.CollectionResponse{
+			Id:          c.ID.String(),
+			Name:        c.Name,
+			UserId:      c.UserID.String(),
+			CoverImages: covers,
+		})
+	}
+
+	return &pb.GetUserCollectionsResponse{Collections: protoCollections}, nil
+}
+
+func (h *Server) ToggleSavePost(ctx context.Context, req *pb.ToggleSavePostRequest) (*pb.ToggleSavePostResponse, error) {
+	isSaved, err := h.repo.ToggleSavePost(ctx, req.UserId, req.PostId, req.CollectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := "Post unsaved"
+	if isSaved {
+		msg = "Post saved"
+	}
+
+	return &pb.ToggleSavePostResponse{
+		IsSaved: isSaved,
+		Message: msg,
+	}, nil
 }
