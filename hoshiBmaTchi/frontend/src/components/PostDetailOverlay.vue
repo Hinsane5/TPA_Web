@@ -32,8 +32,6 @@
           <button class="close-button" @click="$emit('close')">✕</button>
         </div>
 
-        <div class="divider"></div>
-
         <div class="comments-section">
           
           <CommentItem 
@@ -69,8 +67,8 @@
         <div class="action-section-wrapper">
            <div class="action-icons">
              <div class="icons-left">
-               <button class="icon-button" @click="toggleLike">
-                  <img :src="isLiked ? '/icons/notifications-icon-filled.png' : '/icons/notifications-icon.png'" class="icon" />
+               <button class="icon-button" @click="$emit('toggle-like', post)">
+                  <img :src="post.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'" class="icon"  :class="{ active: post.is_liked }"/>
                </button>
                <button class="icon-button" @click="focusInput">
                   <img src="/icons/comment-icon.png" class="icon" />
@@ -83,7 +81,7 @@
                 <img :src="isSaved ? '/icons/save-icon-filled.png' : '/icons/save-icon.png'" class="icon" />
              </button>
            </div>
-           <p class="likes-text">{{ localLikesCount }} likes</p>
+           <p class="likes-text">{{ post.likes_count }} likes</p>
            <p class="date-text">{{ formatFullDate(post.created_at) }}</p>
         </div>
 
@@ -119,7 +117,7 @@ import { postsApi, usersApi } from '@/services/apiService';
 import CommentItem from './commentItem.vue';
 
 const props = defineProps(['isOpen', 'post']);
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'comment-added', 'toggle-like']);
 
 // State
 const rawComments = ref<any[]>([]);
@@ -129,9 +127,7 @@ const loadingComments = ref(true);
 const isSubmitting = ref(false);
 const commentInputRef = ref<HTMLInputElement | null>(null);
 
-const isLiked = ref(props.post.is_liked);
 const isSaved = ref(false);
-const localLikesCount = ref(props.post.likes_count || 0);
 const isFollowing = ref(false);
 
 // User Info (from localStorage)
@@ -224,6 +220,7 @@ const submitComment = async () => {
 
   try {
     await postsApi.createComment(props.post.id, tempText);
+    emit('comment-added');
     // In production, you would replace fakeId with real ID from response
   } catch (e) {
     rawComments.value = rawComments.value.filter(c => c.id !== fakeId);
@@ -242,20 +239,6 @@ const handleReply = (username: string) => {
 
 const focusInput = () => {
   commentInputRef.value?.focus();
-};
-
-const toggleLike = async () => {
-  const prev = isLiked.value;
-  isLiked.value = !isLiked.value;
-  localLikesCount.value += isLiked.value ? 1 : -1;
-  
-  try {
-    if (isLiked.value) await postsApi.likePost(props.post.id);
-    else await postsApi.unlikePost(props.post.id);
-  } catch (e) {
-    isLiked.value = prev;
-    localLikesCount.value += isLiked.value ? 1 : -1;
-  }
 };
 
 const handleFollow = async () => {
@@ -297,7 +280,8 @@ const formatFullDate = (d: string | number | Date) => {
   width: 100%;
   max-width: 1000px;
   height: 600px;
-  background-color: #ffffff;
+  background-color: #000;
+  --bg-primary: #000000;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 32px rgba(0, 0, 0, 0.3);
@@ -324,7 +308,7 @@ const formatFullDate = (d: string | number | Date) => {
   width: 360px;
   display: flex;
   flex-direction: column;
-  background-color: #ffffff;
+  background-color: #202327;
   border-left: 1px solid #e0e0e0;
 }
 
@@ -334,7 +318,6 @@ const formatFullDate = (d: string | number | Date) => {
   justify-content: space-between;
   align-items: center;
   padding: 16px;
-  border-bottom: 1px solid #e0e0e0;
 }
 
 .header-content {
@@ -374,7 +357,7 @@ const formatFullDate = (d: string | number | Date) => {
   background: none;
   border: none;
   font-size: 24px;
-  color: #000000;
+  color: #fff;
   cursor: pointer;
   width: 32px;
   height: 32px;
@@ -392,7 +375,7 @@ const formatFullDate = (d: string | number | Date) => {
 /* Divider */
 .divider {
   height: 1px;
-  background-color: #e0e0e0;
+  /* background-color: #e0e0e0; */
 }
 
 /* Comments Section */
@@ -426,14 +409,14 @@ const formatFullDate = (d: string | number | Date) => {
 .likes-text {
   font-size: 14px;
   font-weight: 600;
-  color: #000000;
-  margin: 0 0 4px 0;
+  color: #fff;
+  margin: 0 0 4px 10px;
 }
 
 .date-text {
   font-size: 12px;
   color: #65676b;
-  margin: 0;
+  margin-left: 9px;
 }
 
 /* Action Icons */
@@ -502,12 +485,13 @@ const formatFullDate = (d: string | number | Date) => {
 
 .comment-input {
   flex: 1;
-  background: #f0f0f0;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
+  background: #202327;
+  /* border: 1px solid #e0e0e0; */
+  border: none;
+  /* border-radius: 20px; */
   padding: 8px 16px;
   font-size: 14px;
-  color: #000000;
+  color: #fff;
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s ease;

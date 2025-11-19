@@ -32,7 +32,7 @@
       @click="toggleLike"
     >
       <img 
-        :src="isLiked ? '/icons/notifications-icon-filled.png' : '/icons/notifications-icon.png'"
+        :src="isLiked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
         class="action-icon"
         :class="{ active: isLiked }"
       />
@@ -120,25 +120,25 @@ const parseRichText = (text: string) => {
 }
 
 .comment-text-wrapper {
-  background-color: #f0f0f0;
+  background-color: #202327;
   border-radius: 16px;
   padding: 8px 12px;
 }
 
 .comment-text {
   font-size: 13px;
-  color: #000000;
+  color: #fff;
   margin: 0;
   line-height: 1.4;
 }
 
 .comment-username {
   font-weight: 600;
-  color: #000000;
+  color: #fff;
 }
 
 .comment-body {
-  color: #000000;
+  color: #fff;
   margin-left: 6px;
 }
 
@@ -147,7 +147,7 @@ const parseRichText = (text: string) => {
   gap: 12px;
   align-items: center;
   font-size: 12px;
-  color: #65676b;
+  color: #fff;
   padding: 0 12px;
 }
 
@@ -222,7 +222,7 @@ const parseRichText = (text: string) => {
 .action-icon {
   width: 16px;
   height: 16px;
-  opacity: 0.5;
+  opacity: 1;
   transition: opacity 0.2s ease;
 }
 

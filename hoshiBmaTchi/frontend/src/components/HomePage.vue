@@ -20,6 +20,7 @@
             :key="post.id" 
             :post="post"
             @open-detail="openOverlay"
+            @toggle-like="handleToggleLike"
           />
         </div>
 
@@ -62,6 +63,8 @@
       :isOpen="!!selectedPost" 
       :post="selectedPost" 
       @close="closeOverlay" 
+      @comment-added="handleCommentAdded"
+      @toggle-like="handleToggleLike"
     />
 
   </div>
@@ -83,6 +86,7 @@ interface Post {
   likes_count: number;
   comments_count: number;
   created_at: string;
+  is_liked: boolean;
 }
 
 const posts = ref<Post[]>([]);
@@ -90,7 +94,7 @@ const isLoading = ref(false)
 const page = ref(0)
 const limit = 5
 const scrollTrigger = ref<HTMLElement | null>(null);
-const selectedPost = ref(null);
+const selectedPost = ref<Post | null>(null);
 
 const fetchFeed = async () => {
   if (isLoading.value) return;
@@ -121,6 +125,43 @@ const openOverlay = (post: any) => {
 const closeOverlay = () => {
   selectedPost.value = null;
   window.history.pushState({}, '', '/'); // Reset URL
+}; 
+
+const handleCommentAdded = () => {
+  if (selectedPost.value) {
+    // Update the selected post (which is linked to the array)
+    selectedPost.value.comments_count = (selectedPost.value.comments_count || 0) + 1;
+    
+    // IMPORTANT: If selectedPost is a copy, find the original in the list and update it too
+    const originalPost = posts.value.find(p => p.id === selectedPost.value?.id);
+    if (originalPost) {
+       originalPost.comments_count = selectedPost.value.comments_count;
+    }
+  }
+};
+
+const handleToggleLike = async (post: Post) => {
+  // Find the exact post object in our array to ensure reactivity
+  const targetPost = posts.value.find(p => p.id === post.id);
+  if (!targetPost) return;
+
+  // Optimistic Update
+  const wasLiked = targetPost.is_liked;
+  targetPost.is_liked = !targetPost.is_liked;
+  targetPost.likes_count += (targetPost.is_liked ? 1 : -1);
+
+  try {
+    if (targetPost.is_liked) {
+      await postsApi.likePost(post.id);
+    } else {
+      await postsApi.unlikePost(post.id);
+    }
+  } catch (error) {
+    // Revert if API fails
+    targetPost.is_liked = wasLiked;
+    targetPost.likes_count += (targetPost.is_liked ? 1 : -1);
+    console.error("Like failed", error);
+  }
 };
 
 onMounted(() => {

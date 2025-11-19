@@ -58,6 +58,9 @@ message PostResponse {
     string caption = 5;
     string location = 6;
     string created_at = 7;
+    int32 likes_count = 8;
+    bool is_liked = 9;
+    int32 comments_count = 10;
 }
 
 message LikePostRequest{

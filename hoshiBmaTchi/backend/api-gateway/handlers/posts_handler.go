@@ -249,10 +249,10 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
             "caption":         post.Caption,
             "location":        post.Location,
             "created_at":      post.CreatedAt,
-            "username":        username,          // Added
-            "profile_picture": profilePic,        // Added
-            "likes_count":     0, // Placeholder until implemented
-            "comments_count":  0, // Placeholder until implemented
+            "username":        username,          
+            "profile_picture": profilePic,        
+            "likes_count":     post.LikesCount,
+            "comments_count":  post.CommentsCount,
             "is_liked":        false,
         })
     }

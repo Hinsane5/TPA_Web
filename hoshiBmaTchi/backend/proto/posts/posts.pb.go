@@ -386,6 +386,9 @@ type PostResponse struct {
 	Caption       string                 `protobuf:"bytes,5,opt,name=caption,proto3" json:"caption,omitempty"`
 	Location      string                 `protobuf:"bytes,6,opt,name=location,proto3" json:"location,omitempty"`
 	CreatedAt     string                 `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	LikesCount    int32                  `protobuf:"varint,8,opt,name=likes_count,json=likesCount,proto3" json:"likes_count,omitempty"`
+	IsLiked       bool                   `protobuf:"varint,9,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`
+	CommentsCount int32                  `protobuf:"varint,10,opt,name=comments_count,json=commentsCount,proto3" json:"comments_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -467,6 +470,27 @@ func (x *PostResponse) GetCreatedAt() string {
 		return x.CreatedAt
 	}
 	return ""
+}
+
+func (x *PostResponse) GetLikesCount() int32 {
+	if x != nil {
+		return x.LikesCount
+	}
+	return 0
+}
+
+func (x *PostResponse) GetIsLiked() bool {
+	if x != nil {
+		return x.IsLiked
+	}
+	return false
+}
+
+func (x *PostResponse) GetCommentsCount() int32 {
+	if x != nil {
+		return x.CommentsCount
+	}
+	return 0
 }
 
 type LikePostRequest struct {
@@ -1016,7 +1040,7 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x10GetPostsResponse\x12)\n" +
 	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\"-\n" +
 	"\x12GetPostByIDRequest\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\tR\x06postId\"\xc8\x01\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\"\xab\x02\n" +
 	"\fPostResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1b\n" +
@@ -1026,7 +1050,12 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\acaption\x18\x05 \x01(\tR\acaption\x12\x1a\n" +
 	"\blocation\x18\x06 \x01(\tR\blocation\x12\x1d\n" +
 	"\n" +
-	"created_at\x18\a \x01(\tR\tcreatedAt\"C\n" +
+	"created_at\x18\a \x01(\tR\tcreatedAt\x12\x1f\n" +
+	"\vlikes_count\x18\b \x01(\x05R\n" +
+	"likesCount\x12\x19\n" +
+	"\bis_liked\x18\t \x01(\bR\aisLiked\x12%\n" +
+	"\x0ecomments_count\x18\n" +
+	" \x01(\x05R\rcommentsCount\"C\n" +
 	"\x0fLikePostRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x17\n" +
 	"\apost_id\x18\x02 \x01(\tR\x06postId\",\n" +

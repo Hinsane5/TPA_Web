@@ -14,4 +14,7 @@ type Post struct {
 	Location        string    `gorm:"type:varchar(255)"`
 	CreatedAt       time.Time `gorm:"autoCreateTime"`
 	UpdatedAt       time.Time `gorm:"autoUpdateTime"`
+	LikesCount    int32 `gorm:"-"`
+    CommentsCount int32 `gorm:"-"`
+    IsLiked       bool  `gorm:"-"` 
 }

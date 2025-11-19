@@ -61,7 +61,7 @@ func (r *GormPostRepository) GetCommentsForPost(ctx context.Context, postID stri
 	return comments, err
 }
 
-func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string, limit, offset int) ([]*domain.Post, error) {
+func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string, currentUserID string, limit, offset int) ([]*domain.Post, error) {
 	var posts []*domain.Post
 	
 	err := r.db.WithContext(ctx).
@@ -74,6 +74,23 @@ func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string,
 	if err != nil {
 		return nil, err
 	}
+
+	for _, post := range posts {
+        var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
+        post.LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", post.ID).Count(&comments)
+        post.CommentsCount = int32(comments)
+
+		var isLikedCount int64
+        r.db.Model(&domain.PostLike{}).
+             Where("post_id = ? AND user_id = ?", post.ID, currentUserID).
+             Count(&isLikedCount)
+        
+        post.IsLiked = isLikedCount > 0
+    }
 
 	return posts, nil
 }

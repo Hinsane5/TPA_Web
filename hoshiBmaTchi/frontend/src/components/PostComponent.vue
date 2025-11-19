@@ -31,18 +31,18 @@
     <div class="post-actions">
       <div class="actions-left">
         <button 
-          @click="toggleLike"
+          @click="$emit('toggle-like', post)"
           class="action-button"
-          :title="isLiked ? 'Unlike' : 'Like'"
+          :title="post.is_liked ? 'Unlike' : 'Like'"
         >
           <img 
-            :src="isLiked ? '/icons/notifications-icon-filled.png' : '/icons/notifications-icon.png'"
+            :src="post.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
             alt="Like"
             class="action-icon"
-            :class="{ liked: isLiked }"
+            :class="{ liked: post.is_liked }"
           />
         </button>
-        <button class="action-button" title="Comment">
+        <button class="action-button" title="Comment" @click="$emit('open-detail', post)">
           <img src="/icons/comment-icon.png" alt="Comment" class="action-icon" />
         </button>
         <button class="action-button" title="Share">
@@ -66,7 +66,7 @@
 
     <div class="post-footer">
       <p class="likes-count">
-        {{ localLikeCount.toLocaleString() }} likes
+        {{ post.likes_count ? post.likes_count.toLocaleString() : 0 }} likes
       </p>
 
       <div class="caption-section">
@@ -76,7 +76,7 @@
         </p>
       </div>
 
-      <button class="view-comments">
+      <button class="view-comments" @click="$emit('open-detail', post)">
         View all {{ post.comments_count || 0 }} comments
       </button>
     </div>
@@ -96,32 +96,10 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(['open-detail']);
+const emit = defineEmits(['open-detail', 'toggle-like']);
 
 // 2. Local State initialized from Props
-const isLiked = ref(props.post.is_liked || false); // Ensure backend sends this boolean
-const localLikeCount = ref(props.post.likes_count || 0);
 const isSaved = ref(false);
-
-// 3. Logic
-const toggleLike = async () => {
-  // Optimistic UI Update (Update immediately before API call)
-  const previousState = isLiked.value;
-  isLiked.value = !isLiked.value;
-  localLikeCount.value += isLiked.value ? 1 : -1;
-
-  try {
-    if (isLiked.value) {
-      await postsApi.likePost(props.post.id);
-    } else {
-      await postsApi.unlikePost(props.post.id);
-    }
-  } catch (error) {
-    isLiked.value = previousState;
-    localLikeCount.value += isLiked.value ? 1 : -1;
-    console.error('Failed to toggle like:', error);
-  }
-};
 
 const toggleSave = () => {
   isSaved.value = !isSaved.value;
@@ -200,7 +178,7 @@ const parseCaption = (text: string) => {
 .username {
   font-size: 14px;
   font-weight: 600;
-  color: #000000;
+  color: #fff;
   margin: 0;
 }
 
@@ -283,8 +261,8 @@ const parseCaption = (text: string) => {
 .action-icon {
   width: 24px;
   height: 24px;
-  opacity: 0.7;
-  transition: all 0.2s ease;
+  opacity: 1;
+  /* transition: all 0.2s ease; */
 }
 
 .action-icon.liked,
@@ -303,7 +281,7 @@ const parseCaption = (text: string) => {
 .likes-count {
   font-size: 14px;
   font-weight: 600;
-  color: #000000;
+  color: #fff;
   margin: 0;
 }
 
@@ -315,18 +293,18 @@ const parseCaption = (text: string) => {
 
 .caption-text {
   font-size: 14px;
-  color: #000000;
+  color: #fff;
   margin: 0;
   line-height: 1.4;
 }
 
 .caption-username {
   font-weight: 600;
-  color: #000000;
+  color: #fff;
 }
 
 .caption-content {
-  color: #65676b;
+  color: #fff;
   margin-left: 8px;
 }
 
@@ -342,6 +320,6 @@ const parseCaption = (text: string) => {
 }
 
 .view-comments:hover {
-  color: #000000;
+  color: #fff;
 }
 </style>

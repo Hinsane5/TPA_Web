@@ -258,7 +258,7 @@ func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*
 
 	authorIDs := append(userRes.FollowingIds, req.UserId)
 
-	posts, err := s.repo.GetFeedPosts(ctx, authorIDs, int(req.Limit), int(req.Offset))
+	posts, err := s.repo.GetFeedPosts(ctx, authorIDs, req.UserId, int(req.Limit), int(req.Offset))
 	if err != nil {
 		log.Printf("Failed to fetch feed posts from DB: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to fetch posts")
