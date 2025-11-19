@@ -200,42 +200,62 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
     c.JSON(http.StatusOK, res.Comments)
 }
 
-func (h *PostsHandler) GetHomeFeed (c *gin.Context){
+func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     userID, exists := c.Get("userID")
-
-    if !exists{
+    if !exists {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
         return
     }
 
     limitStr := c.DefaultQuery("limit", "10")
     offsetStr := c.DefaultQuery("offset", "0")
+    limit, _ := strconv.Atoi(limitStr)
+    offset, _ := strconv.Atoi(offsetStr)
 
-    limit, err := strconv.Atoi(limitStr)
-    if err != nil{
-        limit = 10;
-    }
-
-    offset, err := strconv.Atoi(offsetStr)
-    if err != nil {
-        offset = 0;
-    }
-
+    // 1. Get Raw Posts
     res, err := h.postsClient.GetHomeFeed(context.Background(), &postsProto.GetHomeFeedRequest{
         UserId: userID.(string),
-        Limit: int32(limit),
+        Limit:  int32(limit),
         Offset: int32(offset),
     })
 
     if err != nil {
-        if s, ok := status.FromError(err); ok {
-            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
-        }else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch feed: " + err.Error()})
-		}
-
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch feed: " + err.Error()})
         return
     }
 
-    c.JSON(http.StatusOK, gin.H{"data": res.Posts})
+    // 2. Enrich with User Data
+    var enrichedPosts []gin.H
+
+    for _, post := range res.Posts {
+        // Call Users Service for each post author
+        userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+            UserId: post.UserId,
+        })
+
+        username := "Unknown"
+        profilePic := ""
+        
+        if err == nil {
+            username = userRes.Username
+            profilePic = userRes.ProfilePictureUrl
+        }
+
+        enrichedPosts = append(enrichedPosts, gin.H{
+            "id":              post.Id,
+            "user_id":         post.UserId,
+            "media_url":       post.MediaUrl,
+            "media_type":      post.MediaType,
+            "caption":         post.Caption,
+            "location":        post.Location,
+            "created_at":      post.CreatedAt,
+            "username":        username,          // Added
+            "profile_picture": profilePic,        // Added
+            "likes_count":     0, // Placeholder until implemented
+            "comments_count":  0, // Placeholder until implemented
+            "is_liked":        false,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
 }

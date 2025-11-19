@@ -18,7 +18,8 @@
           <PostComponent 
             v-for="post in posts" 
             :key="post.id" 
-            :post="post" 
+            :post="post"
+            @open-detail="openOverlay"
           />
         </div>
 
@@ -55,6 +56,14 @@
         </div>
       </div>
     </div>
+
+    <PostDetailOverlay 
+      v-if="selectedPost"
+      :isOpen="!!selectedPost" 
+      :post="selectedPost" 
+      @close="closeOverlay" 
+    />
+
   </div>
 </template>
 
@@ -62,6 +71,7 @@
 import { ref, onMounted } from "vue";
 import PostComponent from './PostComponent.vue';
 import { postsApi } from '../services/apiService';
+import PostDetailOverlay from './PostDetailOverlay.vue';
 
 interface Post {
   id: string;
@@ -80,6 +90,7 @@ const isLoading = ref(false)
 const page = ref(0)
 const limit = 5
 const scrollTrigger = ref<HTMLElement | null>(null);
+const selectedPost = ref(null);
 
 const fetchFeed = async () => {
   if (isLoading.value) return;
@@ -98,6 +109,18 @@ const fetchFeed = async () => {
   } finally {
     isLoading.value = false;
   }
+};
+
+const openOverlay = (post: any) => {
+  selectedPost.value = post;
+  // Best Practice: Update URL without reload (Deep Linking)
+  window.history.pushState({}, '', `/p/${post.id}`);
+};
+
+// Close Overlay
+const closeOverlay = () => {
+  selectedPost.value = null;
+  window.history.pushState({}, '', '/'); // Reset URL
 };
 
 onMounted(() => {

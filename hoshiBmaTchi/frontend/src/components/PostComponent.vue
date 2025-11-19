@@ -20,7 +20,7 @@
       </button>
     </div>
 
-    <div class="post-media">
+    <div class="post-media" @click="$emit('open-detail', post)" style="cursor: pointer">
       <img 
         :src="post.media_url"
         alt="Post content"
@@ -86,6 +86,7 @@
 <script setup lang="ts">
 import { ref, defineProps } from 'vue';
 import { formatDistanceToNow } from 'date-fns'; // Make sure to install: npm install date-fns
+import { postsApi } from '../services/apiService';
 
 // 1. Accept Data from Parent (HomePage.vue)
 const props = defineProps({
@@ -95,16 +96,31 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['open-detail']);
+
 // 2. Local State initialized from Props
-const isLiked = ref(false); // You can map this to props.post.is_liked later
-const isSaved = ref(false);
+const isLiked = ref(props.post.is_liked || false); // Ensure backend sends this boolean
 const localLikeCount = ref(props.post.likes_count || 0);
+const isSaved = ref(false);
 
 // 3. Logic
-const toggleLike = () => {
+const toggleLike = async () => {
+  // Optimistic UI Update (Update immediately before API call)
+  const previousState = isLiked.value;
   isLiked.value = !isLiked.value;
   localLikeCount.value += isLiked.value ? 1 : -1;
-  // TODO: Call API to sync like status
+
+  try {
+    if (isLiked.value) {
+      await postsApi.likePost(props.post.id);
+    } else {
+      await postsApi.unlikePost(props.post.id);
+    }
+  } catch (error) {
+    isLiked.value = previousState;
+    localLikeCount.value += isLiked.value ? 1 : -1;
+    console.error('Failed to toggle like:', error);
+  }
 };
 
 const toggleSave = () => {
