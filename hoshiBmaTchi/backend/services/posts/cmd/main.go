@@ -90,7 +90,7 @@ func main() {
 		log.Fatalf("Failed to create presign MinIO client: %v", err)
 	}
 
-	userServiceAddr := "users-service:50052" 
+	userServiceAddr := "users-service:50051" 
 	userConn, err := grpc.Dial(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to users-service: %v", err)

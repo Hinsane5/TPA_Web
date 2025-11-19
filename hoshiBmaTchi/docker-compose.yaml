@@ -106,6 +106,7 @@ services:
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
     networks:
       - ${NETWORK_NAME}
     volumes:

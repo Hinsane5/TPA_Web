@@ -139,10 +139,12 @@ const parseCaption = (text: string) => {
 .post-container {
   width: 100%;
   max-width: 480px;
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
+  background-color: #000000;
+  border: 1px solid #000;
   border-radius: 8px;
+  margin-bottom: 24px;
   overflow: hidden;
+  color: #ffffff;
 }
 
 /* Header Section */
@@ -234,7 +236,6 @@ const parseCaption = (text: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
 }
 
 .actions-left {
