@@ -50,9 +50,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import UserListItem from './UserListItem.vue'
+import { usersApi } from '../services/apiService'
 
 interface Props {
   isOpen: boolean
@@ -68,6 +69,31 @@ const router = useRouter()
 const searchQuery = ref('')
 const results = ref<any[]>([])
 const recentSearches = ref<any[]>([])
+let searchTimeout: ReturnType<typeof setTimeout> | null = null // Variable for debounce timer
+
+watch(searchQuery, (newQuery) => {
+  // 1. Clear the previous timer if the user keeps typing
+  if (searchTimeout) {
+    clearTimeout(searchTimeout)
+  }
+
+  // 2. If query is empty, clear results and stop
+  if (!newQuery.trim()) {
+    results.value = []
+    return
+  }
+
+  // 3. Set a new timer to wait 300ms before calling API
+  searchTimeout = setTimeout(async () => {
+    try {
+      const response = await usersApi.searchUsers(newQuery)
+      // Based on your backend handler, the data is wrapped in "users"
+      results.value = response.data.users || [] 
+    } catch (error) {
+      console.error('Search failed:', error)
+    }
+  }, 300)
+})
 
 const closeSearch = () => {
   searchQuery.value = ''

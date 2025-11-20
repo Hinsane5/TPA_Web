@@ -111,7 +111,7 @@ const handleImageError = (e: Event) => {
   gap: 12px;
   padding: 12px 16px;
   /* Changed background to dark theme (#1a1a1a instead of white) */
-  background-color: #ffffff;
+  background-color: #121212;
   border-bottom: 1px solid #262626;
   transition: background-color 0.2s ease;
 }
