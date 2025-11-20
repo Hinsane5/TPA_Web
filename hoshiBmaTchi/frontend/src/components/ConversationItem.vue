@@ -63,7 +63,7 @@ const participant = computed(() => {
   return parts && parts.length > 0 ? parts[0] : null;
 });
 
-const formatTime = (date: Date) => {
+const formatTime = (date: Date | string) => {
   const now = new Date();
   const messageDate = new Date(date);
   const diffMs = now.getTime() - messageDate.getTime();

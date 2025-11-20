@@ -139,3 +139,24 @@ func (r *ChatRepository) SearchMessages(ctx context.Context, conversationID, que
 		Find(&messages).Error
 	return messages, err
 }
+
+func (r *ChatRepository) FindDirectConversation(ctx context.Context, user1ID, user2ID string) (*domain.Conversation, error) {
+	var conversation domain.Conversation
+
+	// Query logic:
+	// 1. Find conversations that are NOT groups (IsGroup = false)
+	// 2. JOIN with participants to ensure both users are present
+	// 3. Ensure the conversation has exactly 2 participants
+	
+	err := r.db.Table("conversations").
+		Joins("JOIN participants p1 ON p1.conversation_id = conversations.id").
+		Joins("JOIN participants p2 ON p2.conversation_id = conversations.id").
+		Where("conversations.is_group = ?", false).
+		Where("p1.user_id = ? AND p2.user_id = ?", user1ID, user2ID).
+		First(&conversation).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return &conversation, nil
+}

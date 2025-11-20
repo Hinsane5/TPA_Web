@@ -1,214 +1,255 @@
 import { ref, computed } from "vue";
-import type { User, Conversation, Message } from "../types/chat";
+import type { Conversation, Message, User } from "../types/chat";
 
-// Mock current user
-const currentUser = ref<User>({
-  id: "user-1",
-  username: "wen.fu",
-  fullName: "Wen Fu",
-  avatar: "/placeholder.svg?height=48&width=48",
-  isOnline: true,
-});
-
-// Mock conversations data
-const conversations = ref<Conversation[]>([
-  {
-    id: "conv-1",
-    type: "direct",
-    participants: [
-      {
-        id: "user-2",
-        username: "robert",
-        fullName: "Robert Johnson",
-        avatar: "/placeholder.svg?height=48&width=48",
-        isOnline: true,
-      },
-    ],
-    lastMessage: {
-      id: "msg-1",
-      senderId: "user-2",
-      senderName: "Robert",
-      senderAvatar: "/placeholder.svg?height=48&width=48",
-      content: "Looks awesome! 👍",
-      messageType: "text",
-      timestamp: new Date(Date.now() - 3600000),
-      status: "seen",
-      isEdited: false,
-      canUnsend: false,
-      createdAt: new Date(Date.now() - 3600000),
-    },
-    unreadCount: 1,
-    updatedAt: new Date(Date.now() - 3600000),
-  },
-  {
-    id: "conv-2",
-    type: "direct",
-    participants: [
-      {
-        id: "user-3",
-        username: "john",
-        fullName: "John Doe",
-        avatar: "/placeholder.svg?height=48&width=48",
-        isOnline: false,
-      },
-    ],
-    lastMessage: {
-      id: "msg-2",
-      senderId: "user-1",
-      senderName: "You",
-      senderAvatar: "/placeholder.svg?height=48&width=48",
-      content: "See you tomorrow!",
-      messageType: "text",
-      timestamp: new Date(Date.now() - 7200000),
-      status: "sent",
-      isEdited: false,
-      canUnsend: false,
-      createdAt: new Date(Date.now() - 7200000),
-    },
-    unreadCount: 0,
-    updatedAt: new Date(Date.now() - 7200000),
-  },
-  {
-    id: "conv-3",
-    type: "direct",
-    participants: [
-      {
-        id: "user-4",
-        username: "mike",
-        fullName: "Mike Brown",
-        avatar: "/placeholder.svg?height=48&width=48",
-        isOnline: true,
-      },
-    ],
-    lastMessage: {
-      id: "msg-3",
-      senderId: "user-4",
-      senderName: "Mike",
-      senderAvatar: "/placeholder.svg?height=48&width=48",
-      content: "Thanks!",
-      messageType: "text",
-      timestamp: new Date(Date.now() - 10800000),
-      status: "seen",
-      isEdited: false,
-      canUnsend: false,
-      createdAt: new Date(Date.now() - 10800000),
-    },
-    unreadCount: 0,
-    updatedAt: new Date(Date.now() - 10800000),
-  },
-]);
-
-const allMessages = ref<Message[]>([
-  {
-    id: "msg-1",
-    senderId: "user-2",
-    senderName: "Robert",
-    senderAvatar: "/placeholder.svg?height=48&width=48",
-    content: "Looks awesome! 👍",
-    messageType: "text",
-    timestamp: new Date(Date.now() - 3600000),
-    status: "seen",
-    isEdited: false,
-    canUnsend: false,
-    createdAt: new Date(Date.now() - 3600000),
-    conversationId: "conv-1",
-  },
-]);
-
+// --- STATE ---
+const currentUser = ref<User | null>(null);
+const conversations = ref<Conversation[]>([]);
+const messages = ref<Message[]>([]); // Messages for the ACTIVE conversation
 const selectedConversationId = ref<string | null>(null);
+const isConnected = ref(false);
+let socket: WebSocket | null = null;
 
-const selectedConversation = computed<Conversation | null>(() => {
-  if (!selectedConversationId.value) return null;
-  return (
-    conversations.value.find((c) => c.id === selectedConversationId.value) ||
-    null
-  );
-});
-
-// 2. Fix the messages computed property
-const messages = computed<Message[]>(() => {
-  if (!selectedConversationId.value) return [];
-  // In a real app, you filter by conversation ID
-  // For this mock, we just return messages if they matched the ID (logic added below)
-  return allMessages.value.filter(
-    (m) => (m as any).conversationId === selectedConversationId.value
-  );
-});
+// --- CONFIG ---
+// Point this to your Gateway URL
+const API_URL = "http://localhost:8000/api";
+const WS_URL = "ws://localhost:8000/ws";
 
 export function useChatStore() {
-  const selectConversation = (conversationId: string) => {
-    selectedConversationId.value = conversationId;
+  // 1. GET AUTH TOKEN (Helper)
+  const getToken = () => localStorage.getItem("token"); // Or use your useAuth composable
+
+  // 2. INITIALIZE (Call this when App mounts or User logs in)
+  const initialize = async (user: User) => {
+    currentUser.value = user;
+    await fetchConversations();
+    connectWebSocket();
   };
 
-  // 3. Implement Send Logic
-  const sendMessage = (content: string) => {
-    if (!selectedConversationId.value) return;
+  // 3. REST API: Fetch Conversations
+  const fetchConversations = async () => {
+    try {
+      const token = getToken();
+      if (!token) return;
 
-    // 1. Create the new message object
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      senderId: currentUser.value.id,
-      senderName: currentUser.value.fullName,
-      senderAvatar: currentUser.value.avatar,
-      content: content,
-      messageType: "text",
-      timestamp: new Date(),
-      status: "sent",
-      isEdited: false,
-      canUnsend: true,
-      createdAt: new Date(),
-      // Ensure your Message type includes this property (see below)
-      conversationId: selectedConversationId.value, 
+      const res = await fetch(`${API_URL}/chats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Map backend data to frontend shape if necessary
+        conversations.value = data.map((c: any) => ({
+          ...c,
+          participants: c.Participants || [], // Handle capitalization differences
+          updatedAt: c.CreatedAt, // Or LastMessageAt if you have it
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch chats:", error);
+    }
+  };
+
+  // 4. REST API: Fetch Messages for specific chat
+  const selectConversation = async (conversationId: string) => {
+    selectedConversationId.value = conversationId;
+    messages.value = []; // Clear old messages instantly
+
+    try {
+      const token = getToken();
+      const res = await fetch(
+        `${API_URL}/chats/${conversationId}/messages?limit=50`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        messages.value = data.reverse(); // Backend usually sends newest first, UI often needs oldest first
+      }
+    } catch (error) {
+      console.error("Failed to fetch history:", error);
+    }
+  };
+
+  // 5. WEBSOCKET CONNECTION
+  const connectWebSocket = () => {
+    if (socket) return; // Already connected
+
+    const token = getToken();
+    if (!token) return;
+
+    // Connect via Gateway
+    socket = new WebSocket(`${WS_URL}?token=${token}`);
+
+    socket.onopen = () => {
+      console.log("WS Connected");
+      isConnected.value = true;
     };
 
-    // 2. Add to messages list
-    allMessages.value.push(newMessage);
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        handleIncomingMessage(data);
+      } catch (e) {
+        console.error("WS Parse Error", e);
+      }
+    };
 
-    // 3. Update conversation (Fix applied here)
-    const convIndex = conversations.value.findIndex(
-      (c) => c.id === selectedConversationId.value
+    socket.onclose = () => {
+      isConnected.value = false;
+      socket = null;
+      // Optional: Implement reconnect logic here
+      setTimeout(connectWebSocket, 3000);
+    };
+  };
+
+  // 6. HANDLE INCOMING MESSAGES
+  // ... inside useChatStore.ts ...
+
+  // 6. HANDLE INCOMING MESSAGES
+  const handleIncomingMessage = (wsMsg: any) => {
+    // 1. Find Sender Info (Backend WS doesn't send name/avatar, so look it up locally)
+    let senderName = "Unknown";
+    let senderAvatar = "/placeholder.svg"; // Default avatar
+
+    const conversation = conversations.value.find(
+      (c) => c.id === wsMsg.conversation_id
     );
-
-    if (convIndex !== -1) {
-      // FIX: Use strict null check or non-null assertion (!)
-      // TypeScript thinks conversations.value[convIndex] might be undefined
-      const conversation = conversations.value[convIndex];
-      
-      if (conversation) {
-        conversation.lastMessage = newMessage;
-        conversation.updatedAt = new Date(); // Good practice to update timestamp
-
-        // Move conversation to top
-        conversations.value.splice(convIndex, 1);
-        conversations.value.unshift(conversation);
+    if (conversation) {
+      const sender = conversation.participants.find(
+        (p) => p.id === wsMsg.sender_id
+      );
+      if (sender) {
+        senderName = sender.fullName;
+        senderAvatar = sender.avatar;
+      } else if (
+        currentUser.value &&
+        wsMsg.sender_id === currentUser.value.id
+      ) {
+        // It's me
+        senderName = currentUser.value.fullName;
+        senderAvatar = currentUser.value.avatar;
       }
+    }
+
+    // 2. Determine Type
+    const isMedia = !!wsMsg.media_url;
+
+    // 3. Create Message Object
+    const newMessage: Message = {
+      id: wsMsg.id || `msg-${Date.now()}`, // Prefer ID from backend if available
+      conversationId: wsMsg.conversation_id,
+      senderId: wsMsg.sender_id,
+      senderName: senderName, // Filled from local lookup
+      senderAvatar: senderAvatar, // Filled from local lookup
+
+      // UI expects the Image URL to be in 'content' if type is 'image'
+      content: isMedia ? wsMsg.media_url : wsMsg.content,
+
+      // FIX: Correct property name 'messageType'
+      messageType: isMedia ? "image" : "text",
+
+      mediaUrl: wsMsg.media_url,
+      createdAt: new Date().toISOString(),
+      timestamp: new Date().toISOString(),
+      status: "sent",
+      isEdited: false,
+      canUnsend: false,
+    };
+
+    // 4. Add to List (if chat is open)
+    if (selectedConversationId.value === wsMsg.conversation_id) {
+      messages.value.push(newMessage);
+    }
+
+    // 5. Update Conversation List Preview
+    if (conversation) {
+      conversation.lastMessage = newMessage;
+      if (selectedConversationId.value !== wsMsg.conversation_id) {
+        conversation.unreadCount += 1;
+      }
+      // Move to top
+      conversations.value = [
+        conversation,
+        ...conversations.value.filter((c) => c.id !== conversation.id),
+      ];
     }
   };
 
-  const unsendMessage = (messageId: string) => {
-    const index = allMessages.value.findIndex((m) => m.id === messageId);
-    if (index !== -1) allMessages.value.splice(index, 1);
+  // 7. SEND MESSAGE
+  const sendMessage = (content: string) => {
+    if (!socket || !selectedConversationId.value || !currentUser.value) return;
+
+    const payload = {
+      type: "chat", // Defined in your backend Hub
+      conversation_id: selectedConversationId.value,
+      sender_id: currentUser.value.id,
+      content: content,
+    };
+
+    socket.send(JSON.stringify(payload));
+
+    // Optimistic UI update (optional: show immediately before server confirms)
+    // logic similar to handleIncomingMessage...
   };
 
-  const deleteConversation = (conversationId: string) => {
-    const index = conversations.value.findIndex((c) => c.id === conversationId);
-    if (index !== -1) {
-      conversations.value.splice(index, 1);
-      if (selectedConversationId.value === conversationId) {
-        selectedConversationId.value = null;
-      }
+  const deleteConversation = async (conversationId: string) => {
+    // Call DELETE endpoint
+    const token = getToken();
+    await fetch(`${API_URL}/chats/${conversationId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    // Update local state
+    conversations.value = conversations.value.filter(
+      (c) => c.id !== conversationId
+    );
+    if (selectedConversationId.value === conversationId) {
+      selectedConversationId.value = null;
     }
   };
+
+  const unsendMessage = async (messageId: string) => {
+    // 1. Optimistic Update (Update UI immediately)
+    const msg = messages.value.find((m) => m.id === messageId);
+    if (msg) {
+      msg.content = "This message was unsent";
+      msg.isUnsent = true;
+      msg.mediaUrl = undefined;
+      msg.messageType = "text";
+    }
+
+    // 2. Call Backend API
+    // (Assuming your backend has a DELETE or PUT endpoint for this)
+    try {
+      const token = localStorage.getItem("token");
+      await fetch(`http://localhost:8080/api/chats/messages/${messageId}`, {
+        method: "DELETE", // or PUT depending on your backend implementation
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error("Failed to unsend:", err);
+    }
+  };
+
+  const selectedConversation = computed(
+    () =>
+      conversations.value.find((c) => c.id === selectedConversationId.value) ||
+      null
+  );
 
   return {
     currentUser,
     conversations,
+    messages,
     selectedConversationId,
     selectedConversation,
-    messages,
+    isConnected,
+    initialize,
     selectConversation,
     sendMessage,
-    unsendMessage,
     deleteConversation,
+    unsendMessage,
   };
 }

@@ -76,7 +76,8 @@ defineEmits<{
   unsend: [messageId: string];
 }>();
 
-const formatTime = (date: Date) => {
+const formatTime = (date: string | Date) => {
+
   return new Date(date).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",

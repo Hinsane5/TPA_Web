@@ -150,3 +150,15 @@ export const usersApi = {
     return apiClient.get(`/v1/users/search`, { params: { q: query } });
   },
 };
+
+export const chatApi = {
+  // Find or create a direct conversation with a target user
+  getOrCreateConversation: (targetUserId: string) => {
+    // Adjust the endpoint to match your backend route for creating/finding a chat
+    return apiClient.post(`/chats`, {
+      name: "Direct Message", // Optional, backend might ignore for DM
+      user_ids: [targetUserId], // The person you want to message
+      is_group: false, // Helpful flag if your backend supports it
+    });
+  },
+};

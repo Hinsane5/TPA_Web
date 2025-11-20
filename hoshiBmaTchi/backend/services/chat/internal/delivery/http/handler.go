@@ -106,6 +106,22 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
+	if len(req.UserIDs) == 1 {
+		targetUserID := req.UserIDs[0]
+		
+		// Check DB for existing chat
+		existingConv, err := h.Repo.FindDirectConversation(c, userID, targetUserID)
+		if err == nil && existingConv != nil {
+			// Found one! Return it immediately.
+			c.JSON(http.StatusOK, gin.H{
+				"conversation_id": existingConv.ID.String(),
+				"message":         "Chat already exists",
+				"is_existing":     true,
+			})
+			return
+		}
+	}
+
 	// Include the creator in the participant list if not already present
 	userIDs := append(req.UserIDs, userID)
 
@@ -123,6 +139,7 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"conversation_id": conv.ID.String(),
 		"message":         "Group created successfully",
+		"is_existing":     false,
 	})
 }
 

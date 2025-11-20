@@ -90,10 +90,6 @@
         <div class="user-name">{{ currentUser.username }}</div>
         <div class="user-fullname">{{ currentUser.fullName }}</div>
       </div>
-      <div v-else class="user-info loading">
-        <div class="skeleton-text"></div>
-        <div class="skeleton-text small"></div>
-      </div>
     </div>
   </aside>
 </template>
@@ -365,7 +361,6 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border-color);
 }
 
 .user-avatar {

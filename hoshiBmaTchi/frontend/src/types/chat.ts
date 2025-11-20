@@ -13,25 +13,30 @@ export interface Message {
   senderAvatar: string;
   content: string;
   messageType: "text" | "image" | "gif" | "video";
-  timestamp: Date;
+
+  // Update: Allow string | Date for backend compatibility
+  timestamp: Date | string;
   status: "sending" | "sent" | "seen";
   isEdited: boolean;
   canUnsend: boolean;
-  createdAt: Date;
 
-  // Added: link back to conversation for local filtering
+  // Update: Allow string | Date
+  createdAt: Date | string;
+
+  // Fix: Add these properties
   conversationId?: string;
+  isUnsent?: boolean;
+  mediaUrl?: string;
 }
 
 export interface Conversation {
   id: string;
-  type: "direct" | "group";
-  participants: User[];
-  lastMessage: Message | null;
-  unreadCount: number;
-  updatedAt: Date;
   name?: string;
-  avatar?: string;
+  isGroup: boolean;
+  participants: User[];
+  lastMessage?: Message;
+  unreadCount: number;
+  updatedAt: string;
 }
 
 export interface GroupParticipant extends User {

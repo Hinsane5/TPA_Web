@@ -34,7 +34,7 @@
                 >
                   {{ isFollowing ? 'Following' : 'Follow' }}
                 </button>
-                <button class="action-btn">Message</button>
+                <button class="action-btn" @click="handleMessageClick">Message</button>
               </template>
             </div>
           </div>
@@ -125,7 +125,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { usersApi, postsApi } from '../services/apiService'
+import { usersApi, postsApi, chatApi } from '../services/apiService'
+import router from '@/router'
 
 // State
 const route = useRoute()
@@ -155,7 +156,7 @@ const getUserIdFromToken = (): string | null => {
   if (!token) return null
   
   try {
-    const parts = token.split('.')
+    const parts = token.split('.') 
     
     // JWTs typically have 3 parts: Header.Payload.Signature
     // Checking for 2 is okay, but ensuring the payload exists is key.
@@ -241,6 +242,24 @@ const loadProfileData = async () => {
     console.error("Failed to load profile:", error)
   }
 }
+
+  const handleMessageClick = async () => {
+    const targetUserId = profileUser.value.id
+    if(!targetUserId) return
+
+    try {
+      const res = await chatApi.getOrCreateConversation(targetUserId)
+      const conversationId = res.data.conversation_id
+
+      router.push({
+        name: 'messages',
+        query: {conversationId: conversationId}
+      })
+    } catch (error){
+      console.error("Failed to start conversation:", error)
+      router.push({name : 'messages'})
+    }
+  }
 
 const toggleFollow = async () => {
   const targetId = profileUser.value.id
