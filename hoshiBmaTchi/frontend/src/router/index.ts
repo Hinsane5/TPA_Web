@@ -46,7 +46,7 @@ const router = createRouter({
     {
       path: "/verify-2fa",
       name: "verify-2fa",
-      component: TwoFAVerificationPage
+      component: TwoFAVerificationPage,
     },
     {
       path: "/dashboard",
@@ -74,7 +74,7 @@ const router = createRouter({
           component: MessagesPage,
         },
         {
-          path: "profile",
+          path: "profile/:id?",
           name: "profile",
           component: ProfilePage,
         },
