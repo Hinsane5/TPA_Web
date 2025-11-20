@@ -27,6 +27,11 @@ services:
     networks:
       - ${NETWORK_NAME}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:18
@@ -141,6 +146,54 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: ${PROJECT_NAME}-chat-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/chat
+    networks:
+      - ${NETWORK_NAME}
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=hoshi_chat_db
+      - REDIS_ADDR=redis:6379
+      - PORT=8080
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      
+      # MinIO configuration for chat media uploads
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=chat-media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat-ws.rule=Host(`api.hoshi.localhost`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.chat-ws.entrypoints=websecure"
+      - "traefik.http.routers.chat-ws.tls=true"
+      - "traefik.http.routers.chat-upload.rule=Host(`api.hoshi.localhost`) && PathPrefix(`/chat/upload`)"
+      - "traefik.http.routers.chat-upload.entrypoints=websecure"
+      - "traefik.http.routers.chat-upload.tls=true"
+      - "traefik.http.services.chat-service.loadbalancer.server.port=8080"
 
   api-gateway:
     build:

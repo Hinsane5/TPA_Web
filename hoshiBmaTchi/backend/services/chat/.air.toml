@@ -1,0 +1,15 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  # Just plain go build command
+  cmd = "go build -o tmp/chat-service ./cmd"
+  
+  # Binary file to run
+  bin = "tmp/chat-service"
+
+[log]
+  level = "error"
+
+[misc]
+  clean_on_exit = true

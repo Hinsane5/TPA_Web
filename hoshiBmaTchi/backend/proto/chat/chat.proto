@@ -1,0 +1,60 @@
+syntax = "proto3";
+
+package chat;
+
+option go_package = "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat";
+
+service ChatService {
+  // Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
+  rpc CreateGroupChat(CreateGroupRequest) returns (CreateGroupResponse);
+
+  // Fetches the list of conversations for a specific user.
+  rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
+
+  // Fetches paginated message history for a specific conversation.
+  rpc GetMessageHistory(GetHistoryRequest) returns (GetHistoryResponse);
+}
+
+message CreateGroupRequest {
+  string name = 1;
+  repeated string user_ids = 2; // List of participant User IDs
+}
+
+message CreateGroupResponse {
+  string conversation_id = 1;
+}
+
+message GetConversationsRequest {
+  string user_id = 1;
+}
+
+message GetConversationsResponse {
+  repeated Conversation conversations = 1;
+}
+
+message Conversation {
+  string id = 1;
+  string name = 2;
+  bool is_group = 3;
+  string last_message = 4;    // Optional: for preview in the list
+  string last_message_at = 5; // Timestamp string
+}
+
+message GetHistoryRequest {
+  string conversation_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetHistoryResponse {
+  repeated Message messages = 1;
+}
+
+message Message {
+  string id = 1;
+  string sender_id = 2;
+  string content = 3;
+  string media_url = 4;
+  string created_at = 5;
+  bool is_unsent = 6;
+}
