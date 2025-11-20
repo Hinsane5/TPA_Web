@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import UserListItem from './UserListItem.vue'
 import { usersApi } from '../services/apiService'
@@ -95,6 +95,12 @@ watch(searchQuery, (newQuery) => {
   }, 300)
 })
 
+watch(() => props.isOpen, (isOpen) => {
+  if (isOpen) {
+    loadHistory()
+  }
+})
+
 const closeSearch = () => {
   searchQuery.value = ''
   emit('close')
@@ -106,21 +112,76 @@ const goToProfile = (user: any) => {
 }
 
 const addToHistory = (user: any) => {
+  if (!storageKey.value) return // Don't save if no user ID
+
   const filtered = recentSearches.value.filter(u => u.user_id !== user.user_id)
   const newHistory = [user, ...filtered].slice(0, 10)
+  
   recentSearches.value = newHistory
-  localStorage.setItem('searchHistory', JSON.stringify(newHistory))
+  // FIX: Use dynamic key
+  localStorage.setItem(storageKey.value, JSON.stringify(newHistory))
 }
 
 const clearHistory = () => {
+  if (!storageKey.value) return
+
   recentSearches.value = []
-  localStorage.removeItem('searchHistory')
+  // FIX: Use dynamic key
+  localStorage.removeItem(storageKey.value)
 }
 
 const removeFromHistory = (userId: string) => {
+  if (!storageKey.value) return
+
   recentSearches.value = recentSearches.value.filter(u => u.user_id !== userId)
-  localStorage.setItem('searchHistory', JSON.stringify(recentSearches.value))
+  localStorage.setItem(storageKey.value, JSON.stringify(recentSearches.value))
 }
+
+const getCurrentUserId = (): string | null => {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+
+    const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+
+    const userId = payload.user_id || payload.sub || payload.id;
+    return typeof userId === 'string' ? userId : null;
+  } catch(e){
+    return null;
+  }
+}
+
+const storageKey = computed(() => {
+  const userId = getCurrentUserId()
+  return userId ? `searchHistory_${userId}` : null
+})
+
+const loadHistory = () => {
+  if (!storageKey.value) {
+    recentSearches.value = []
+    return
+  }
+  const history = localStorage.getItem(storageKey.value)
+  if (history) {
+    try {
+      recentSearches.value = JSON.parse(history)
+    } catch (e) {
+      console.error('Failed to parse search history', e)
+      recentSearches.value = []
+    }
+  } else {
+    recentSearches.value = []
+  }
+}
+
+
 
 onMounted(() => {
   const history = localStorage.getItem('searchHistory')
