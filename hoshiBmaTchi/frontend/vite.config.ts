@@ -17,13 +17,21 @@ export default defineConfig({
     proxy: {
       // 1. SPECIFIC rule for /api/v1 (for Posts, etc.)
       // This matches first and DOES NOT rewrite.
+      "/api/chats": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+        // DO NOT use rewrite here. The Gateway expects /api/chats
+      },
+
+      // 2. Posts Service
       "/api/v1": {
         target: "http://localhost:8081",
         changeOrigin: true,
       },
 
-      // 2. GENERAL rule for /api (for Auth)
-      // This catches /api/auth and REWRITES it to /auth.
+      // --- GENERAL RULE LAST (Rewrite enabled) ---
+
+      // 3. Auth Service (Catch-all for other /api requests)
       "/api": {
         target: "http://localhost:8081",
         changeOrigin: true,
