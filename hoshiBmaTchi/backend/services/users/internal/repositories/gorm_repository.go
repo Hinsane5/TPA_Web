@@ -1,6 +1,8 @@
 package repositories
 
 import (
+	"context"
+
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -108,4 +110,18 @@ func (r *gormUserRepository) GetFollowing(userID string) ([]string, error){
 	}
 
 	return followingIDs, nil
+}
+
+func (r *gormUserRepository) SearchUsers(ctx context.Context, query string) ([]*domain.User, error) {
+    var users []*domain.User
+    wildcard := "%" + query + "%"
+    err := r.db.WithContext(ctx).
+        Where("username ILIKE ? OR name ILIKE ?", wildcard, wildcard).
+        Limit(20).
+        Find(&users).Error
+    
+    if err != nil {
+        return nil, err
+    }
+    return users, nil
 }

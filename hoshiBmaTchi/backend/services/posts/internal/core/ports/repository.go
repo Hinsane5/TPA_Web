@@ -21,6 +21,5 @@ type PostRepository interface {
 	CreateCollection(ctx context.Context, collection *domain.Collection) error
     GetUserCollections(ctx context.Context, userID string) ([]*domain.Collection, error)
     
-
     ToggleSavePost(ctx context.Context, userID, postID, collectionID string) (bool, error)
 }

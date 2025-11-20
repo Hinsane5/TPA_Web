@@ -385,3 +385,25 @@ func (h *AuthHandler) UnfollowUser(c *gin.Context) {
     }
     c.JSON(http.StatusOK, gin.H{"message": "Unfollowed successfully"})
 }
+
+func (h *AuthHandler) SearchUsers (c *gin.Context){
+	query := c.Query("q")
+	if query == ""{
+		c.JSON(http.StatusOK, gin.H{"users": []interface{}{}})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+
+    res, err := h.UserClient.SearchUsers(context.Background(), &pb.SearchUsersRequest{
+        Query:  query,
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"users": res.Users})
+}

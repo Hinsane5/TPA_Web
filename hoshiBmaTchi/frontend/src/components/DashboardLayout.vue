@@ -4,6 +4,8 @@
     <Sidebar 
       :current-page="currentPage" 
       :notification-count="notificationCount"
+      :is-search-active="isSearchOpen" 
+      @toggle-search="handleSearchToggle"
       @navigate="handleNavigation" 
       @logout="handleLogout"
       @open-search="isSearchOpen = true"
@@ -65,6 +67,10 @@ const handleSearch = (query: string) => {
   console.log('Search for:', query)
   // TODO: Implement search backend call
 }
+
+const handleSearchToggle = () => {
+  isSearchOpen.value = !isSearchOpen.value;
+};
 
 const handlePostUpload = (file: File, description: string) => {
   console.log('Upload post:', file.name, 'Description:', description)

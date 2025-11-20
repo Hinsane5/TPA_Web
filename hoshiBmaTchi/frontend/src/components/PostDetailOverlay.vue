@@ -18,7 +18,7 @@
         
         <div class="overlay-header">
           <div class="header-content">
-            <img :src="post.profile_picture || '/default-avatar.png'" class="author-avatar" />
+            <img :src="post.profile_picture" class="author-avatar" />
             <div class="author-info">
               <p class="author-username">{{ post.username }}</p>
               <p v-if="!isOwnPost && !isFollowing" class="follow-text" @click="handleFollow">

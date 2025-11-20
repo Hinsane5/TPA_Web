@@ -129,24 +129,24 @@ export const postsApi = {
 
 export const usersApi = {
   getUserProfile: (userId: string) => {
-    // Maps to GET /api/v1/users/:id
     return apiClient.get(`/v1/users/${userId}`);
   },
 
   followUser: (userId: string) => {
-    // Maps to POST /api/v1/users/:id/follow
     return apiClient.post(`/v1/users/${userId}/follow`);
   },
 
   unfollowUser: (userId: string) => {
-    // Maps to DELETE /api/v1/users/:id/follow
     return apiClient.delete(`/v1/users/${userId}/follow`);
   },
 
-  // Helper to get current user's profile
   getMe: () => {
     const userId = localStorage.getItem("userID");
     if (!userId) return Promise.reject("No user ID found");
     return apiClient.get(`/v1/users/${userId}`);
+  },
+
+  searchUsers: (query: string) => {
+    return apiClient.get(`/v1/users/search`, { params: { q: query } });
   },
 };
