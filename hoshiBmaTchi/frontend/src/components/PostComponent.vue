@@ -2,15 +2,20 @@
   <div class="post-container">
     <div class="post-header">
       <div class="header-left">
-        <img v-if="post.profile_picture" :src="post.profile_picture" class="avatar-img" alt="Profile" />
+        <img
+          v-if="post.profile_picture"
+          :src="post.profile_picture"
+          class="avatar-img"
+          alt="Profile"
+        />
         <div v-else class="avatar">{{ getInitials(post.username) }}</div>
-        
+
         <div class="user-info">
           <p class="username">{{ post.username }}</p>
           <p class="timestamp">{{ formatTime(post.created_at) }}</p>
         </div>
       </div>
-      
+
       <button class="more-button">
         <svg class="dots-icon" fill="currentColor" viewBox="0 0 24 24">
           <circle cx="6" cy="12" r="2" />
@@ -21,39 +26,42 @@
     </div>
 
     <div class="post-media" @dblclick="$emit('toggle-like', post)">
-      
       <div class="media-item-wrapper" v-if="currentMedia">
-         <video 
-           v-if="currentMedia.media_type.startsWith('video/')"
-           :src="currentMedia.media_url"
-           controls
-           loop
-           muted
-           class="post-image"
-         ></video>
-         <img 
-           v-else
-           :src="currentMedia.media_url"
-           alt="Post content"
-           class="post-image"
-         />
+        <video
+          v-if="currentMedia.media_type.startsWith('video/')"
+          :src="getDisplayUrl(currentMedia.media_url)"
+          controls
+          loop
+          muted
+          class="post-image"
+        ></video>
+        <img
+          v-else
+          :src="getDisplayUrl(currentMedia.media_url)"
+          alt="Post content"
+          class="post-image"
+        />
       </div>
 
-      <button 
-        v-if="hasMultiple && currentIndex > 0" 
-        class="nav-btn left" 
+      <button
+        v-if="hasMultiple && currentIndex > 0"
+        class="nav-btn left"
         @click.stop="currentIndex--"
-      >❮</button>
-      
-      <button 
-        v-if="hasMultiple && currentIndex < mediaList.length - 1" 
-        class="nav-btn right" 
+      >
+        ❮
+      </button>
+
+      <button
+        v-if="hasMultiple && currentIndex < mediaList.length - 1"
+        class="nav-btn right"
         @click.stop="currentIndex++"
-      >❯</button>
+      >
+        ❯
+      </button>
 
       <div v-if="hasMultiple" class="dots-container">
-        <div 
-          v-for="(_, idx) in mediaList" 
+        <div
+          v-for="(_, idx) in mediaList"
           :key="idx"
           class="dot"
           :class="{ active: idx === currentIndex }"
@@ -63,32 +71,44 @@
 
     <div class="post-actions">
       <div class="actions-left">
-        <button 
+        <button
           @click="$emit('toggle-like', post)"
           class="action-button"
           :title="post.is_liked ? 'Unlike' : 'Like'"
         >
-          <img 
-            :src="post.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
+          <img
+            :src="
+              post.is_liked
+                ? '/icons/liked-icon.png'
+                : '/icons/notifications-icon.png'
+            "
             alt="Like"
             class="action-icon"
             :class="{ liked: post.is_liked }"
           />
         </button>
-        <button class="action-button" title="Comment" @click="$emit('open-detail', post)">
-          <img src="/icons/comment-icon.png" alt="Comment" class="action-icon" />
+        <button
+          class="action-button"
+          title="Comment"
+          @click="$emit('open-detail', post)"
+        >
+          <img
+            src="/icons/comment-icon.png"
+            alt="Comment"
+            class="action-icon"
+          />
         </button>
         <button class="action-button" title="Share">
           <img src="/icons/share-icon.png" alt="Share" class="action-icon" />
         </button>
       </div>
 
-      <button 
+      <button
         @click="toggleSave"
         class="action-button"
         :title="isSaved ? 'Unsave' : 'Save'"
       >
-        <img 
+        <img
           :src="isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
           alt="Save"
           class="action-icon"
@@ -105,11 +125,18 @@
       <div class="caption-section">
         <p class="caption-text">
           <span class="caption-username">{{ post.username }}</span>
-          <span class="caption-content" v-html="parseCaption(post.caption)"></span>
+          <span
+            class="caption-content"
+            v-html="parseCaption(post.caption)"
+          ></span>
         </p>
       </div>
 
-      <button v-if="post.comments_count > 0" class="view-comments" @click="$emit('open-detail', post)">
+      <button
+        v-if="post.comments_count > 0"
+        class="view-comments"
+        @click="$emit('open-detail', post)"
+      >
         View all {{ post.comments_count }} comments
       </button>
     </div>
@@ -117,18 +144,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, computed } from 'vue';
-import { formatDistanceToNow } from 'date-fns'; 
-import { postsApi } from '../services/apiService';
+import { ref, defineProps, computed } from "vue";
+import { formatDistanceToNow } from "date-fns";
+import { postsApi } from "../services/apiService";
 
 const props = defineProps({
   post: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 });
 
-const emit = defineEmits(['open-detail', 'toggle-like']);
+const emit = defineEmits(["open-detail", "toggle-like"]);
 
 // State
 const isSaved = ref(false);
@@ -137,15 +164,21 @@ const currentIndex = ref(0);
 // --- NEW LOGIC FOR CAROUSEL ---
 const mediaList = computed(() => {
   // 1. If backend sends new array structure
-  if (props.post.media && Array.isArray(props.post.media) && props.post.media.length > 0) {
+  if (
+    props.post.media &&
+    Array.isArray(props.post.media) &&
+    props.post.media.length > 0
+  ) {
     return props.post.media;
   }
   // 2. Fallback for legacy posts (single url)
   if (props.post.media_url) {
-    return [{ 
-      media_url: props.post.media_url, 
-      media_type: props.post.media_type || 'image/jpeg' 
-    }];
+    return [
+      {
+        media_url: props.post.media_url,
+        media_type: props.post.media_type || "image/jpeg",
+      },
+    ];
   }
   return [];
 });
@@ -168,22 +201,35 @@ const toggleSave = async () => {
   }
 };
 
+const getDisplayUrl = (url: string) => {
+  if (!url) return "/placeholder.png";
+
+  // Fix: Replace internal docker network 'minio' with 'localhost' for the browser
+  // Also handles 'host.docker.internal' if it appears
+  return url
+    .replace("http://minio:9000", "http://localhost:9000")
+    .replace("http://host.docker.internal:9000", "http://localhost:9000");
+};
+
 const getInitials = (username: string) => {
-  return username ? username.substring(0, 2).toUpperCase() : 'UN';
+  return username ? username.substring(0, 2).toUpperCase() : "UN";
 };
 
 const formatTime = (dateStr: string) => {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   try {
     return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
   } catch (e) {
-    return '';
+    return "";
   }
 };
 
 const parseCaption = (text: string) => {
-  if (!text) return '';
-  return text.replace(/([#@][\w.]+)/g, '<span style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>');
+  if (!text) return "";
+  return text.replace(
+    /([#@][\w.]+)/g,
+    '<span style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
+  );
 };
 </script>
 
@@ -320,8 +366,12 @@ const parseCaption = (text: string) => {
   background: rgba(255, 255, 255, 0.2);
 }
 
-.left { left: 10px; }
-.right { right: 10px; }
+.left {
+  left: 10px;
+}
+.right {
+  right: 10px;
+}
 
 .dots-container {
   position: absolute;
@@ -377,7 +427,6 @@ const parseCaption = (text: string) => {
 .action-icon {
   width: 24px;
   height: 24px;
-  filter: invert(1); /* Invert black icons to white for dark mode */
 }
 
 /* Specific fixes for icons that might already be colored/white */

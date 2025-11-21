@@ -2,48 +2,64 @@
   <div class="profile-container">
     <div class="profile-header">
       <div class="profile-info">
-        <div class="profile-picture-wrapper" @click="showProfileImageModal = true">
-          <img 
-            :src="profileUser?.profileImage || '/placeholder.svg?height=150&width=150'" 
+        <div
+          class="profile-picture-wrapper"
+          @click="showProfileImageModal = true"
+        >
+          <img
+            :src="
+              profileUser?.profileImage ||
+              '/placeholder.svg?height=150&width=150'
+            "
             :alt="profileUser?.fullName || 'Profile'"
             class="profile-picture"
           />
         </div>
-        
+
         <div class="profile-details">
           <div class="profile-top">
             <div class="user-info">
-              <h1 class="full-name">{{ profileUser?.fullName || 'Loading...' }}</h1>
-              <p class="username">@{{ profileUser?.username || 'username' }}</p>
+              <h1 class="full-name">
+                {{ profileUser?.fullName || "Loading..." }}
+              </h1>
+              <p class="username">@{{ profileUser?.username || "username" }}</p>
             </div>
-            
+
             <div class="profile-actions">
               <template v-if="isOwnProfile">
                 <button class="action-btn">Edit profile</button>
                 <button class="action-btn">View archive</button>
                 <button class="action-btn settings-btn" title="Settings">
-                  <img src="/icons/setting-icon.png" alt="Settings" class="settings-icon" />
+                  <img
+                    src="/icons/setting-icon.png"
+                    alt="Settings"
+                    class="settings-icon"
+                  />
                 </button>
               </template>
 
               <template v-else>
-                <button 
-                  class="action-btn follow-btn" 
-                  :class="{ 'following': isFollowing }"
+                <button
+                  class="action-btn follow-btn"
+                  :class="{ following: isFollowing }"
                   @click="toggleFollow"
                 >
-                  {{ isFollowing ? 'Following' : 'Follow' }}
+                  {{ isFollowing ? "Following" : "Follow" }}
                 </button>
-                <button class="action-btn" @click="handleMessageClick">Message</button>
+                <button class="action-btn" @click="handleMessageClick">
+                  Message
+                </button>
               </template>
             </div>
           </div>
-          
-          <p class="bio">{{ profileUser?.bio || 'No bio yet.' }}</p>
-          
+
+          <p class="bio">{{ profileUser?.bio || "No bio yet." }}</p>
+
           <div class="stats">
             <div class="stat">
-              <span class="stat-number">{{ profileUser?.postsCount || 0 }}</span>
+              <span class="stat-number">{{
+                profileUser?.postsCount || 0
+              }}</span>
               <span class="stat-label">posts</span>
             </div>
             <div class="stat">
@@ -60,7 +76,7 @@
     </div>
 
     <div class="profile-tabs">
-      <button 
+      <button
         v-for="tab in tabs"
         :key="tab"
         :class="['tab', { active: activeTab === tab }]"
@@ -73,13 +89,37 @@
 
     <div class="tab-content">
       <div v-if="activeTab === 'posts'" class="posts-grid">
-        <div 
-          class="grid-item" 
-          v-for="post in posts" 
+        <div
+          class="grid-item"
+          v-for="post in posts"
           :key="post.id"
-          @click="openPostDetail(post)" 
+          @click="openPostDetail(post)"
         >
-          <img :src="post.media_url" class="post-image" loading="lazy" />
+          <img
+            :src="getThumbnail(post)"
+            class="post-image"
+            loading="lazy"
+            alt="Post thumbnail"
+          />
+
+          <div class="grid-hover-overlay">
+            <div class="hover-stat">
+              <img
+                src="/icons/notifications-icon.png"
+                class="hover-icon"
+                alt="Likes"
+              />
+              {{ post.likes_count || 0 }}
+            </div>
+            <div class="hover-stat">
+              <img
+                src="/icons/comment-icon.png"
+                class="hover-icon"
+                alt="Comments"
+              />
+              {{ post.comments_count || 0 }}
+            </div>
+          </div>
         </div>
 
         <div v-if="posts.length === 0" class="empty-state">
@@ -95,10 +135,10 @@
 
       <div v-if="activeTab === 'saved'" class="saved-grid">
         <div v-if="isOwnProfile">
-             <div class="empty-state"><p>Your saved collections.</p></div>
+          <div class="empty-state"><p>Your saved collections.</p></div>
         </div>
         <div v-else class="empty-state">
-            <p>Saved posts are private.</p>
+          <p>Saved posts are private.</p>
         </div>
       </div>
 
@@ -109,208 +149,240 @@
       </div>
     </div>
 
-    <div v-if="showProfileImageModal" class="modal-overlay" @click="showProfileImageModal = false">
+    <div
+      v-if="showProfileImageModal"
+      class="modal-overlay"
+      @click="showProfileImageModal = false"
+    >
       <div class="modal-content" @click.stop>
-        <button class="close-btn" @click="showProfileImageModal = false">✕</button>
-        <img 
-          :src="profileUser?.profileImage || '/placeholder.svg?height=400&width=400'" 
+        <button class="close-btn" @click="showProfileImageModal = false">
+          ✕
+        </button>
+        <img
+          :src="
+            profileUser?.profileImage || '/placeholder.svg?height=400&width=400'
+          "
           :alt="profileUser?.fullName || 'Profile'"
           class="modal-image"
         />
       </div>
     </div>
+
+    <PostDetailOverlay
+      v-if="showPostOverlay"
+      :is-open="showPostOverlay"
+      :post="selectedPost"
+      @close="closePostDetail"
+      @toggle-like="handleLikeUpdate"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { usersApi, postsApi, chatApi } from '../services/apiService'
-import router from '@/router'
+import { ref, onMounted, computed, watch } from "vue";
+import { useRoute } from "vue-router";
+import { usersApi, postsApi, chatApi } from "../services/apiService";
+import router from "@/router";
+import PostDetailOverlay from "./PostDetailOverlay.vue"; // Import the overlay
 
 // State
-const route = useRoute()
-const posts = ref<any[]>([])
-const activeTab = ref('posts')
-const showProfileImageModal = ref(false)
-const hasContent = ref(false)
-const tabs = ['posts', 'reels', 'saved', 'mentions'] as const
-const isFollowing = ref(false)
+const route = useRoute();
+const posts = ref<any[]>([]);
+const activeTab = ref("posts");
+const showProfileImageModal = ref(false);
+const hasContent = ref(false);
+const tabs = ["posts", "reels", "saved", "mentions"] as const;
+const isFollowing = ref(false);
+
+// Post Overlay State
+const showPostOverlay = ref(false);
+const selectedPost = ref<any>(null);
 
 const profileUser = ref({
-  id: '',
-  fullName: 'Loading...',
-  username: 'loading...',
-  bio: 'Loading...',
-  postsCount: 0, 
+  id: "",
+  fullName: "Loading...",
+  username: "loading...",
+  bio: "Loading...",
+  postsCount: 0,
   followers: 0,
   following: 0,
-  profileImage: '',
-})
+  profileImage: "",
+});
 
 // --- HELPERS ---
-
-// 1. STRICT Token Decoder: returns string | null (never undefined)
 const getUserIdFromToken = (): string | null => {
-  const token = localStorage.getItem('accessToken')
-  if (!token) return null
-  
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
   try {
-    const parts = token.split('.') 
-    
-    // JWTs typically have 3 parts: Header.Payload.Signature
-    // Checking for 2 is okay, but ensuring the payload exists is key.
-    if (parts.length < 2) return null 
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+    const payload = JSON.parse(atob(payloadPart));
+    const id = payload.user_id || payload.sub || payload.id;
+    return typeof id === "string" ? id : null;
+  } catch (e) {
+    return null;
+  }
+};
 
-    const payloadPart = parts[1]; // Assign to variable
+const currentUserId = getUserIdFromToken();
 
-    // Explicitly check if payloadPart is undefined to satisfy TypeScript
-    if (!payloadPart) return null; 
-
-    // Now passing payloadPart is safe because TypeScript knows it's a string
-    const payload = JSON.parse(atob(payloadPart))
-    
-    const id = payload.user_id || payload.sub || payload.id
-    
-    // Explicitly check if it's a string, otherwise return null
-    return (typeof id === 'string') ? id : null
-  } catch (e) { return null }
-}
-
-const currentUserId = getUserIdFromToken()
-
-// 2. STRICT Route ID Extractor: returns string | undefined
 const getRouteId = (): string | undefined => {
-  const param = route.params.id
-  // If array, take first. If string, take it. If undefined, return undefined.
-  return Array.isArray(param) ? param[0] : param
-}
+  const param = route.params.id;
+  return Array.isArray(param) ? param[0] : param;
+};
+
+// --- URL FIXING HELPERS ---
+const getDisplayUrl = (url: string) => {
+  if (!url) return "/placeholder.png";
+  // Fix: Replace internal docker network 'minio' with 'localhost'
+  return url.replace("http://minio:9000", "http://localhost:9000");
+};
+
+const getThumbnail = (post: any) => {
+  // 1. Check if we have the new 'media' array
+  if (post.media && Array.isArray(post.media) && post.media.length > 0) {
+    return getDisplayUrl(post.media[0].media_url);
+  }
+  // 2. Fallback to legacy 'media_url'
+  if (post.media_url) {
+    return getDisplayUrl(post.media_url);
+  }
+  return "/placeholder.png";
+};
 
 // --- COMPUTED ---
-
 const isOwnProfile = computed(() => {
-  const paramId = getRouteId()
-  // If no param ID, it implies /dashboard/profile (My Profile)
-  if (!paramId) return true
-  return paramId === currentUserId
-})
+  const paramId = getRouteId();
+  if (!paramId) return true;
+  return paramId === currentUserId;
+});
 
 // --- ACTIONS ---
-
 const loadProfileData = async () => {
-  const routeId = getRouteId()
-  // Logic: Use route param if exists, otherwise fallback to current user token
-  const rawId = routeId || currentUserId
+  const routeId = getRouteId();
+  const rawId = routeId || currentUserId;
 
-  // TYPE GUARD: Explicitly stop if ID is missing or not a string
-  if (!rawId || typeof rawId !== 'string') {
-    console.warn("Skipping profile load: No valid User ID found.")
-    return
+  if (!rawId || typeof rawId !== "string") {
+    console.warn("Skipping profile load: No valid User ID found.");
+    return;
   }
-  
-  // TypeScript now knows 'rawId' is definitely a string
-  const targetUserId: string = rawId
+
+  const targetUserId: string = rawId;
 
   try {
     // 1. Fetch Profile Info
-    const userRes = await usersApi.getUserProfile(targetUserId)
-    const data = userRes.data
+    const userRes = await usersApi.getUserProfile(targetUserId);
+    const data = userRes.data;
 
     profileUser.value = {
       id: data.id,
       fullName: data.name,
       username: data.username,
-      bio: data.bio || 'No bio yet.', 
+      bio: data.bio || "No bio yet.",
       profileImage: data.profile_picture_url,
-      followers: data.followers_count, 
-      following: data.following_count, 
-      postsCount: 0 
-    }
+      followers: data.followers_count,
+      following: data.following_count,
+      postsCount: 0,
+    };
 
-    // 2. Check Follow Status
     if (data.is_following !== undefined) {
-      isFollowing.value = data.is_following
+      isFollowing.value = data.is_following;
     }
 
-    // 3. Fetch Posts
-    const postsRes = await postsApi.getPostByUserID(targetUserId)
-    posts.value = postsRes.data || []
-    profileUser.value.postsCount = posts.value.length
-    hasContent.value = posts.value.length > 0
-
+    // 2. Fetch Posts
+    const postsRes = await postsApi.getPostByUserID(targetUserId);
+    posts.value = postsRes.data || [];
+    profileUser.value.postsCount = posts.value.length;
+    hasContent.value = posts.value.length > 0;
   } catch (error) {
-    console.error("Failed to load profile:", error)
+    console.error("Failed to load profile:", error);
   }
-}
+};
 
-  const handleMessageClick = async () => {
-    const targetUserId = profileUser.value.id
-    if(!targetUserId) return
+const handleMessageClick = async () => {
+  const targetUserId = profileUser.value.id;
+  if (!targetUserId) return;
 
-    try {
-      const res = await chatApi.getOrCreateConversation(targetUserId)
-      const conversationId = res.data.conversation_id
+  try {
+    const res = await chatApi.getOrCreateConversation(targetUserId);
+    const conversationId = res.data.conversation_id;
 
-      router.push({
-        name: 'messages',
-        query: {conversationId: conversationId}
-      })
-    } catch (error){
-      console.error("Failed to start conversation:", error)
-      router.push({name : 'messages'})
-    }
+    router.push({
+      name: "messages",
+      query: { conversationId: conversationId },
+    });
+  } catch (error) {
+    console.error("Failed to start conversation:", error);
+    router.push({ name: "messages" });
   }
+};
 
 const toggleFollow = async () => {
-  const targetId = profileUser.value.id
-  // Guard against empty ID
-  if (!targetId) return 
+  const targetId = profileUser.value.id;
+  if (!targetId) return;
 
   try {
     if (isFollowing.value) {
-      await usersApi.unfollowUser(targetId)
-      isFollowing.value = false
-      profileUser.value.followers--
+      await usersApi.unfollowUser(targetId);
+      isFollowing.value = false;
+      profileUser.value.followers--;
     } else {
-      await usersApi.followUser(targetId)
-      isFollowing.value = true
-      profileUser.value.followers++
+      await usersApi.followUser(targetId);
+      isFollowing.value = true;
+      profileUser.value.followers++;
     }
   } catch (error) {
-    console.error("Follow action failed:", error)
+    console.error("Follow action failed:", error);
   }
-}
+};
 
-// 3. STRICT Icon Path: returns string (never undefined)
 const getTabIconPath = (tab: string): string => {
   const icons: Record<string, string> = {
-    posts: '/icons/post-icon.png',
-    reels: '/icons/reels-icon.png',
-    saved: '/icons/save-icon.png',
-    mentions: '/icons/mention-icon.png',
-  }
-  // The || '' prevents 'string | undefined' error
-  return icons[tab] || ''
-}
+    posts: "/icons/post-icon.png",
+    reels: "/icons/reels-icon.png",
+    saved: "/icons/save-icon.png",
+    mentions: "/icons/mention-icon.png",
+  };
+  return icons[tab] || "";
+};
 
+// --- POST OVERLAY HANDLERS ---
 const openPostDetail = (post: any) => {
-  console.log("Open post", post)
-}
+  selectedPost.value = post;
+  showPostOverlay.value = true;
+};
+
+const closePostDetail = () => {
+  showPostOverlay.value = false;
+  selectedPost.value = null;
+};
+
+const handleLikeUpdate = (post: any) => {
+  // Update local state to reflect the like change immediately
+  const target = posts.value.find((p) => p.id === post.id);
+  if (target) {
+    target.is_liked = !target.is_liked;
+    target.likes_count += target.is_liked ? 1 : -1;
+  }
+};
 
 // --- LIFECYCLE ---
-
 onMounted(() => {
-  loadProfileData()
-})
+  loadProfileData();
+});
 
-watch(() => route.params.id, () => {
-  posts.value = [] 
-  loadProfileData()
-})
+watch(
+  () => route.params.id,
+  () => {
+    posts.value = [];
+    loadProfileData();
+  }
+);
 </script>
 
 <style scoped>
-/* Add specific styles for the Follow button */
 .follow-btn {
   background-color: #0095f6;
   border: none;
@@ -325,7 +397,6 @@ watch(() => route.params.id, () => {
   color: #fff;
 }
 
-/* Existing styles... */
 .profile-container {
   width: 100%;
   max-width: 1000px;
@@ -530,6 +601,7 @@ watch(() => route.params.id, () => {
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s ease;
+  position: relative;
 }
 
 .grid-item:hover {
@@ -537,28 +609,56 @@ watch(() => route.params.id, () => {
 }
 
 .post-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.placeholder-image,
-.placeholder-video,
-.placeholder-collection {
   width: 100%;
   height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 48px;
-  color: #808080;
+  object-fit: cover;
 }
 
-.placeholder-collection p {
-  font-size: 14px;
-  color: #a0a0a0;
+/* Grid Hover Overlay Effect */
+.grid-hover-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.grid-item:hover .grid-hover-overlay {
+  opacity: 1;
+}
+
+.hover-stat {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.hover-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  filter: invert(1); /* This turns the black icons into white */
+  display: block;
+}
+
+/* Update .hover-stat to align items properly */
+.hover-stat {
+  color: white;
+  font-weight: bold;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Add some space between icon and number */
 }
 
 .empty-state {
