@@ -38,7 +38,14 @@ func main() {
 	}
 	log.Println("Connected to database")
 
-	err = db.AutoMigrate(&domain.Post{}, &domain.PostLike{}, &domain.PostComment{}, &domain.Collection{}, &domain.SavedPost{})
+	err = db.AutoMigrate(
+        &domain.Post{}, 
+        &domain.PostLike{}, 
+        &domain.PostComment{}, 
+        &domain.Collection{}, 
+        &domain.SavedPost{},
+        &domain.PostMedia{}, // <--- ADD THIS!
+    )
 	if err != nil {
 		log.Fatalf("Failed to automigrate: %v", err)
 	}

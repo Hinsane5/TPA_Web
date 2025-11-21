@@ -1,4 +1,5 @@
 import axios from 'axios';
+import router from "@/router";
 
 const apiClient = axios.create({
     baseURL: '/api',
@@ -58,6 +59,27 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 )
+
+apiClient.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // If the backend returns 401 Unauthorized
+    if (error.response && error.response.status === 401) {
+      console.log("Session expired. Logging out...");
+
+      // 1. Clear local storage
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userID");
+
+      // 2. Redirect to Login page
+      // Note: You might need to reload or push to router
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const postsApi = {
   generateUploadUrl: (fileName: string, fileType: string) => {

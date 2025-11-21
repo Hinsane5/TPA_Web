@@ -2,7 +2,7 @@
   <div class="post-container">
     <div class="post-header">
       <div class="header-left">
-        <img v-if="post.profile_picture" :src="post.profile_picture" class="avatar-img" />
+        <img v-if="post.profile_picture" :src="post.profile_picture" class="avatar-img" alt="Profile" />
         <div v-else class="avatar">{{ getInitials(post.username) }}</div>
         
         <div class="user-info">
@@ -20,12 +20,45 @@
       </button>
     </div>
 
-    <div class="post-media" @click="$emit('open-detail', post)" style="cursor: pointer">
-      <img 
-        :src="post.media_url"
-        alt="Post content"
-        class="post-image"
-      />
+    <div class="post-media" @dblclick="$emit('toggle-like', post)">
+      
+      <div class="media-item-wrapper" v-if="currentMedia">
+         <video 
+           v-if="currentMedia.media_type.startsWith('video/')"
+           :src="currentMedia.media_url"
+           controls
+           loop
+           muted
+           class="post-image"
+         ></video>
+         <img 
+           v-else
+           :src="currentMedia.media_url"
+           alt="Post content"
+           class="post-image"
+         />
+      </div>
+
+      <button 
+        v-if="hasMultiple && currentIndex > 0" 
+        class="nav-btn left" 
+        @click.stop="currentIndex--"
+      >❮</button>
+      
+      <button 
+        v-if="hasMultiple && currentIndex < mediaList.length - 1" 
+        class="nav-btn right" 
+        @click.stop="currentIndex++"
+      >❯</button>
+
+      <div v-if="hasMultiple" class="dots-container">
+        <div 
+          v-for="(_, idx) in mediaList" 
+          :key="idx"
+          class="dot"
+          :class="{ active: idx === currentIndex }"
+        ></div>
+      </div>
     </div>
 
     <div class="post-actions">
@@ -76,19 +109,18 @@
         </p>
       </div>
 
-      <button class="view-comments" @click="$emit('open-detail', post)">
-        View all {{ post.comments_count || 0 }} comments
+      <button v-if="post.comments_count > 0" class="view-comments" @click="$emit('open-detail', post)">
+        View all {{ post.comments_count }} comments
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps } from 'vue';
-import { formatDistanceToNow } from 'date-fns'; // Make sure to install: npm install date-fns
+import { ref, defineProps, computed } from 'vue';
+import { formatDistanceToNow } from 'date-fns'; 
 import { postsApi } from '../services/apiService';
 
-// 1. Accept Data from Parent (HomePage.vue)
 const props = defineProps({
   post: {
     type: Object,
@@ -98,34 +130,48 @@ const props = defineProps({
 
 const emit = defineEmits(['open-detail', 'toggle-like']);
 
-// 2. Local State initialized from Props
+// State
 const isSaved = ref(false);
+const currentIndex = ref(0);
+
+// --- NEW LOGIC FOR CAROUSEL ---
+const mediaList = computed(() => {
+  // 1. If backend sends new array structure
+  if (props.post.media && Array.isArray(props.post.media) && props.post.media.length > 0) {
+    return props.post.media;
+  }
+  // 2. Fallback for legacy posts (single url)
+  if (props.post.media_url) {
+    return [{ 
+      media_url: props.post.media_url, 
+      media_type: props.post.media_type || 'image/jpeg' 
+    }];
+  }
+  return [];
+});
+
+const currentMedia = computed(() => {
+  if (mediaList.value.length === 0) return null;
+  return mediaList.value[currentIndex.value];
+});
+
+const hasMultiple = computed(() => mediaList.value.length > 1);
+// -----------------------------
 
 const toggleSave = async () => {
   try {
-    // Optimistic UI update
     isSaved.value = !isSaved.value;
-    
-    // Call API
     await postsApi.toggleSavePost(props.post.id);
-    
-    // Note: If you want to save to a specific collection, you would need to 
-    // open a modal here instead of immediately calling the API. 
-    // For now, this saves to the default "All Posts" collection.
-    
   } catch (error) {
-    // Revert on error
     isSaved.value = !isSaved.value;
     console.error("Failed to save post", error);
   }
 };
 
-// Helper: Generate initials for avatar placeholder
 const getInitials = (username: string) => {
   return username ? username.substring(0, 2).toUpperCase() : 'UN';
 };
 
-// Helper: Format Date (e.g., "22h ago")
 const formatTime = (dateStr: string) => {
   if (!dateStr) return '';
   try {
@@ -135,10 +181,8 @@ const formatTime = (dateStr: string) => {
   }
 };
 
-// Helper: Rich Text (Blue Mentions & Hashtags) - Requirement Page 11
 const parseCaption = (text: string) => {
   if (!text) return '';
-  // Regex to find @mentions and #hashtags
   return text.replace(/([#@][\w.]+)/g, '<span style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>');
 };
 </script>
@@ -149,7 +193,7 @@ const parseCaption = (text: string) => {
   width: 100%;
   max-width: 480px;
   background-color: #000000;
-  border: 1px solid #000;
+  border: 1px solid #262626; /* Darker border for dark mode */
   border-radius: 8px;
   margin-bottom: 24px;
   overflow: hidden;
@@ -162,7 +206,7 @@ const parseCaption = (text: string) => {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #262626;
 }
 
 .header-left {
@@ -172,16 +216,23 @@ const parseCaption = (text: string) => {
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   background: linear-gradient(135deg, #a78bfa 0%, #ec4899 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
+}
+
+.avatar-img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .user-info {
@@ -199,7 +250,7 @@ const parseCaption = (text: string) => {
 
 .timestamp {
   font-size: 12px;
-  color: #65676b;
+  color: #a8a8a8;
   margin: 0;
 }
 
@@ -211,32 +262,87 @@ const parseCaption = (text: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: background-color 0.2s ease;
-}
-
-.more-button:hover {
-  background-color: #f0f0f0;
+  color: #fff;
 }
 
 .dots-icon {
   width: 20px;
   height: 20px;
-  color: #000000;
 }
 
 /* Media Section */
 .post-media {
+  position: relative; /* Needed for absolute positioning of arrows/dots */
   width: 100%;
-  aspect-ratio: 1;
-  background-color: #f0f0f0;
+  aspect-ratio: 1; /* Square post */
+  background-color: #121212;
   overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.media-item-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .post-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: cover; /* Maintains aspect ratio while filling square */
+}
+
+/* --- CAROUSEL CONTROLS --- */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(26, 26, 26, 0.8);
+  color: white;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.nav-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.left { left: 10px; }
+.right { right: 10px; }
+
+.dots-container {
+  position: absolute;
+  bottom: 15px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none; /* Let clicks pass through */
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.dot.active {
+  background: #3badf8; /* Blue active dot like Instagram */
 }
 
 /* Action Bar Section */
@@ -256,41 +362,38 @@ const parseCaption = (text: string) => {
 .action-button {
   background: none;
   border: none;
-  padding: 8px;
+  padding: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-}
-
-.action-button:hover {
-  background-color: #f0f0f0;
+  transition: transform 0.1s ease;
 }
 
 .action-button:active {
-  transform: scale(0.95);
+  transform: scale(0.9);
 }
 
 .action-icon {
   width: 24px;
   height: 24px;
-  opacity: 1;
-  /* transition: all 0.2s ease; */
+  filter: invert(1); /* Invert black icons to white for dark mode */
 }
 
-.action-icon.liked,
+/* Specific fixes for icons that might already be colored/white */
+.action-icon.liked {
+  filter: none; /* Don't invert the red heart */
+}
 .action-icon.saved {
-  opacity: 1;
+  filter: invert(1); /* Keep white */
 }
 
 /* Footer Section */
 .post-footer {
-  padding: 12px 16px;
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .likes-count {
@@ -316,11 +419,11 @@ const parseCaption = (text: string) => {
 .caption-username {
   font-weight: 600;
   color: #fff;
+  margin-right: 6px;
 }
 
 .caption-content {
   color: #fff;
-  margin-left: 8px;
 }
 
 .view-comments {
@@ -328,10 +431,10 @@ const parseCaption = (text: string) => {
   border: none;
   padding: 0;
   cursor: pointer;
-  font-size: 12px;
-  color: #65676b;
+  font-size: 14px;
+  color: #a8a8a8;
   text-align: left;
-  transition: color 0.2s ease;
+  margin-top: 4px;
 }
 
 .view-comments:hover {

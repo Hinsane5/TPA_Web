@@ -31,11 +31,17 @@ message GenerateUploadURLResponse {
 
 message CreatePostRequest {
     string user_id = 1;
-    string media_object_name = 2; // Nama yang didapat dari GenerateUploadURLResponse
-    string media_type = 3;
+    repeated PostMediaItem media = 2; 
     string caption = 4;
     string location = 5;
 }
+
+message PostMediaItem {
+    string media_object_name = 1;
+    string media_type = 2;
+}
+
+
 
 message CreatePostResponse {
     PostResponse post = 1;
@@ -56,14 +62,18 @@ message GetPostByIDRequest {
 message PostResponse {
     string id = 1;
     string user_id = 2;
-    string media_url = 3; // Ini akan menjadi URL Presigned untuk *melihat*
-    string media_type = 4;
+    repeated PostMediaResponse media = 3; 
     string caption = 5;
     string location = 6;
     string created_at = 7;
     int32 likes_count = 8;
     bool is_liked = 9;
     int32 comments_count = 10;
+}
+
+message PostMediaResponse {
+    string media_url = 1;
+    string media_type = 2;
 }
 
 message LikePostRequest{

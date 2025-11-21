@@ -17,10 +17,14 @@ type PostsHandler struct {
 }
 
 type createPostJSON struct {
+    Media    []mediaItemJSON `json:"media" binding:"required"` // CHANGED
+	Caption  string          `json:"caption"`
+	Location string          `json:"location"`
+}
+
+type mediaItemJSON struct {
     MediaObjectName string `json:"media_object_name" binding:"required"`
-	MediaType       string `json:"media_type" binding:"required"`
-	Caption         string `json:"caption"`
-	Location        string `json:"location"`
+    MediaType       string `json:"media_type" binding:"required"`
 }
 
 func NewPostsHandler(postsClient postsProto.PostsServiceClient, usersClient usersProto.UserServiceClient) *PostsHandler {
@@ -78,25 +82,32 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
     }
 
     userID, exists := c.Get("userID")
-
     if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "UserID not found in token"})
 		return
 	}
 
+    // Convert JSON media items to Proto media items
+    var protoMedia []*postsProto.PostMediaItem
+    for _, m := range jsonReq.Media {
+        protoMedia = append(protoMedia, &postsProto.PostMediaItem{
+            MediaObjectName: m.MediaObjectName,
+            MediaType:       m.MediaType,
+        })
+    }
+
     res, err := h.postsClient.CreatePost(context.Background(), &postsProto.CreatePostRequest{
-		UserId:          userID.(string),
-		MediaObjectName: jsonReq.MediaObjectName,
-		MediaType:       jsonReq.MediaType,
-		Caption:         jsonReq.Caption,
-		Location:        jsonReq.Location,
+		UserId:   userID.(string),
+		Media:    protoMedia, // CHANGED
+		Caption:  jsonReq.Caption,
+		Location: jsonReq.Location,
 	})
 
     if err != nil {
 		if s, ok := status.FromError(err); ok {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal memanggil gRPC: " + err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call gRPC: " + err.Error()})
 		}
 		return
 	}
@@ -220,7 +231,6 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     limit, _ := strconv.Atoi(limitStr)
     offset, _ := strconv.Atoi(offsetStr)
 
-    // 1. Get Raw Posts
     res, err := h.postsClient.GetHomeFeed(context.Background(), &postsProto.GetHomeFeedRequest{
         UserId: userID.(string),
         Limit:  int32(limit),
@@ -232,11 +242,9 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
         return
     }
 
-    // 2. Enrich with User Data
     var enrichedPosts []gin.H
 
     for _, post := range res.Posts {
-        // Call Users Service for each post author
         userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
             UserId: post.UserId,
         })
@@ -249,11 +257,19 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
             profilePic = userRes.ProfilePictureUrl
         }
 
+        // Map the Proto Media Array to JSON
+        var mediaList []gin.H
+        for _, m := range post.Media {
+            mediaList = append(mediaList, gin.H{
+                "media_url":  m.MediaUrl,
+                "media_type": m.MediaType,
+            })
+        }
+
         enrichedPosts = append(enrichedPosts, gin.H{
             "id":              post.Id,
             "user_id":         post.UserId,
-            "media_url":       post.MediaUrl,
-            "media_type":      post.MediaType,
+            "media":           mediaList, // NEW: Return array
             "caption":         post.Caption,
             "location":        post.Location,
             "created_at":      post.CreatedAt,
@@ -261,7 +277,7 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
             "profile_picture": profilePic,        
             "likes_count":     post.LikesCount,
             "comments_count":  post.CommentsCount,
-            "is_liked":        false,
+            "is_liked":        post.IsLiked,
         })
     }
 

@@ -17,7 +17,6 @@ func NewGormPostRepository(db *gorm.DB) *GormPostRepository{
 }
 
 func (r *GormPostRepository) CreatePost(ctx context.Context, post *domain.Post) error {
-	
 	result := r.db.WithContext(ctx).Create(post)
     return result.Error 
 }
@@ -29,7 +28,14 @@ func (r *GormPostRepository) GetPostByID(ctx context.Context, postID string) (*d
 func (r *GormPostRepository) GetPostsByUserID(ctx context.Context, userID string) ([]*domain.Post, error) {
 	var posts []*domain.Post
 
-	err := r.db.WithContext(ctx).Where("user_id = ?", userID).Order("created_at desc").Find(&posts).Error
+    // ADDED: Preload("Media") and Order by sequence
+	err := r.db.WithContext(ctx).
+        Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Where("user_id = ?", userID).
+        Order("created_at desc").
+        Find(&posts).Error
 
 	if err != nil {
 		return nil, err
@@ -66,11 +72,14 @@ func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string,
 	var posts []*domain.Post
 	
 	err := r.db.WithContext(ctx).
-		Where("user_id IN ?", userIDs).
-		Order("created_at desc").
-		Limit(limit).
-		Offset(offset).
-		Find(&posts).Error
+        Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Where("user_id IN ?", userIDs).
+        Order("created_at desc").
+        Limit(limit).
+        Offset(offset).
+        Find(&posts).Error
 
 	if err != nil {
 		return nil, err
@@ -113,7 +122,9 @@ func (r *GormPostRepository) GetUserCollections(ctx context.Context, userID stri
 	for _, coll := range collections {
 		var savedPosts []domain.SavedPost
 		r.db.WithContext(ctx).
-			Preload("Post").
+			Preload("Post.Media", func(db *gorm.DB) *gorm.DB {
+                return db.Order("sequence asc")
+            }).
 			Where("collection_id = ?", coll.ID).
 			Order("created_at desc").
 			Limit(4).

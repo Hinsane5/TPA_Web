@@ -1,8 +1,7 @@
 <template>
   <div v-if="isOpen" class="create-overlay" @click="closeCreate">
     <div class="create-modal" @click.stop>
-      <!-- Step 1: Upload -->
-      <div v-if="!selectedFile" class="upload-step">
+      <div v-if="selectedFiles.length === 0" class="upload-step">
         <div class="modal-header">
           <h2>Create new post</h2>
           <button class="close-btn" @click="closeCreate">✕</button>
@@ -16,6 +15,7 @@
             <input 
               ref="fileInput"
               type="file" 
+              multiple 
               accept="image/*,video/*"
               style="display: none"
               @change="handleFileSelect"
@@ -24,7 +24,6 @@
         </div>
       </div>
 
-      <!-- Step 2: Edit & Caption -->
       <div v-else class="edit-step">
         <div class="modal-header">
           <button class="back-btn" @click="goBack">← Back</button>
@@ -39,12 +38,45 @@
         </div>
         
         <div class="edit-container">
-          <!-- Image Preview -->
           <div class="preview-area">
-            <img v-if="filePreview" :src="filePreview" :alt="selectedFile?.name" class="preview-image" />
+            <div class="media-wrapper" v-if="currentFile">
+              <video 
+                v-if="currentFile.type.startsWith('video/')" 
+                :src="currentPreviewUrl" 
+                controls 
+                class="preview-image"
+              ></video>
+              <img 
+                v-else 
+                :src="currentPreviewUrl" 
+                :alt="currentFile.name" 
+                class="preview-image" 
+              />
+            </div>
+
+            <button 
+              v-if="selectedFiles.length > 1 && currentIndex > 0" 
+              class="nav-btn left" 
+              @click="currentIndex--"
+            >❮</button>
+            
+            <button 
+              v-if="selectedFiles.length > 1 && currentIndex < selectedFiles.length - 1" 
+              class="nav-btn right" 
+              @click="currentIndex++"
+            >❯</button>
+            
+            <div class="dots-container" v-if="selectedFiles.length > 1">
+              <span 
+                v-for="(_, index) in selectedFiles" 
+                :key="index" 
+                class="dot"
+                :class="{ active: index === currentIndex }"
+                @click="currentIndex = index"
+              ></span>
+            </div>
           </div>
 
-          <!-- Caption Area -->
           <div class="caption-area">
             <textarea 
               v-model="postDescription"
@@ -56,7 +88,6 @@
               <span class="word-count">{{ wordCount }} / 2200</span>
             </div>
 
-            <!-- Add Location -->
             <input 
               v-model="location"
               type="text"
@@ -64,7 +95,6 @@
               class="location-input"
             />
 
-            <!-- Upload Progress -->
             <div v-if="isUploading" class="upload-progress">
               <div class="progress-bar">
                 <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
@@ -72,7 +102,6 @@
               <p class="progress-text">{{ uploadProgress }}% uploaded</p>
             </div>
 
-            <!-- Error Message -->
             <div v-if="errorMessage" class="error-message">
               {{ errorMessage }}
             </div>
@@ -84,7 +113,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import axios from 'axios'
 
 const props = defineProps<{
@@ -92,20 +121,28 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  close: []
-  success: []
+  (e: 'close'): void
+  (e: 'success'): void
 }>()
 
 const fileInput = ref<HTMLInputElement>()
 const dragOver = ref(false)
-const selectedFile = ref<File | null>(null)
-const filePreview = ref<string>('')
+
+// --- UPDATED STATE FOR MULTIPLE FILES ---
+const selectedFiles = ref<File[]>([])
+const filePreviews = ref<string[]>([])
+const currentIndex = ref(0)
+
 const postDescription = ref('')
 const location = ref('')
 const wordCount = ref(0)
 const isUploading = ref(false)
 const uploadProgress = ref(0)
 const errorMessage = ref('')
+
+// Helper to get current visible file
+const currentFile = computed(() => selectedFiles.value[currentIndex.value])
+const currentPreviewUrl = computed(() => filePreviews.value[currentIndex.value])
 
 const closeCreate = () => {
   if (!isUploading.value) {
@@ -116,18 +153,18 @@ const closeCreate = () => {
 
 const goBack = () => {
   if (!isUploading.value) {
-    selectedFile.value = null
-    filePreview.value = ''
-    postDescription.value = ''
-    location.value = ''
-    wordCount.value = 0
-    errorMessage.value = ''
+    // Only clear files if user goes back from edit step
+    resetForm()
   }
 }
 
 const resetForm = () => {
-  selectedFile.value = null
-  filePreview.value = ''
+  selectedFiles.value = []
+  // Revoke old URLs to avoid memory leaks
+  filePreviews.value.forEach(url => URL.revokeObjectURL(url))
+  filePreviews.value = []
+  currentIndex.value = 0
+  
   postDescription.value = ''
   location.value = ''
   wordCount.value = 0
@@ -151,32 +188,32 @@ const updateWordCount = () => {
 
 const handleFileSelect = (event: Event) => {
   const input = event.target as HTMLInputElement
-  if (input.files?.[0]) {
-    selectFile(input.files[0])
+  if (input.files && input.files.length > 0) {
+    processFiles(Array.from(input.files))
   }
 }
 
 const handleDrop = (event: DragEvent) => {
   dragOver.value = false
-  const file = event.dataTransfer?.files?.[0]
-  if (file && (file.type.startsWith('image/') || file.type.startsWith('video/'))) {
-    selectFile(file)
+  const droppedFiles = event.dataTransfer?.files
+  if (droppedFiles && droppedFiles.length > 0) {
+    processFiles(Array.from(droppedFiles))
   }
 }
 
-const selectFile = (file: File) => {
-  selectedFile.value = file
+const processFiles = (files: File[]) => {
+  const validFiles = files.filter(file => 
+    file.type.startsWith('image/') || file.type.startsWith('video/')
+  )
   
-  // Create preview
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    filePreview.value = e.target?.result as string
-  }
-  reader.readAsDataURL(file)
+  validFiles.forEach(file => {
+    selectedFiles.value.push(file)
+    filePreviews.value.push(URL.createObjectURL(file))
+  })
 }
 
 const handleSharePost = async () => {
-  if (!selectedFile.value) {
+  if (selectedFiles.value.length === 0) {
     errorMessage.value = 'Please select a file to upload'
     return
   }
@@ -186,55 +223,55 @@ const handleSharePost = async () => {
     errorMessage.value = ''
     uploadProgress.value = 0
 
-    // Get auth token from localStorage
+    // Get auth token
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
       errorMessage.value = 'You must be logged in to create a post'
       return
     }
 
-    // Step 1: Generate presigned upload URL
-    const fileName = selectedFile.value.name
-    const fileType = selectedFile.value.type
+    const mediaObjects = []
+    const totalFiles = selectedFiles.value.length
+    const progressPerFile = 90 / totalFiles 
 
-    console.log('Requesting upload URL for:', fileName, fileType)
+    // --- LOOP: UPLOAD EACH FILE ---
+    for (let i = 0; i < totalFiles; i++) {
+      const file = selectedFiles.value[i]
+      
+      // FIX: Add this check to satisfy TypeScript
+      if (!file) continue 
 
-    const urlResponse = await axios.get('/api/v1/posts/generate-upload-url', {
-      params: {
-        file_name: fileName,
-        file_type: fileType
-      },
-      headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
-    })
+      // 1. Get Presigned URL
+      const urlResponse = await axios.get('/api/v1/posts/generate-upload-url', {
+        params: {
+          file_name: file.name,
+          file_type: file.type
+        },
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      })
 
-    const { upload_url, object_name } = urlResponse.data
-    console.log('Got upload URL:', upload_url)
-    console.log('Object name:', object_name)
+      const { upload_url, object_name } = urlResponse.data
 
-    // Step 2: Upload file directly to MinIO using presigned URL
-    uploadProgress.value = 25
-    
-    await axios.put(upload_url, selectedFile.value, {
-      headers: {
-        'Content-Type': fileType
-      },
-      onUploadProgress: (progressEvent) => {
-        if (progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          uploadProgress.value = 25 + (progress * 0.5) // 25% to 75%
+      // 2. Upload to MinIO
+      await axios.put(upload_url, file, {
+        headers: { 'Content-Type': file.type },
+        onUploadProgress: (progressEvent) => {
+           // Optional: finer grain progress update
         }
-      }
-    })
+      })
 
-    console.log('File uploaded to MinIO successfully')
-    uploadProgress.value = 75
+      // 3. Add to list
+      mediaObjects.push({
+        media_object_name: object_name,
+        media_type: file.type
+      })
+      
+      uploadProgress.value = Math.round((i + 1) * progressPerFile)
+    }
 
-    // Step 3: Create post record in database
-    const createPostResponse = await axios.post('/api/v1/posts', {
-      media_object_name: object_name,
-      media_type: fileType,
+    // --- FINAL STEP: CREATE POST WITH ARRAY ---
+    await axios.post('/api/v1/posts', {
+      media: mediaObjects, 
       caption: postDescription.value.trim(),
       location: location.value.trim()
     }, {
@@ -244,10 +281,8 @@ const handleSharePost = async () => {
       }
     })
 
-    console.log('Post created successfully:', createPostResponse.data)
     uploadProgress.value = 100
 
-    // Success! Close modal and emit success
     setTimeout(() => {
       resetForm()
       emit('success')
@@ -256,11 +291,8 @@ const handleSharePost = async () => {
 
   } catch (error: any) {
     console.error('Failed to make post:', error)
-    
     if (error.response) {
       errorMessage.value = error.response.data?.error || 'Failed to create post. Please try again.'
-    } else if (error.request) {
-      errorMessage.value = 'Network error. Please check your connection.'
     } else {
       errorMessage.value = 'An unexpected error occurred. Please try again.'
     }
@@ -293,7 +325,7 @@ const handleSharePost = async () => {
   border: 1px solid var(--border-color);
   border-radius: 8px;
   width: 100%;
-  max-width: 600px;
+  max-width: 750px; /* Increased slightly to accommodate carousel better */
   max-height: 80vh;
   overflow: hidden;
   animation: slideUp 0.3s ease;
@@ -302,27 +334,23 @@ const handleSharePost = async () => {
 }
 
 @keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 10px 16px; /* Compact header */
   border-bottom: 1px solid var(--border-color);
+  height: 45px;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
+  font-weight: 600;
   flex: 1;
   text-align: center;
 }
@@ -334,137 +362,173 @@ const handleSharePost = async () => {
   color: var(--text-primary);
   font-size: 20px;
   cursor: pointer;
-  padding: 5px 10px;
+  padding: 0;
 }
 
 .share-btn {
-  background: var(--primary-color);
-  color: white;
+  background: none;
+  color: var(--primary-color);
   border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
+  padding: 0;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
 }
 
-.share-btn:hover {
-  background: var(--primary-hover);
+.share-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.share-btn:hover:not(:disabled) {
+  color: var(--text-primary);
 }
 
 /* Upload Step */
 .modal-body {
   padding: 40px;
-  flex: 1;
-  overflow-y: auto;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .upload-area {
-  border: 2px dashed var(--border-color);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.upload-content {
-  padding: 60px 20px;
-  text-align: center;
-  transition: all 0.3s ease;
-}
-
-.upload-content.dragover {
-  background: var(--surface-light);
-  border-color: var(--primary-color);
-}
-
-.upload-icon {
-  font-size: 40px;
-  margin-bottom: 15px;
-  height: 60px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.upload-icon img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
+.upload-content {
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.upload-content.dragover {
+  transform: scale(1.05);
 }
 
 .upload-text {
   color: var(--text-primary);
   margin: 0 0 20px 0;
-  font-size: 16px;
+  font-size: 20px;
 }
 
 .select-btn {
   background: var(--primary-color);
   color: white;
   border: none;
-  padding: 10px 24px;
-  border-radius: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.2s ease;
-}
-
-.select-btn:hover {
-  background: var(--primary-hover);
 }
 
 /* Edit Step */
 .edit-container {
   display: flex;
-  height: 400px;
-  gap: 20px;
-  padding: 20px;
+  height: 500px; /* Fixed height for split view */
 }
 
 .preview-area {
-  flex: 1;
-  background: var(--surface-light);
-  border-radius: 8px;
+  flex: 1.5; /* Takes up more space */
+  background: #000;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
+}
+
+.media-wrapper {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .preview-image {
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   object-fit: contain;
 }
 
+/* Carousel Controls */
+.nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(26, 26, 26, 0.8);
+  color: white;
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.nav-btn:hover { background: rgba(255, 255, 255, 0.2); }
+.left { left: 12px; }
+.right { right: 12px; }
+
+.dots-container {
+  position: absolute;
+  bottom: 15px;
+  display: flex;
+  gap: 6px;
+  z-index: 10;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.dot.active {
+  background: #fff;
+  transform: scale(1.2);
+}
+
+/* Caption Area */
 .caption-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  border-left: 1px solid var(--border-color);
+  padding: 16px;
 }
 
 .caption-input {
   flex: 1;
-  background: var(--surface-light);
-  border: 1px solid var(--border-color);
+  background: transparent;
+  border: none;
   color: var(--text-primary);
-  padding: 12px;
-  border-radius: 8px;
+  padding: 0;
   font-family: inherit;
   font-size: 14px;
   resize: none;
 }
 
-.caption-input::placeholder {
-  color: var(--text-secondary);
+.caption-input:focus {
+  outline: none;
 }
 
 .caption-footer {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 2px;
+  justify-content: flex-end;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .word-count {
@@ -472,35 +536,66 @@ const handleSharePost = async () => {
   color: var(--text-secondary);
 }
 
-.add-option {
-  background: none;
-  border: 1px solid var(--border-color);
+.location-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
   color: var(--text-primary);
-  padding: 10px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 12px 0;
   font-size: 14px;
-  transition: background 0.2s ease;
 }
 
-.add-option:hover {
+.location-input:focus {
+  outline: none;
+}
+
+.upload-progress {
+  margin-top: 20px;
+}
+
+.progress-bar {
+  height: 2px;
   background: var(--surface-light);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.error-message {
+  color: #ed4956;
+  font-size: 12px;
+  margin-top: 10px;
+  text-align: center;
 }
 
 @media (max-width: 768px) {
   .create-modal {
-    max-width: 90vw;
-    max-height: 90vh;
+    max-width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
   }
 
   .edit-container {
     flex-direction: column;
     height: auto;
-    max-height: 60vh;
+    flex: 1;
   }
 
   .preview-area {
-    height: 250px;
+    height: 300px;
+    flex: none;
   }
 }
 </style>
