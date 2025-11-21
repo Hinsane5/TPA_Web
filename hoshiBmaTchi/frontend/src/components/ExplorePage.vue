@@ -32,7 +32,7 @@ import { ref, onMounted } from 'vue'
 const hasContent = ref(false)
 
 onMounted(() => {
-  // TODO: Fetch explore posts from backend
+  
 })
 </script>
 

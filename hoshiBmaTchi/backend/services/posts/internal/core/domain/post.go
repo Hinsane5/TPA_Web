@@ -17,9 +17,7 @@ type Post struct {
 	ID              uuid.UUID   `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	UserID          uuid.UUID   `gorm:"type:uuid;not null"`
 	
-    // --- THIS FIELD WAS MISSING ---
 	Media           []PostMedia `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"` 
-    // ------------------------------
 
 	Caption         string      `gorm:"type:text"`
 	Location        string      `gorm:"type:varchar(255)"`
@@ -46,6 +44,5 @@ type Collection struct {
 	Name      string    `gorm:"type:varchar(100);not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	
-	// Relationships
 	SavedPosts []SavedPost `gorm:"foreignKey:CollectionID"`
 }

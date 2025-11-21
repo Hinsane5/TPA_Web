@@ -101,18 +101,15 @@ const emit = defineEmits<{
   'delete-conversation': []
 }>()
 
-// --- FIX: Computed Property for Chat Partner ---
-// This safely finds the "other person" and prevents undefined errors
 const chatPartner = computed(() => {
-  // Safety check: if conversation or participants array is missing
+
   if (!props.selectedConversation || !props.selectedConversation.participants?.length) {
     return null
   }
 
-  // Find the participant who is NOT me
   const partner = props.selectedConversation.participants.find(p => p.id !== props.currentUserId)
 
-  // Return partner, or fallback to the first person if (e.g. self-chat)
+
   return partner || props.selectedConversation.participants[0]
 })
 

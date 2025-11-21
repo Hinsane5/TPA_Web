@@ -128,7 +128,6 @@ const emit = defineEmits<{
 const fileInput = ref<HTMLInputElement>()
 const dragOver = ref(false)
 
-// --- UPDATED STATE FOR MULTIPLE FILES ---
 const selectedFiles = ref<File[]>([])
 const filePreviews = ref<string[]>([])
 const currentIndex = ref(0)
@@ -140,7 +139,6 @@ const isUploading = ref(false)
 const uploadProgress = ref(0)
 const errorMessage = ref('')
 
-// Helper to get current visible file
 const currentFile = computed(() => selectedFiles.value[currentIndex.value])
 const currentPreviewUrl = computed(() => filePreviews.value[currentIndex.value])
 
@@ -153,14 +151,12 @@ const closeCreate = () => {
 
 const goBack = () => {
   if (!isUploading.value) {
-    // Only clear files if user goes back from edit step
     resetForm()
   }
 }
 
 const resetForm = () => {
   selectedFiles.value = []
-  // Revoke old URLs to avoid memory leaks
   filePreviews.value.forEach(url => URL.revokeObjectURL(url))
   filePreviews.value = []
   currentIndex.value = 0
@@ -223,7 +219,6 @@ const handleSharePost = async () => {
     errorMessage.value = ''
     uploadProgress.value = 0
 
-    // Get auth token
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
       errorMessage.value = 'You must be logged in to create a post'
@@ -234,14 +229,11 @@ const handleSharePost = async () => {
     const totalFiles = selectedFiles.value.length
     const progressPerFile = 90 / totalFiles 
 
-    // --- LOOP: UPLOAD EACH FILE ---
     for (let i = 0; i < totalFiles; i++) {
       const file = selectedFiles.value[i]
       
-      // FIX: Add this check to satisfy TypeScript
       if (!file) continue 
 
-      // 1. Get Presigned URL
       const urlResponse = await axios.get('/api/v1/posts/generate-upload-url', {
         params: {
           file_name: file.name,
@@ -252,15 +244,12 @@ const handleSharePost = async () => {
 
       const { upload_url, object_name } = urlResponse.data
 
-      // 2. Upload to MinIO
       await axios.put(upload_url, file, {
         headers: { 'Content-Type': file.type },
         onUploadProgress: (progressEvent) => {
-           // Optional: finer grain progress update
         }
       })
 
-      // 3. Add to list
       mediaObjects.push({
         media_object_name: object_name,
         media_type: file.type
@@ -269,7 +258,6 @@ const handleSharePost = async () => {
       uploadProgress.value = Math.round((i + 1) * progressPerFile)
     }
 
-    // --- FINAL STEP: CREATE POST WITH ARRAY ---
     await axios.post('/api/v1/posts', {
       media: mediaObjects, 
       caption: postDescription.value.trim(),

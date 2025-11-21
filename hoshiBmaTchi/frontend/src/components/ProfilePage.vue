@@ -183,9 +183,8 @@ import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { usersApi, postsApi, chatApi } from "../services/apiService";
 import router from "@/router";
-import PostDetailOverlay from "./PostDetailOverlay.vue"; // Import the overlay
+import PostDetailOverlay from "./PostDetailOverlay.vue"; 
 
-// State
 const route = useRoute();
 const posts = ref<any[]>([]);
 const activeTab = ref("posts");
@@ -194,7 +193,6 @@ const hasContent = ref(false);
 const tabs = ["posts", "reels", "saved", "mentions"] as const;
 const isFollowing = ref(false);
 
-// Post Overlay State
 const showPostOverlay = ref(false);
 const selectedPost = ref<any>(null);
 
@@ -209,7 +207,6 @@ const profileUser = ref({
   profileImage: "",
 });
 
-// --- HELPERS ---
 const getUserIdFromToken = (): string | null => {
   const token = localStorage.getItem("accessToken");
   if (!token) return null;
@@ -233,33 +230,27 @@ const getRouteId = (): string | undefined => {
   return Array.isArray(param) ? param[0] : param;
 };
 
-// --- URL FIXING HELPERS ---
 const getDisplayUrl = (url: string) => {
   if (!url) return "/placeholder.png";
-  // Fix: Replace internal docker network 'minio' with 'localhost'
   return url.replace("http://minio:9000", "http://localhost:9000");
 };
 
 const getThumbnail = (post: any) => {
-  // 1. Check if we have the new 'media' array
   if (post.media && Array.isArray(post.media) && post.media.length > 0) {
     return getDisplayUrl(post.media[0].media_url);
   }
-  // 2. Fallback to legacy 'media_url'
   if (post.media_url) {
     return getDisplayUrl(post.media_url);
   }
   return "/placeholder.png";
 };
 
-// --- COMPUTED ---
 const isOwnProfile = computed(() => {
   const paramId = getRouteId();
   if (!paramId) return true;
   return paramId === currentUserId;
 });
 
-// --- ACTIONS ---
 const loadProfileData = async () => {
   const routeId = getRouteId();
   const rawId = routeId || currentUserId;
@@ -272,7 +263,6 @@ const loadProfileData = async () => {
   const targetUserId: string = rawId;
 
   try {
-    // 1. Fetch Profile Info
     const userRes = await usersApi.getUserProfile(targetUserId);
     const data = userRes.data;
 
@@ -291,7 +281,6 @@ const loadProfileData = async () => {
       isFollowing.value = data.is_following;
     }
 
-    // 2. Fetch Posts
     const postsRes = await postsApi.getPostByUserID(targetUserId);
     posts.value = postsRes.data || [];
     profileUser.value.postsCount = posts.value.length;
@@ -348,7 +337,6 @@ const getTabIconPath = (tab: string): string => {
   return icons[tab] || "";
 };
 
-// --- POST OVERLAY HANDLERS ---
 const openPostDetail = (post: any) => {
   selectedPost.value = post;
   showPostOverlay.value = true;
@@ -360,7 +348,6 @@ const closePostDetail = () => {
 };
 
 const handleLikeUpdate = (post: any) => {
-  // Update local state to reflect the like change immediately
   const target = posts.value.find((p) => p.id === post.id);
   if (target) {
     target.is_liked = !target.is_liked;
@@ -368,7 +355,6 @@ const handleLikeUpdate = (post: any) => {
   }
 };
 
-// --- LIFECYCLE ---
 onMounted(() => {
   loadProfileData();
 });

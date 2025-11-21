@@ -27,11 +27,8 @@ func SetupChatRoutes(router *gin.Engine, authHandler *handlers.AuthHandler) {
 		}
 	}
 
-	// Define the handler that wraps the proxy
 	proxyHandler := func(c *gin.Context) {
-		// FIX: Extract the userID set by AuthMiddleware and inject it into headers
 		if userID, exists := c.Get("userID"); exists {
-			// The Chat Service looks for "X-User-ID" to identify the user
 			c.Request.Header.Set("X-User-ID", userID.(string))
 		}
 
@@ -48,7 +45,6 @@ func SetupChatRoutes(router *gin.Engine, authHandler *handlers.AuthHandler) {
 	}
 
 	router.GET("/ws", authHandler.AuthMiddleware(), func(c *gin.Context) {
-		// Also inject for WebSockets if needed, though WS params are often handled differently
 		if userID, exists := c.Get("userID"); exists {
 			c.Request.Header.Set("X-User-ID", userID.(string))
 		}

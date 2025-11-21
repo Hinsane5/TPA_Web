@@ -117,22 +117,19 @@ const fetchFeed = async () => {
 
 const openOverlay = (post: any) => {
   selectedPost.value = post;
-  // Best Practice: Update URL without reload (Deep Linking)
   window.history.pushState({}, '', `/p/${post.id}`);
 };
 
-// Close Overlay
+
 const closeOverlay = () => {
   selectedPost.value = null;
-  window.history.pushState({}, '', '/'); // Reset URL
+  window.history.pushState({}, '', '/'); 
 }; 
 
 const handleCommentAdded = () => {
   if (selectedPost.value) {
-    // Update the selected post (which is linked to the array)
     selectedPost.value.comments_count = (selectedPost.value.comments_count || 0) + 1;
     
-    // IMPORTANT: If selectedPost is a copy, find the original in the list and update it too
     const originalPost = posts.value.find(p => p.id === selectedPost.value?.id);
     if (originalPost) {
        originalPost.comments_count = selectedPost.value.comments_count;
@@ -141,11 +138,9 @@ const handleCommentAdded = () => {
 };
 
 const handleToggleLike = async (post: Post) => {
-  // Find the exact post object in our array to ensure reactivity
   const targetPost = posts.value.find(p => p.id === post.id);
   if (!targetPost) return;
 
-  // Optimistic Update
   const wasLiked = targetPost.is_liked;
   targetPost.is_liked = !targetPost.is_liked;
   targetPost.likes_count += (targetPost.is_liked ? 1 : -1);
@@ -157,7 +152,6 @@ const handleToggleLike = async (post: Post) => {
       await postsApi.unlikePost(post.id);
     }
   } catch (error) {
-    // Revert if API fails
     targetPost.is_liked = wasLiked;
     targetPost.likes_count += (targetPost.is_liked ? 1 : -1);
     console.error("Like failed", error);

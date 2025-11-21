@@ -155,11 +155,9 @@ const handleLogout = () => {
   logout()
 }
 
-// Fetch current user from backend
+
 onMounted(() => {
-  // TODO: Fetch current user from backend
-  // const response = await fetch('/api/user/me')
-  // currentUser.value = await response.json()
+
 })
 </script>
 

@@ -10,40 +10,33 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Configuration for internal services (Docker DNS)
 const (
 	ChatServiceURL = "http://chat-service:8080"
-	AuthServiceURL = "http://auth-service:50051" // gRPC usually
+	AuthServiceURL = "http://auth-service:50051" 
 )
 
 func main() {
 	r := gin.Default()
 
-	// 1. Middleware: CORS (Critical for Vue Frontend)
 	r.Use(CORSMiddleware())
 
-	// 2. Public Routes (No Auth)
-	r.POST("/login", reverseProxy(AuthServiceURL))   // Proxies to Auth Service
+	r.POST("/login", reverseProxy(AuthServiceURL)) 
 	r.POST("/signup", reverseProxy(AuthServiceURL))
 
-	// 3. Protected Routes (Require JWT)
 	protected := r.Group("/api")
 	protected.Use(AuthMiddleware())
 	{
-		// Proxy REST requests to Chat Service (e.g., Get History)
 		protected.GET("/chats", reverseProxy(ChatServiceURL))
 		protected.GET("/chats/:id/messages", reverseProxy(ChatServiceURL))
 	}
 
-	// 4. WebSocket Route (Special Handling)
 	r.GET("/ws", AuthMiddleware(), func(c *gin.Context) {
 		proxyWebSocket(c, ChatServiceURL)
 	})
 
-	log.Fatal(r.Run(":8000")) // Public Port
+	log.Fatal(r.Run(":8000")) 
 }
 
-// AuthMiddleware validates JWT
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
@@ -54,14 +47,11 @@ func AuthMiddleware() gin.HandlerFunc {
 
 		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
-		// TODO: Add JWT validation logic
-		// For now, just pass through
 		if tokenString == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			return
 		}
 
-		// c.Set("userID", claims.Subject)
 		c.Next()
 	}
 }
@@ -79,7 +69,6 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-// Helper to proxy requests to internal microservices
 func reverseProxy(target string) gin.HandlerFunc {
 	targetURL, err := url.Parse(target)
 	if err != nil {
@@ -97,7 +86,6 @@ func reverseProxy(target string) gin.HandlerFunc {
 	}
 }
 
-// WebSocket proxy implementation
 func proxyWebSocket(c *gin.Context, target string) {
 	targetURL, err := url.Parse(target)
 	if err != nil {
@@ -105,7 +93,6 @@ func proxyWebSocket(c *gin.Context, target string) {
 		return
 	}
 
-	// Change scheme to ws/wss
 	if targetURL.Scheme == "https" {
 		targetURL.Scheme = "wss"
 	} else {

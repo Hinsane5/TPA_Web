@@ -61,8 +61,6 @@ const filteredConversations = computed(() => {
   const query = searchInput.value.toLowerCase();
   
   return props.conversations.filter((conv) => {
-    // --- FIX 2: Improved Search Logic ---
-    // Search ALL participants to find a match (excluding myself ideally, but searching all is fine)
     return conv.participants.some(p => 
       p.username.toLowerCase().includes(query) ||
       p.fullName.toLowerCase().includes(query)

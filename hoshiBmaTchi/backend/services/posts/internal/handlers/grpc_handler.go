@@ -70,7 +70,6 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, status.Errorf(codes.InvalidArgument, "UserID tidak valid")
 	}
 
-	// Map Proto Media items to Domain Media items
 	var mediaItems []domain.PostMedia
 	for i, item := range req.GetMedia() {
 		mediaItems = append(mediaItems, domain.PostMedia{
@@ -84,7 +83,7 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		UserID:   userID,
 		Caption:  req.GetCaption(),
 		Location: req.GetLocation(),
-		Media:    mediaItems, // This requires domain.Post to have 'Media' field
+		Media:    mediaItems, 
 	}
 
 	err = s.repo.CreatePost(ctx, newPost)
@@ -93,13 +92,11 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, status.Error(codes.Internal, "Failed to create post")
 	}
 
-	// Construct response
 	var pbMedia []*pb.PostMediaResponse
 
 	for _, m := range newPost.Media {
 		pbMedia = append(pbMedia, &pb.PostMediaResponse{
 			MediaType: m.MediaType,
-			// We don't generate a GET URL here to save time, or you can if needed.
 		})
 	}
 
@@ -132,7 +129,6 @@ func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDR
 	for _, post := range posts{
 		var pbMedia []*pb.PostMediaResponse
 		
-		// Iterate over the multiple media items for this post
 		for _, m := range post.Media {
 			reqParams := make(url.Values)
 			reqParams.Set("response-content-type", m.MediaType)
@@ -348,7 +344,6 @@ func (h *Server) GetUserCollections(ctx context.Context, req *pb.GetUserCollecti
 	for _, c := range collections {
 		var covers []string
 		for _, sp := range c.SavedPosts {
-			// Use the first media item of the saved post as the cover
 			if len(sp.Post.Media) > 0 {
 				covers = append(covers, sp.Post.Media[0].MediaObjectName)
 			}
@@ -382,8 +377,6 @@ func (h *Server) ToggleSavePost(ctx context.Context, req *pb.ToggleSavePostReque
 	}, nil
 }
 
-// Helper methods for GORM repository mapping if needed...
 func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
-	// Implementation if needed
 	return nil, nil
 }

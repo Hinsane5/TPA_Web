@@ -40,15 +40,12 @@ func (h *ChatHandler) RegisterRoutes(r *gin.Engine){
 
 	chatGroup := r.Group("/chats")
 	{
-		// Conversation Management
 		chatGroup.GET("", h.GetConversations)
-		chatGroup.POST("", h.CreateGroupChat) // Create Group
+		chatGroup.POST("", h.CreateGroupChat) 
 
-		// Message History & Search
 		chatGroup.GET("/:id/messages", h.GetMessageHistory)
-		chatGroup.GET("/search", h.SearchMessages) // Query: ?conversation_id=...&q=...
+		chatGroup.GET("/search", h.SearchMessages) 
 
-		// Group Participant Management
 		chatGroup.POST("/:id/participants", h.AddParticipant)
 		chatGroup.DELETE("/:id/participants", h.RemoveParticipant)
 
@@ -58,12 +55,10 @@ func (h *ChatHandler) RegisterRoutes(r *gin.Engine){
 }
 
 func (h *ChatHandler) ServeWS(c *gin.Context) {
-	// 1. Authentication: Get User ID injected by Gateway
-	// The Gateway's AuthMiddleware validates the JWT and sets this header
+
 	userID := c.GetHeader("X-User-ID")
 	
 	if userID == "" {
-		// Fallback: Check query param (often used in direct WS connections)
 		userID = c.Query("user_id")
 	}
 
@@ -72,8 +67,6 @@ func (h *ChatHandler) ServeWS(c *gin.Context) {
 		return
 	}
 
-	// 2. Upgrade the HTTP connection to a WebSocket connection
-	// passing the verified UserID to the Client struct
 	ws.ServeWs(h.Hub, h.Repo, c.Writer, c.Request, userID)
 }
 
@@ -109,10 +102,8 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 	if len(req.UserIDs) == 1 {
 		targetUserID := req.UserIDs[0]
 		
-		// Check DB for existing chat
 		existingConv, err := h.Repo.FindDirectConversation(c, userID, targetUserID)
 		if err == nil && existingConv != nil {
-			// Found one! Return it immediately.
 			c.JSON(http.StatusOK, gin.H{
 				"conversation_id": existingConv.ID.String(),
 				"message":         "Chat already exists",
@@ -122,7 +113,6 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		}
 	}
 
-	// Include the creator in the participant list if not already present
 	userIDs := append(req.UserIDs, userID)
 
 	conv := &domain.Conversation{
@@ -143,11 +133,9 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 	})
 }
 
-// GetMessageHistory fetches paginated messages
 func (h *ChatHandler) GetMessageHistory(c *gin.Context) {
 	conversationID := c.Param("id")
 	
-	// Parse pagination (default limit: 50, offset: 0)
 	limitStr := c.DefaultQuery("limit", "50")
 	offsetStr := c.DefaultQuery("offset", "0")
 	limit, _ := strconv.Atoi(limitStr)
@@ -162,7 +150,6 @@ func (h *ChatHandler) GetMessageHistory(c *gin.Context) {
 	c.JSON(http.StatusOK, msgs)
 }
 
-// SearchMessages looks for text within a specific conversation
 func (h *ChatHandler) SearchMessages(c *gin.Context) {
 	conversationID := c.Query("conversation_id")
 	query := c.Query("q")
@@ -181,7 +168,6 @@ func (h *ChatHandler) SearchMessages(c *gin.Context) {
 	c.JSON(http.StatusOK, msgs)
 }
 
-// AddParticipant adds a user to an existing group
 func (h *ChatHandler) AddParticipant(c *gin.Context) {
 	conversationID := c.Param("id")
 	var req ParticipantRequest
@@ -190,8 +176,6 @@ func (h *ChatHandler) AddParticipant(c *gin.Context) {
 		return
 	}
 
-	// Validate if conversation exists/is group (Logic can be inside Repo or Service layer)
-	// For now, calling Repo directly
 	if err := h.Repo.AddParticipant(c, conversationID, req.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add participant"})
 		return
@@ -200,7 +184,6 @@ func (h *ChatHandler) AddParticipant(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Participant added"})
 }
 
-// RemoveParticipant removes a user from a group
 func (h *ChatHandler) RemoveParticipant(c *gin.Context) {
 	conversationID := c.Param("id")
 	var req ParticipantRequest
@@ -227,14 +210,14 @@ func (h *ChatHandler) UploadMedia(c *gin.Context){
 
 	defer file.Close()
 
-	accessKey := os.Getenv("MINIO_ROOT_USER")     // "minioadmin"
+	accessKey := os.Getenv("MINIO_ROOT_USER")   
     secretKey := os.Getenv("MINIO_ROOT_PASSWORD")
 	bucketName := os.Getenv("MINIO_CHAT_BUCKET_NAME")
 
 	endpoint := "localhost:9000"
 	minioClient, err := minio.New(endpoint, &minio.Options{
         Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-        Secure: false, // Set to true if using HTTPS
+        Secure: false,
     })
 
     objectName := uuid.New().String() + filepath.Ext(header.Filename)
@@ -254,8 +237,7 @@ func (h *ChatHandler) UploadMedia(c *gin.Context){
         return
     }
 
-    // 4. Generate Real URL
-    // If the bucket is public:
+
     fileURL := "http://" + endpoint + "/" + bucketName + "/" + objectName
     
     c.JSON(http.StatusOK, gin.H{
@@ -268,8 +250,6 @@ func (h *ChatHandler) DeleteConversation(c *gin.Context) {
 	conversationID := c.Param("id")
 	userID := c.GetHeader("X-User-ID")
 
-	// We don't delete the actual chat (other users need it). 
-	// We remove the "Participant" entry or mark it as 'hidden' for this user.
 	if err := h.Repo.RemoveParticipant(c, conversationID, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete conversation"})
 		return

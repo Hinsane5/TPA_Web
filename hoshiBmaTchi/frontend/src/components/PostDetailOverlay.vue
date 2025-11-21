@@ -181,7 +181,6 @@ import CommentItem from "./commentItem.vue";
 const props = defineProps(["isOpen", "post"]);
 const emit = defineEmits(["close", "comment-added", "toggle-like"]);
 
-// State
 const rawComments = ref<any[]>([]);
 const userCache = ref(new Map());
 const commentText = ref("");
@@ -191,7 +190,6 @@ const commentInputRef = ref<HTMLInputElement | null>(null);
 const isSaved = ref(false);
 const isFollowing = ref(false);
 
-// Carousel State
 const currentIndex = ref(0);
 
 watch(
@@ -201,13 +199,11 @@ watch(
   }
 );
 
-// User Info
 const currentUserId = localStorage.getItem("userID");
 const currentUsername = localStorage.getItem("username") || "me";
 const currentUserPic = localStorage.getItem("profilePicture") || "";
 const isOwnPost = props.post.user_id === currentUserId;
 
-// Computed Media
 const mediaList = computed(() => {
   if (
     props.post.media &&
@@ -351,10 +347,8 @@ const toggleSave = async () => {
   try {
     isSaved.value = !isSaved.value;
     
-    // Call the API
     await postsApi.toggleSavePost(props.post.id);
   } catch (error) {
-    // Revert if failed
     isSaved.value = !isSaved.value;
     console.error("Failed to toggle save:", error);
   }

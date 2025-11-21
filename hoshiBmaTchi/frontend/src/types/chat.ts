@@ -14,16 +14,16 @@ export interface Message {
   content: string;
   messageType: "text" | "image" | "gif" | "video";
 
-  // Update: Allow string | Date for backend compatibility
+
   timestamp: Date | string;
   status: "sending" | "sent" | "seen";
   isEdited: boolean;
   canUnsend: boolean;
 
-  // Update: Allow string | Date
+
   createdAt: Date | string;
 
-  // Fix: Add these properties
+
   conversationId?: string;
   isUnsent?: boolean;
   mediaUrl?: string;

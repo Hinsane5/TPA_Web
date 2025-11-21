@@ -389,11 +389,11 @@ const handleRegister = async () => {
       confirm_password: formData.confirmPassword,
       date_of_birth: new Date(formData.dateOfBirth).toISOString(),
       gender: formData.gender,
-      profile_picture_url: "", // Placeholder, implement upload logic
+      profile_picture_url: "", 
       subscribe_to_newsletter: formData.subscribeNewsletter,
       enable_2fa: formData.enable2FA,
       otp_code: formData.otpCode,
-      turnstile_token: "dummy_token", // Placeholder, integrate with Cloudflare Turnstile
+      turnstile_token: "dummy_token", 
     };
 
     const response = await authApi.register(apiData);

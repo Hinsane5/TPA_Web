@@ -8,7 +8,6 @@ package chat
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -21,7 +20,10 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	ChatService_CreateGroupChat_FullMethodName   = "/chat.ChatService/CreateGroupChat"
+	ChatService_SendMessage_FullMethodName       = "/chat.ChatService/SendMessage"
 	ChatService_GetConversations_FullMethodName  = "/chat.ChatService/GetConversations"
+	ChatService_GetMessages_FullMethodName       = "/chat.ChatService/GetMessages"
+	ChatService_DeleteMessage_FullMethodName     = "/chat.ChatService/DeleteMessage"
 	ChatService_GetMessageHistory_FullMethodName = "/chat.ChatService/GetMessageHistory"
 )
 
@@ -31,8 +33,11 @@ const (
 type ChatServiceClient interface {
 	// Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
 	CreateGroupChat(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
+	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
 	// Fetches the list of conversations for a specific user.
 	GetConversations(ctx context.Context, in *GetConversationsRequest, opts ...grpc.CallOption) (*GetConversationsResponse, error)
+	GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error)
+	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*DeleteMessageResponse, error)
 	// Fetches paginated message history for a specific conversation.
 	GetMessageHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*GetHistoryResponse, error)
 }
@@ -55,10 +60,40 @@ func (c *chatServiceClient) CreateGroupChat(ctx context.Context, in *CreateGroup
 	return out, nil
 }
 
+func (c *chatServiceClient) SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SendMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_SendMessage_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *chatServiceClient) GetConversations(ctx context.Context, in *GetConversationsRequest, opts ...grpc.CallOption) (*GetConversationsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetConversationsResponse)
 	err := c.cc.Invoke(ctx, ChatService_GetConversations_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetMessagesResponse)
+	err := c.cc.Invoke(ctx, ChatService_GetMessages_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *chatServiceClient) DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*DeleteMessageResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteMessageResponse)
+	err := c.cc.Invoke(ctx, ChatService_DeleteMessage_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +116,11 @@ func (c *chatServiceClient) GetMessageHistory(ctx context.Context, in *GetHistor
 type ChatServiceServer interface {
 	// Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
 	CreateGroupChat(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
+	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
 	// Fetches the list of conversations for a specific user.
 	GetConversations(context.Context, *GetConversationsRequest) (*GetConversationsResponse, error)
+	GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error)
+	DeleteMessage(context.Context, *DeleteMessageRequest) (*DeleteMessageResponse, error)
 	// Fetches paginated message history for a specific conversation.
 	GetMessageHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error)
 	mustEmbedUnimplementedChatServiceServer()
@@ -98,8 +136,17 @@ type UnimplementedChatServiceServer struct{}
 func (UnimplementedChatServiceServer) CreateGroupChat(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateGroupChat not implemented")
 }
+func (UnimplementedChatServiceServer) SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SendMessage not implemented")
+}
 func (UnimplementedChatServiceServer) GetConversations(context.Context, *GetConversationsRequest) (*GetConversationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetConversations not implemented")
+}
+func (UnimplementedChatServiceServer) GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetMessages not implemented")
+}
+func (UnimplementedChatServiceServer) DeleteMessage(context.Context, *DeleteMessageRequest) (*DeleteMessageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteMessage not implemented")
 }
 func (UnimplementedChatServiceServer) GetMessageHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMessageHistory not implemented")
@@ -143,6 +190,24 @@ func _ChatService_CreateGroupChat_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_SendMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SendMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).SendMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_SendMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).SendMessage(ctx, req.(*SendMessageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _ChatService_GetConversations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetConversationsRequest)
 	if err := dec(in); err != nil {
@@ -157,6 +222,42 @@ func _ChatService_GetConversations_Handler(srv interface{}, ctx context.Context,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ChatServiceServer).GetConversations(ctx, req.(*GetConversationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_GetMessages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetMessagesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetMessages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_GetMessages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetMessages(ctx, req.(*GetMessagesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _ChatService_DeleteMessage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteMessageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).DeleteMessage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_DeleteMessage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).DeleteMessage(ctx, req.(*DeleteMessageRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -191,8 +292,20 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ChatService_CreateGroupChat_Handler,
 		},
 		{
+			MethodName: "SendMessage",
+			Handler:    _ChatService_SendMessage_Handler,
+		},
+		{
 			MethodName: "GetConversations",
 			Handler:    _ChatService_GetConversations_Handler,
+		},
+		{
+			MethodName: "GetMessages",
+			Handler:    _ChatService_GetMessages_Handler,
+		},
+		{
+			MethodName: "DeleteMessage",
+			Handler:    _ChatService_DeleteMessage_Handler,
 		},
 		{
 			MethodName: "GetMessageHistory",

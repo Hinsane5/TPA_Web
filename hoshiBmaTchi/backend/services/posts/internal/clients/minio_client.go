@@ -24,7 +24,6 @@ func NewMinIOClient() (*minio.Client, error) {
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
 	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
 
-	// Validate environment variables
 	if endpoint == "" || accessKeyID == "" || secretAccessKey == "" || bucketName == "" {
 		return nil, fmt.Errorf("missing required MinIO environment variables")
 	}
@@ -34,7 +33,6 @@ func NewMinIOClient() (*minio.Client, error) {
 	var minioClient *minio.Client
 	var err error
 
-	// Retry connection with exponential backoff
 	for attempt := 1; attempt <= maxRetries; attempt++ {
 		minioClient, err = minio.New(endpoint, &minio.Options{
 			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
@@ -50,7 +48,6 @@ func NewMinIOClient() (*minio.Client, error) {
 			return nil, fmt.Errorf("failed to create MinIO client after %d attempts: %w", maxRetries, err)
 		}
 
-		// Test connection
 		ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 		defer cancel()
 
@@ -64,7 +61,6 @@ func NewMinIOClient() (*minio.Client, error) {
 			return nil, fmt.Errorf("failed to verify MinIO connection: %w", errBucketExists)
 		}
 
-		// Create bucket if it doesn't exist
 		if !exists {
 			ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 			defer cancel()
@@ -83,9 +79,7 @@ func NewMinIOClient() (*minio.Client, error) {
 			log.Printf("Bucket '%s' already exists", bucketName)
 		}
 
-		// Set bucket policy for public read access (required for presigned URLs to work)
 		if err := setBucketPolicy(minioClient, bucketName); err != nil {
-			// Don't fail if policy setting fails - log warning and continue
 			log.Printf("Warning: Failed to set bucket policy (this is optional): %v", err)
 		}
 
@@ -96,13 +90,10 @@ func NewMinIOClient() (*minio.Client, error) {
 	return nil, fmt.Errorf("failed to initialize MinIO client after %d attempts", maxRetries)
 }
 
-// setBucketPolicy sets a policy that allows public read access to objects
-// This is necessary for presigned URLs to work properly
 func setBucketPolicy(client *minio.Client, bucketName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
 	defer cancel()
 
-	// Policy that allows public read access
 	policy := fmt.Sprintf(`{
 		"Version": "2012-10-17",
 		"Statement": [

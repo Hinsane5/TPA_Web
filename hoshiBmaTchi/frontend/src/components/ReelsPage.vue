@@ -30,7 +30,6 @@ import { ref, onMounted } from 'vue'
 const hasContent = ref(false)
 
 onMounted(() => {
-  // TODO: Fetch reels from backend
 })
 </script>
 

@@ -44,7 +44,7 @@ func main() {
         &domain.PostComment{}, 
         &domain.Collection{}, 
         &domain.SavedPost{},
-        &domain.PostMedia{}, // <--- ADD THIS!
+        &domain.PostMedia{}, 
     )
 	if err != nil {
 		log.Fatalf("Failed to automigrate: %v", err)
@@ -52,15 +52,13 @@ func main() {
 
 	log.Println("Automigrate successfully")
 
-	var minioClient *minio.Client // Use the *minio.Client type
+	var minioClient *minio.Client 
 	var minioErr error
 	
 	const maxRetries = 10
 	for i := 0; i < maxRetries; i++ {
-		// This calls the code you just posted
 		minioClient, minioErr = clients.NewMinIOClient()
 		if minioErr == nil {
-			// Success!
 			break
 		}
 		
@@ -68,7 +66,6 @@ func main() {
 		time.Sleep(5 * time.Second)
 	}
 	
-	// If it still failed after all retries, then exit
 	if minioErr != nil {
 		log.Fatalf("Failed to initialize MinIO client after multiple retries: %v", minioErr)
 	}

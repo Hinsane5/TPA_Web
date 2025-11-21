@@ -2,7 +2,7 @@ import { ref, computed } from "vue";
 import type { Conversation, Message, User } from "../types/chat";
 import { usersApi } from "../services/apiService";
 
-// --- STATE ---
+
 const currentUser = ref<User | null>(null);
 const conversations = ref<Conversation[]>([]);
 const messages = ref<Message[]>([]);
@@ -10,18 +10,13 @@ const selectedConversationId = ref<string | null>(null);
 const isConnected = ref(false);
 let socket: WebSocket | null = null;
 
-// --- CONFIG ---
-// FIX 1: Use relative path '/api' to use the Vite Proxy (points to 8081)
 const API_URL = "/api";
-// FIX 2: Point WebSocket to the Gateway port (8081)
 const WS_URL = "ws://localhost:8081/ws";
 
 export function useChatStore() {
-  // FIX 3: Use 'accessToken' to match apiService.ts
   const getToken = () => localStorage.getItem("accessToken");
 
   const resolveSenderInfo = (senderId: string, conversationId: string) => {
-    // 1. Is it Me?
     if (currentUser.value && senderId === currentUser.value.id) {
       return {
         name: currentUser.value.fullName || currentUser.value.username || "Me",
@@ -29,7 +24,6 @@ export function useChatStore() {
       };
     }
 
-    // 2. Is it a Participant in the conversation?
     const conversation = conversations.value.find(
       (c) => c.id === conversationId
     );
@@ -45,7 +39,7 @@ export function useChatStore() {
       }
     }
 
-    // 3. Fallback
+
     return { name: "Unknown", avatar: "/placeholder.svg" };
   };
 
@@ -55,7 +49,6 @@ export function useChatStore() {
     connectWebSocket();
   };
 
-  // 3. REST API: Fetch Conversations (ROBUST VERSION)
   const fetchConversations = async () => {
     try {
       const token = getToken();
@@ -74,15 +67,12 @@ export function useChatStore() {
           updatedAt: c.created_at || new Date().toISOString(),
         }));
 
-        // FIX: Iterate ALL participants to ensure everyone has a name
         const enrichedConversations = await Promise.all(
           mappedConversations.map(async (conv: any) => {
             const myId = currentUser.value?.id;
 
-            // Map over the participants array and enrich EACH one
             conv.participants = await Promise.all(
               conv.participants.map(async (p: any) => {
-                // 1. If it's Me, use local data (Optimization)
                 if (myId && p.id === myId && currentUser.value) {
                   return {
                     ...p,
@@ -93,7 +83,6 @@ export function useChatStore() {
                   };
                 }
 
-                // 2. If it's someone else, fetch their profile from API
                 try {
                   const userRes = await usersApi.getUserProfile(p.id);
                   const userData = userRes.data;
@@ -141,7 +130,6 @@ export function useChatStore() {
       if (res.ok) {
         const rawData = await res.json();
 
-        // FIX: Map Snake_Case -> CamelCase & Enrich Sender
         const mappedMessages = rawData.map((msg: any) => {
           const { name, avatar } = resolveSenderInfo(
             msg.sender_id,
@@ -152,11 +140,11 @@ export function useChatStore() {
           return {
             id: msg.id,
             conversationId: msg.conversation_id,
-            senderId: msg.sender_id, // Crucial Fix: sender_id -> senderId
+            senderId: msg.sender_id, 
             senderName: name,
             senderAvatar: avatar,
             content: isMedia ? msg.media_url : msg.content,
-            mediaUrl: msg.media_url, // Crucial Fix: media_url -> mediaUrl
+            mediaUrl: msg.media_url, 
             messageType: isMedia ? "image" : "text",
             createdAt: msg.created_at,
             timestamp: msg.created_at,
@@ -201,22 +189,18 @@ export function useChatStore() {
   };
 
   const handleIncomingMessage = async (wsMsg: any) => {
-    // 1. Check if we have this conversation locally
     let conversation = conversations.value.find(
       (c) => c.id === wsMsg.conversation_id
     );
 
-    // --- FIX: If conversation is missing (New Chat), fetch list immediately ---
     if (!conversation) {
       console.log("New conversation detected, refreshing list...");
       await fetchConversations();
-      // Try finding it again after fetch
       conversation = conversations.value.find(
         (c) => c.id === wsMsg.conversation_id
       );
     }
 
-    // 2. Resolve Sender Info (Now works because we fetched the list + participants)
     const { name, avatar } = resolveSenderInfo(
       wsMsg.sender_id,
       wsMsg.conversation_id
@@ -224,7 +208,7 @@ export function useChatStore() {
 
     const isMedia = !!wsMsg.media_url;
 
-    // 3. Create Message Object
+
     const newMessage: Message = {
       id: wsMsg.id || `msg-${Date.now()}`,
       conversationId: wsMsg.conversation_id,
@@ -236,28 +220,23 @@ export function useChatStore() {
       mediaUrl: wsMsg.media_url,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
-      status: "sent", // You received it, so it's effectively sent/delivered
+      status: "sent",
       isEdited: false,
       canUnsend: false,
     };
 
-    // 4. Add to Message List (only if viewing THIS conversation)
     if (selectedConversationId.value === wsMsg.conversation_id) {
       messages.value.push(newMessage);
 
-      // Optional: Scroll to bottom logic usually goes here or in the component watcher
     }
 
-    // 5. Update Sidebar Preview (Last Message & Unread Count)
     if (conversation) {
       conversation.lastMessage = newMessage;
 
-      // Increment unread count if we aren't looking at this chat
       if (selectedConversationId.value !== wsMsg.conversation_id) {
         conversation.unreadCount = (conversation.unreadCount || 0) + 1;
       }
 
-      // Move this conversation to the top of the list
       conversations.value = [
         conversation,
         ...conversations.value.filter((c) => c.id !== conversation!.id),

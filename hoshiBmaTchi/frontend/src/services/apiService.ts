@@ -65,16 +65,12 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // If the backend returns 401 Unauthorized
     if (error.response && error.response.status === 401) {
       console.log("Session expired. Logging out...");
 
-      // 1. Clear local storage
       localStorage.removeItem("accessToken");
       localStorage.removeItem("userID");
 
-      // 2. Redirect to Login page
-      // Note: You might need to reload or push to router
       window.location.href = "/login";
     }
     return Promise.reject(error);
@@ -163,22 +159,18 @@ export const usersApi = {
   },
 
   getMe: () => {
-    // 1. Try to get ID from LocalStorage
     let userId = localStorage.getItem("userID");
 
-    // 2. Fallback: Decode it from the Access Token if missing
     if (!userId) {
       const token = localStorage.getItem("accessToken");
       if (token) {
         try {
           const parts = token.split(".");
           if (parts.length >= 2) {
-            const payloadPart = parts[1]; // FIX: Assign to variable first
+            const payloadPart = parts[1]; 
 
             if (payloadPart) {
-              // FIX: Explicit check to ensure it's a string
               const payload = JSON.parse(atob(payloadPart));
-              // Check common claims for the ID
               userId = payload.user_id || payload.sub || payload.id;
             }
           }
@@ -198,13 +190,12 @@ export const usersApi = {
 };
 
 export const chatApi = {
-  // Find or create a direct conversation with a target user
   getOrCreateConversation: (targetUserId: string) => {
-    // Adjust the endpoint to match your backend route for creating/finding a chat
+
     return apiClient.post(`/chats`, {
-      name: "Direct Message", // Optional, backend might ignore for DM
-      user_ids: [targetUserId], // The person you want to message
-      is_group: false, // Helpful flag if your backend supports it
+      name: "Direct Message", 
+      user_ids: [targetUserId], 
+      is_group: false, 
     });
   },
 };

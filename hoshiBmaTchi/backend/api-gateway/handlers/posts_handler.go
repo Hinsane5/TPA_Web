@@ -17,7 +17,7 @@ type PostsHandler struct {
 }
 
 type createPostJSON struct {
-    Media    []mediaItemJSON `json:"media" binding:"required"` // CHANGED
+    Media    []mediaItemJSON `json:"media" binding:"required"` 
 	Caption  string          `json:"caption"`
 	Location string          `json:"location"`
 }
@@ -87,7 +87,6 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
 		return
 	}
 
-    // Convert JSON media items to Proto media items
     var protoMedia []*postsProto.PostMediaItem
     for _, m := range jsonReq.Media {
         protoMedia = append(protoMedia, &postsProto.PostMediaItem{
@@ -98,7 +97,7 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
 
     res, err := h.postsClient.CreatePost(context.Background(), &postsProto.CreatePostRequest{
 		UserId:   userID.(string),
-		Media:    protoMedia, // CHANGED
+		Media:    protoMedia, 
 		Caption:  jsonReq.Caption,
 		Location: jsonReq.Location,
 	})
@@ -116,7 +115,7 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
 }
 
 func (h *PostsHandler) GetPostsByUserID (c *gin.Context){
-    userID := c.Param("userID") //antara userID atau gk UserID
+    userID := c.Param("userID") 
     if userID == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error" : "Parameter userID diperlukan"})
         return
@@ -257,7 +256,7 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
             profilePic = userRes.ProfilePictureUrl
         }
 
-        // Map the Proto Media Array to JSON
+
         var mediaList []gin.H
         for _, m := range post.Media {
             mediaList = append(mediaList, gin.H{
@@ -269,7 +268,7 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
         enrichedPosts = append(enrichedPosts, gin.H{
             "id":              post.Id,
             "user_id":         post.UserId,
-            "media":           mediaList, // NEW: Return array
+            "media":           mediaList, 
             "caption":         post.Caption,
             "location":        post.Location,
             "created_at":      post.CreatedAt,

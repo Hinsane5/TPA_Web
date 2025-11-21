@@ -51,14 +51,14 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 
-// Define the Props to match your Backend Data Structure
+
 interface Props {
   user: {
     user_id: string;
     username: string;
-    name: string; // Backend sends 'name', not 'fullName'
-    profile_picture_url?: string; // Backend sends snake_case
-    followers?: number; // Optional: Search results might not have this
+    name: string; 
+    profile_picture_url?: string; 
+    followers?: number; 
     is_verified?: boolean;
     is_following?: boolean;
   };
@@ -73,20 +73,20 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['click', 'remove', 'follow', 'unfollow']);
 
-// Local state for optimistic UI updates
+
 const isFollowingLocal = ref(props.user.is_following || false);
 
-// Watch for prop updates (e.g., if data is refreshed)
+
 watch(() => props.user.is_following, (newVal) => {
   if (newVal !== undefined) isFollowingLocal.value = newVal;
 });
 
-// COMPUTED PROPERTY: Safely format followers (Prevents the crash!)
+
 const formattedFollowers = computed(() => {
   if (props.user.followers !== undefined && props.user.followers !== null) {
     return props.user.followers.toLocaleString();
   }
-  return null; // Returns null if no follower data (e.g., in Search results)
+  return null; 
 });
 
 const handleFollowClick = () => {

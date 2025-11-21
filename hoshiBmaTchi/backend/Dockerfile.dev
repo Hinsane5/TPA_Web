@@ -11,6 +11,8 @@ COPY backend/services/users/go.mod backend/services/users/go.sum ./backend/servi
 COPY backend/services/notifications/go.mod backend/services/notifications/go.sum ./backend/services/notifications/
 COPY backend/services/posts/go.mod backend/services/posts/go.sum ./backend/services/posts/
 COPY backend/services/chat/go.mod backend/services/chat/go.sum ./backend/services/chat/
+COPY backend/services/stories/go.mod backend/services/stories/go.sum ./backend/services/stories/
+
 
 RUN go mod download
 

@@ -20,7 +20,6 @@ const (
 	maxMessageSize = 512
 )
 
-// Client is a middleman between the websocket connection and the hub.
 type Client struct {
 	Hub    *Hub
 	Conn   *websocket.Conn
@@ -29,7 +28,6 @@ type Client struct {
 	Repo   *repositories.ChatRepository
 }
 
-// ReadPump pumps messages from the websocket connection to the hub.
 func (c *Client) ReadPump() {
 	defer func() {
 		c.Hub.unregister <- c
@@ -53,7 +51,6 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
-		// Save to DB
 		msg := &domain.Message{
 			ConversationID: uuid.MustParse(wsMsg.ConversationID),
 			SenderID:       uuid.MustParse(c.UserID),
@@ -69,7 +66,6 @@ func (c *Client) ReadPump() {
 	}
 }
 
-// WritePump pumps messages from the hub to the websocket connection.
 func (c *Client) WritePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
@@ -103,7 +99,6 @@ func (c *Client) WritePump() {
 	}
 }
 
-// In client.go
 func ServeWs(hub *Hub, repo *repositories.ChatRepository, w http.ResponseWriter, r *http.Request, userID string) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
@@ -119,6 +114,5 @@ func ServeWs(hub *Hub, repo *repositories.ChatRepository, w http.ResponseWriter,
 var upgrader = websocket.Upgrader{
     ReadBufferSize:  1024,
     WriteBufferSize: 1024,
-    // Allow all origins because Gateway handles CORS
     CheckOrigin: func(r *http.Request) bool { return true },
 }

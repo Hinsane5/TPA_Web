@@ -61,7 +61,6 @@ defineEmits<{
   delete: [];
 }>();
 
-// --- FIX: Safe Access to Participant ---
 const participant = computed(() => {
   const parts = props.conversation.participants;
   if (!parts || parts.length === 0) return null;

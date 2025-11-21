@@ -1,6 +1,6 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { setAuthHeader } from "../services/apiService"; // Make sure to export this from apiService.ts
+import { setAuthHeader } from "../services/apiService"; 
 
 
 const isLoggedIn = ref(false);
@@ -12,7 +12,7 @@ export function useAuth(){
       const token = localStorage.getItem("accessToken");
       isLoggedIn.value = !!token;
       if (token) {
-        setAuthHeader(token); // Set header on app load
+        setAuthHeader(token); 
       }
     };
 

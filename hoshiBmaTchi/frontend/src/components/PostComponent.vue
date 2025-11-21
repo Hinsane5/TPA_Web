@@ -157,13 +157,13 @@ const props = defineProps({
 
 const emit = defineEmits(["open-detail", "toggle-like"]);
 
-// State
+
 const isSaved = ref(false);
 const currentIndex = ref(0);
 
-// --- NEW LOGIC FOR CAROUSEL ---
+
 const mediaList = computed(() => {
-  // 1. If backend sends new array structure
+
   if (
     props.post.media &&
     Array.isArray(props.post.media) &&
@@ -171,7 +171,7 @@ const mediaList = computed(() => {
   ) {
     return props.post.media;
   }
-  // 2. Fallback for legacy posts (single url)
+
   if (props.post.media_url) {
     return [
       {
@@ -189,7 +189,6 @@ const currentMedia = computed(() => {
 });
 
 const hasMultiple = computed(() => mediaList.value.length > 1);
-// -----------------------------
 
 const toggleSave = async () => {
   try {
@@ -204,8 +203,7 @@ const toggleSave = async () => {
 const getDisplayUrl = (url: string) => {
   if (!url) return "/placeholder.png";
 
-  // Fix: Replace internal docker network 'minio' with 'localhost' for the browser
-  // Also handles 'host.docker.internal' if it appears
+
   return url
     .replace("http://minio:9000", "http://localhost:9000")
     .replace("http://host.docker.internal:9000", "http://localhost:9000");

@@ -5,6 +5,7 @@ import (
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/routes"
+	storiesProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
 	postsProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/gin-gonic/gin"
@@ -31,17 +32,27 @@ func main(){
 	postsClient := postsProto.NewPostsServiceClient(postsConn)
 	log.Println("Connected to gRPC posts-service")
 
+	storiesConn, err := grpc.NewClient("stories-service:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+    if err != nil {
+        log.Fatalf("Failed to connect to stories-service: %v", err)
+    }
+	defer storiesConn.Close()
+    storiesClient := storiesProto.NewStoriesServiceClient(storiesConn)
+    log.Println("Connected to gRPC stories-service")
+
 	router := gin.Default()
 
 	authHandler := handlers.NewAuthHandler(userClient)
-
 	postsHandler := handlers.NewPostsHandler(postsClient, userClient)
+	storiesHandler := handlers.NewStoriesHandler(storiesClient)
 
 	routes.SetupAuthRoutes(router, userClient)
 
 	routes.SetupPostsRoutes(router, postsHandler, authHandler)
 
 	routes.SetupChatRoutes(router, authHandler)
+
+	routes.SetupStoriesRoutes(router, storiesHandler, authHandler)
 	
 	log.Println("API Gateway listening on port :8080")
 	router.Run(":8080")

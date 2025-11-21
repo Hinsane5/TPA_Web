@@ -158,7 +158,6 @@ func (h *AuthHandler) SendOtp(c *gin.Context){
 	})
  
 	if err != nil {
-		// Handle gRPC errors (like rate limit)
 		if s, ok := status.FromError(err); ok {
 			switch s.Code() {
 			case codes.InvalidArgument:
@@ -219,11 +218,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 				return
 			
 			case codes.AlreadyExists:
-				// If user exists, return a 409 Conflict (or 400)
 				c.JSON(http.StatusConflict, gin.H{"error": s.Message()})
 				return
 			default:
-				// For any other gRPC error, return a 500
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "gRPC error: " + s.Message()})
 				return
 					
@@ -291,7 +288,6 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var tokenString string
 
-		// 1. Check Authorization Header (Standard REST API)
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
@@ -300,19 +296,16 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 			}
 		}
 
-		// 2. Check Query Param (Fallback for WebSocket /ws?token=...)
 		if tokenString == "" {
 			tokenString = c.Query("token")
 		}
 
-		// 3. Fail if no token found
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization token"})
 			c.Abort()
 			return
 		}
 
-		// 4. Validate with Users Service
 		res, err := h.UserClient.ValidateToken(context.Background(), &pb.ValidateTokenRequest{
 			Token: tokenString,
 		})
@@ -329,7 +322,6 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// 5. Set User ID for downstream handlers/proxies
 		c.Set("userID", res.UserId)
 
 		c.Next()
@@ -365,7 +357,7 @@ func (h *AuthHandler) GetUserProfile(c *gin.Context) {
 
 func (h *AuthHandler) FollowUser(c *gin.Context) {
     targetUserID := c.Param("id")
-    currentUserID, _ := c.Get("userID") // From AuthMiddleware
+    currentUserID, _ := c.Get("userID")
 
     _, err := h.UserClient.FollowUser(context.Background(), &pb.FollowUserRequest{
         FollowerId:  currentUserID.(string),

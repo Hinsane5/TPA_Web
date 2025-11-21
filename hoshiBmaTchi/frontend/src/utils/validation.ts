@@ -105,7 +105,6 @@ export const validateConfirmPassword = (
   return { isValid: true, message: "" };
 };
 
-// Gender validation
 export const validateGender = (gender: string): ValidationResult => {
   if (!["male", "female"].includes(gender.toLowerCase())) {
     return { isValid: false, message: "Please select a valid gender" };
@@ -113,7 +112,6 @@ export const validateGender = (gender: string): ValidationResult => {
   return { isValid: true, message: "" };
 };
 
-// Age validation: >= 13 years old
 export const validateAge = (dateOfBirth: string): ValidationResult => {
   if (!dateOfBirth) {
     return { isValid: false, message: "Please select your date of birth" };

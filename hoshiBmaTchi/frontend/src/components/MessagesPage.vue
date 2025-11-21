@@ -22,8 +22,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'; // Import lifecycle hooks
-import { useRoute } from 'vue-router';   // Import router
+import { onMounted, watch } from 'vue'; 
+import { useRoute } from 'vue-router';  
 import MessagesList from "./MessagesList.vue";
 import ChatWindow from "./ChatWindow.vue";
 import { useChatStore } from "../composables/useChatStore";
@@ -45,11 +45,9 @@ const {
 const route = useRoute();
 
 const handleDeepLink = async () => {
-  // 1. Get ID from URL query (e.g., /messages?conversationId=123)
   const targetId = route.query.conversationId as string;
 
   if (targetId) {
-    // 2. Select it (this opens the chat window)
     selectConversation(targetId);
   }
 };
@@ -58,17 +56,14 @@ onMounted(async () => {
   try {
     const { data: user } = await usersApi.getMe();
 
-    // 2. Initialize the store (Fetch chats, connect WebSocket)
     await initialize(user);
 
-    // 3. Select the conversation if redirected from Profile
     await handleDeepLink();
   } catch (error) {
     console.error("Failed to initialize messages page:", error);
   }
 });
 
-// Run if the URL changes while staying on the page
 watch(() => route.query.conversationId, () => {
   handleDeepLink();
 });

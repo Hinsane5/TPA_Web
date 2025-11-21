@@ -125,6 +125,50 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  stories-service:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: ${PROJECT_NAME}-stories-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/stories
+    networks:
+      - ${NETWORK_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+    restart: unless-stopped
+    environment:
+      # Database configuration
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=hoshi_stories_db
+
+      # gRPC configuration
+      - GRPC_PORT=50053
+
+      # Service URLs
+      - USER_SERVICE_URL=${PROJECT_NAME}-users-service:50051
+      - CHAT_SERVICE_URL=${PROJECT_NAME}-chat-service:50054
+
+      # MinIO configuration for stories media
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=stories
+
   notification-service:
     build:
       context: .

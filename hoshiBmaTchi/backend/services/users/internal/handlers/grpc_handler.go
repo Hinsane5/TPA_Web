@@ -720,12 +720,10 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
 		matches = append(matches, match{User: u, Score: score})
 	}
 
-	// Sort descending by score
     sort.Slice(matches, func(i, j int) bool {
         return matches[i].Score > matches[j].Score
     })
 
-    // 3. Return Top 5 (PDF Requirement Page 13)
     limit := 5
     if len(matches) < 5 {
         limit = len(matches)
@@ -739,7 +737,6 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
             Username:          u.Username,
             Name:              u.Name,
             ProfilePictureUrl: u.ProfilePictureURL,
-            // You can add 'IsFollowing' logic here later if needed
         })
     }
 

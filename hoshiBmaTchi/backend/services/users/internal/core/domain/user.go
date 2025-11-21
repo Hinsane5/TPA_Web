@@ -40,7 +40,6 @@ type User struct{
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
-	// Generate a new UUID (version 4)
 	user.ID = uuid.New()
 
 	if user.Username == ""{

@@ -28,7 +28,6 @@ func (r *GormPostRepository) GetPostByID(ctx context.Context, postID string) (*d
 func (r *GormPostRepository) GetPostsByUserID(ctx context.Context, userID string) ([]*domain.Post, error) {
 	var posts []*domain.Post
 
-    // ADDED: Preload("Media") and Order by sequence
 	err := r.db.WithContext(ctx).
         Preload("Media", func(db *gorm.DB) *gorm.DB {
             return db.Order("sequence asc")
@@ -139,37 +138,29 @@ func (r *GormPostRepository) GetUserCollections(ctx context.Context, userID stri
 func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID, collectionID string) (bool, error) {
 	var savedPost domain.SavedPost
 	
-	// Check if the post is already saved by this user
 	query := r.db.WithContext(ctx).Where("user_id = ? AND post_id = ?", userID, postID)
 	
-	// If a specific collection is targeted, refine the check
 	if collectionID != "" {
 		query = query.Where("collection_id = ?", collectionID)
 	}
 
 	result := query.First(&savedPost)
 
-	// 1. IF EXISTS: Delete it (Unsave)
 	if result.Error == nil {
 		if err := r.db.WithContext(ctx).Delete(&savedPost).Error; err != nil {
 			return true, err
 		}
-		return false, nil // Post is now UNSAVED
+		return false, nil 
 	}
 
-	// 2. IF NOT EXISTS: Create it (Save)
 	newSave := domain.SavedPost{
 		UserID: uuid.MustParse(userID),
 		PostID: uuid.MustParse(postID),
 	}
 
-	// Handle Collection Logic
 	if collectionID != "" {
-		// Case A: User selected a specific collection
 		newSave.CollectionID = uuid.MustParse(collectionID)
 	} else {
-		// Case B: User just clicked "Save" (Default behavior)
-		// We must find or create the "All Posts" collection for this user
 		var defaultCollection domain.Collection
 		
 		err := r.db.WithContext(ctx).
@@ -178,7 +169,6 @@ func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID,
 
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
-				// Create "All Posts" collection if it doesn't exist
 				defaultCollection = domain.Collection{
 					UserID: uuid.MustParse(userID),
 					Name:   "All Posts",
@@ -187,7 +177,7 @@ func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID,
 					return false, createErr
 				}
 			} else {
-				return false, err // Database error
+				return false, err 
 			}
 		}
 		newSave.CollectionID = defaultCollection.ID
@@ -197,5 +187,5 @@ func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID,
 		return false, err
 	}
 
-	return true, nil // Post is now SAVED
+	return true, nil 
 }

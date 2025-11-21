@@ -59,13 +59,11 @@ const handleNavigation = (page: DashboardPage) => {
 }
 
 const handleLogout = () => {
-  // TODO: Clear auth token/session from backend
   router.push({ name: 'login' })
 }
 
 const handleSearch = (query: string) => {
   console.log('Search for:', query)
-  // TODO: Implement search backend call
 }
 
 const handleSearchToggle = () => {
@@ -74,7 +72,6 @@ const handleSearchToggle = () => {
 
 const handlePostUpload = (file: File, description: string) => {
   console.log('Upload post:', file.name, 'Description:', description)
-  // TODO: Implement post upload to backend with description
   isCreateOpen.value = false
 }
 

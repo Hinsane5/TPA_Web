@@ -69,25 +69,21 @@ const router = useRouter()
 const searchQuery = ref('')
 const results = ref<any[]>([])
 const recentSearches = ref<any[]>([])
-let searchTimeout: ReturnType<typeof setTimeout> | null = null // Variable for debounce timer
+let searchTimeout: ReturnType<typeof setTimeout> | null = null 
 
 watch(searchQuery, (newQuery) => {
-  // 1. Clear the previous timer if the user keeps typing
   if (searchTimeout) {
     clearTimeout(searchTimeout)
   }
 
-  // 2. If query is empty, clear results and stop
   if (!newQuery.trim()) {
     results.value = []
     return
   }
 
-  // 3. Set a new timer to wait 300ms before calling API
   searchTimeout = setTimeout(async () => {
     try {
       const response = await usersApi.searchUsers(newQuery)
-      // Based on your backend handler, the data is wrapped in "users"
       results.value = response.data.users || [] 
     } catch (error) {
       console.error('Search failed:', error)
@@ -112,13 +108,12 @@ const goToProfile = (user: any) => {
 }
 
 const addToHistory = (user: any) => {
-  if (!storageKey.value) return // Don't save if no user ID
+  if (!storageKey.value) return 
 
   const filtered = recentSearches.value.filter(u => u.user_id !== user.user_id)
   const newHistory = [user, ...filtered].slice(0, 10)
   
   recentSearches.value = newHistory
-  // FIX: Use dynamic key
   localStorage.setItem(storageKey.value, JSON.stringify(newHistory))
 }
 
@@ -126,7 +121,6 @@ const clearHistory = () => {
   if (!storageKey.value) return
 
   recentSearches.value = []
-  // FIX: Use dynamic key
   localStorage.removeItem(storageKey.value)
 }
 

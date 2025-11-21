@@ -27,8 +27,7 @@ func (s *ChatGRPCServer) CreateGroupChat(ctx context.Context, req *pb.CreateGrou
 		CreatedAt: time.Now(),
 	}
 
-	// Convert string IDs to UUIDs (in production, handle errors)
-	// We include the creator implicitly or explicitly via req.UserIds
+
 	err := s.repo.CreateConversation(ctx, conv, req.UserIds)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to create group")
@@ -49,7 +48,6 @@ func (s *ChatGRPCServer) GetConversations(ctx context.Context, req *pb.GetConver
 			Id:        c.ID.String(),
 			Name:      c.Name,
 			IsGroup:   c.IsGroup,
-			// Logic to find last message content would go here
 		})
 	}
 
