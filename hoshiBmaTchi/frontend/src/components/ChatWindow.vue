@@ -97,7 +97,15 @@ const chatPartner = computed(() => {
   if (!props.selectedConversation || props.selectedConversation.participants.length === 0) {
     return null
   }
-  return props.selectedConversation.participants[0]
+
+  // 1. Try to find the participant who is NOT me
+  const otherUser = props.selectedConversation.participants.find(
+    (p) => p.id !== props.currentUserId
+  )
+
+  // 2. If found, return them. 
+  // If not found (e.g., a "Note to Self" chat with only 1 participant), return the only participant.
+  return otherUser || props.selectedConversation.participants[0]
 })
 
 const messageInput = ref('')

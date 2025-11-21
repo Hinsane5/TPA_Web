@@ -1,8 +1,10 @@
 <template>
   <div class="messages-page">
     <MessagesList
+      v-if="currentUser" 
       :conversations="conversations"
       :selected-conversation-id="selectedConversationId"
+      :current-user-id="currentUser.id" 
       @select-conversation="selectConversation"
       @delete-conversation="deleteConversation"
     />

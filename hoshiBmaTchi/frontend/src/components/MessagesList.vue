@@ -25,6 +25,7 @@
         v-for="conversation in filteredConversations"
         :key="conversation.id"
         :conversation="conversation"
+        :current-user-id="currentUserId" 
         :is-active="selectedConversationId === conversation.id"
         @select="selectConversation(conversation.id)"
         @delete="deleteConversation(conversation.id)"
@@ -41,6 +42,7 @@ import ConversationItem from "./ConversationItem.vue";
 interface Props {
   conversations: Conversation[];
   selectedConversationId: string | null;
+  currentUserId: string;
 }
 
 const props = defineProps<Props>();
@@ -57,15 +59,13 @@ const filteredConversations = computed(() => {
   }
 
   const query = searchInput.value.toLowerCase();
+  
   return props.conversations.filter((conv) => {
-    const participant = conv.participants[0];
-    
-    // --- FIX: Check if participant exists before accessing properties ---
-    if (!participant) return false; 
-
-    return (
-      participant.username.toLowerCase().includes(query) ||
-      participant.fullName.toLowerCase().includes(query)
+    // --- FIX 2: Improved Search Logic ---
+    // Search ALL participants to find a match (excluding myself ideally, but searching all is fine)
+    return conv.participants.some(p => 
+      p.username.toLowerCase().includes(query) ||
+      p.fullName.toLowerCase().includes(query)
     );
   });
 });

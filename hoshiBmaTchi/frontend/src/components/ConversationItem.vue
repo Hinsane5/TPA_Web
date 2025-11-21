@@ -45,13 +45,17 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Conversation } from "../types/chat";
+import { useChatStore } from "../composables/useChatStore";
 
 interface Props {
   conversation: Conversation;
   isActive: boolean;
+  currentUserId: string;
 }
 
 const props = defineProps<Props>();
+const store = useChatStore();
+
 defineEmits<{
   select: [];
   delete: [];
@@ -60,7 +64,10 @@ defineEmits<{
 // --- FIX: Safe Access to Participant ---
 const participant = computed(() => {
   const parts = props.conversation.participants;
-  return parts && parts.length > 0 ? parts[0] : null;
+  if (!parts || parts.length === 0) return null;
+
+  const other = parts.find(p => p.id !== props.currentUserId);
+  return other || parts[0];
 });
 
 const formatTime = (date: Date | string) => {

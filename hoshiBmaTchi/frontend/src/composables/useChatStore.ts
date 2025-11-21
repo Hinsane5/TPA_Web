@@ -55,6 +55,7 @@ export function useChatStore() {
     connectWebSocket();
   };
 
+  // 3. REST API: Fetch Conversations (ROBUST VERSION)
   const fetchConversations = async () => {
     try {
       const token = getToken();
@@ -67,42 +68,52 @@ export function useChatStore() {
       if (res.ok) {
         const data = await res.json();
 
-        // 1. Map the basic structure
         const mappedConversations = data.map((c: any) => ({
           ...c,
-          // FIX: Backend now sends 'participants' (lowercase)
           participants: c.participants || [],
           updatedAt: c.created_at || new Date().toISOString(),
         }));
 
-        // 2. Fetch User Details for each chat (enrichment)
-        // We need to find the "other person" in each chat and get their name/avatar
+        // FIX: Iterate ALL participants to ensure everyone has a name
         const enrichedConversations = await Promise.all(
           mappedConversations.map(async (conv: any) => {
-            // Identify the partner (the one who isn't ME)
             const myId = currentUser.value?.id;
-            const partner =
-              conv.participants.find((p: any) => p.id !== myId) ||
-              conv.participants[0];
 
-            if (partner && partner.id) {
-              try {
-                // Fetch their profile from User Service
-                const userRes = await usersApi.getUserProfile(partner.id);
-                const userData = userRes.data;
+            // Map over the participants array and enrich EACH one
+            conv.participants = await Promise.all(
+              conv.participants.map(async (p: any) => {
+                // 1. If it's Me, use local data (Optimization)
+                if (myId && p.id === myId && currentUser.value) {
+                  return {
+                    ...p,
+                    fullName:
+                      currentUser.value.fullName || currentUser.value.username,
+                    username: currentUser.value.username,
+                    avatar: currentUser.value.avatar || "/placeholder.svg",
+                  };
+                }
 
-                // Update the participant object with real data
-                partner.fullName = userData.name || userData.username;
-                partner.username = userData.username;
-                partner.avatar =
-                  userData.profile_picture_url || "/placeholder.svg";
-                partner.isOnline = false; // You can hook this up to WS later
-              } catch (err) {
-                console.warn("Failed to fetch user info for chat:", conv.id);
-                partner.fullName = "Unknown User";
-                partner.avatar = "/placeholder.svg";
-              }
-            }
+                // 2. If it's someone else, fetch their profile from API
+                try {
+                  const userRes = await usersApi.getUserProfile(p.id);
+                  const userData = userRes.data;
+                  return {
+                    ...p,
+                    fullName: userData.name || userData.username,
+                    username: userData.username,
+                    avatar: userData.profile_picture_url || "/placeholder.svg",
+                  };
+                } catch (err) {
+                  console.warn(`Failed to fetch user ${p.id}`, err);
+                  return {
+                    ...p,
+                    fullName: "Unknown User",
+                    avatar: "/placeholder.svg",
+                  };
+                }
+              })
+            );
+
             return conv;
           })
         );
@@ -189,59 +200,67 @@ export function useChatStore() {
     };
   };
 
-  const handleIncomingMessage = (wsMsg: any) => {
-    let senderName = "Unknown";
-    let senderAvatar = "/placeholder.svg";
-
-    const conversation = conversations.value.find(
+  const handleIncomingMessage = async (wsMsg: any) => {
+    // 1. Check if we have this conversation locally
+    let conversation = conversations.value.find(
       (c) => c.id === wsMsg.conversation_id
     );
-    if (conversation) {
-      const sender = conversation.participants.find(
-        (p) => p.id === wsMsg.sender_id
+
+    // --- FIX: If conversation is missing (New Chat), fetch list immediately ---
+    if (!conversation) {
+      console.log("New conversation detected, refreshing list...");
+      await fetchConversations();
+      // Try finding it again after fetch
+      conversation = conversations.value.find(
+        (c) => c.id === wsMsg.conversation_id
       );
-      if (sender) {
-        senderName = sender.fullName;
-        senderAvatar = sender.avatar;
-      } else if (
-        currentUser.value &&
-        wsMsg.sender_id === currentUser.value.id
-      ) {
-        senderName = currentUser.value.fullName;
-        senderAvatar = currentUser.value.avatar;
-      }
     }
+
+    // 2. Resolve Sender Info (Now works because we fetched the list + participants)
+    const { name, avatar } = resolveSenderInfo(
+      wsMsg.sender_id,
+      wsMsg.conversation_id
+    );
 
     const isMedia = !!wsMsg.media_url;
 
+    // 3. Create Message Object
     const newMessage: Message = {
       id: wsMsg.id || `msg-${Date.now()}`,
       conversationId: wsMsg.conversation_id,
       senderId: wsMsg.sender_id,
-      senderName: senderName,
-      senderAvatar: senderAvatar,
+      senderName: name,
+      senderAvatar: avatar,
       content: isMedia ? wsMsg.media_url : wsMsg.content,
       messageType: isMedia ? "image" : "text",
       mediaUrl: wsMsg.media_url,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
-      status: "sent",
+      status: "sent", // You received it, so it's effectively sent/delivered
       isEdited: false,
       canUnsend: false,
     };
 
+    // 4. Add to Message List (only if viewing THIS conversation)
     if (selectedConversationId.value === wsMsg.conversation_id) {
       messages.value.push(newMessage);
+
+      // Optional: Scroll to bottom logic usually goes here or in the component watcher
     }
 
+    // 5. Update Sidebar Preview (Last Message & Unread Count)
     if (conversation) {
       conversation.lastMessage = newMessage;
+
+      // Increment unread count if we aren't looking at this chat
       if (selectedConversationId.value !== wsMsg.conversation_id) {
-        conversation.unreadCount += 1;
+        conversation.unreadCount = (conversation.unreadCount || 0) + 1;
       }
+
+      // Move this conversation to the top of the list
       conversations.value = [
         conversation,
-        ...conversations.value.filter((c) => c.id !== conversation.id),
+        ...conversations.value.filter((c) => c.id !== conversation!.id),
       ];
     }
   };
