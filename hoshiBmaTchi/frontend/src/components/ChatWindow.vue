@@ -19,10 +19,18 @@
       </div>
 
       <div class="chat-header-actions">
-        <button class="header-action-btn" title="Call">☎️</button>
-        <button class="header-action-btn" title="Video call">📹</button>
-        <button class="header-action-btn" @click="handleDeleteConversation" title="Delete conversation">🗑️</button>
-        <button class="header-action-btn" title="Info">ⓘ</button>
+        <button class="header-action-btn icon-btn" title="Call">
+          <img src="/icons/call-icon.png" alt="Call" class="action-icon" />
+        </button>
+        <button class="header-action-btn icon-btn" title="Video call">
+          <img src="/icons/video-call-icon.png" alt="Video Call" class="action-icon" />
+        </button>
+        <button class="header-action-btn icon-btn" @click="handleDeleteConversation" title="Delete conversation">
+          <img src="/icons/trashbin-icon.png" alt="Delete" class="action-icon" />
+        </button>
+        <button class="header-action-btn" title="Info">
+          ⓘ
+        </button>
       </div>
     </div>
 
@@ -40,9 +48,12 @@
 
     <div class="chat-input-area">
       <div class="input-actions">
-        <button class="input-action-btn" title="Add image">🖼️</button>
-        <button class="input-action-btn" title="Add GIF">🎬</button>
-        <button class="input-action-btn" title="Add emoji">😊</button>
+        <button class="input-action-btn icon-btn" title="Add image">
+          <img src="/icons/gallery-icon.png" alt="Gallery" class="action-icon" />
+        </button>
+        <button class="input-action-btn icon-btn" title="Add sticker">
+          <img src="/icons/sticker-icon.png" alt="Sticker" class="action-icon" />
+        </button>
       </div>
 
       <div class="input-wrapper">
@@ -63,7 +74,6 @@
       >
         ➤
       </button>
-      <button v-else class="input-action-btn" title="Like">❤️</button>
     </div>
   </div>
 
@@ -92,20 +102,18 @@ const emit = defineEmits<{
 }>()
 
 // --- FIX: Computed Property for Chat Partner ---
-// This safely handles cases where conversation is null or participants array is empty
+// This safely finds the "other person" and prevents undefined errors
 const chatPartner = computed(() => {
-  if (!props.selectedConversation || props.selectedConversation.participants.length === 0) {
+  // Safety check: if conversation or participants array is missing
+  if (!props.selectedConversation || !props.selectedConversation.participants?.length) {
     return null
   }
 
-  // 1. Try to find the participant who is NOT me
-  const otherUser = props.selectedConversation.participants.find(
-    (p) => p.id !== props.currentUserId
-  )
+  // Find the participant who is NOT me
+  const partner = props.selectedConversation.participants.find(p => p.id !== props.currentUserId)
 
-  // 2. If found, return them. 
-  // If not found (e.g., a "Note to Self" chat with only 1 participant), return the only participant.
-  return otherUser || props.selectedConversation.participants[0]
+  // Return partner, or fallback to the first person if (e.g. self-chat)
+  return partner || props.selectedConversation.participants[0]
 })
 
 const messageInput = ref('')
@@ -205,6 +213,30 @@ const handleDeleteConversation = () => {
   gap: 12px;
 }
 
+/* Icon Buttons */
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.icon-btn:hover {
+  transform: scale(1.1);
+}
+
+.action-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  /* Optional: Invert color for dark mode if icons are black */
+  /* filter: invert(1); */
+}
+
 .header-action-btn {
   background: none;
   border: none;
@@ -267,9 +299,7 @@ const handleDeleteConversation = () => {
 .input-action-btn {
   background: none;
   border: none;
-  color: #0084ff;
   cursor: pointer;
-  font-size: 18px;
   padding: 8px;
   transition: transform 0.2s ease;
 }
