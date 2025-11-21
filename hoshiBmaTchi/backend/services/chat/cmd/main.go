@@ -9,8 +9,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/core/domain"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/repositories"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/ws"
+	chatHttp "github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/delivery/http"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 // Configuration
@@ -20,41 +27,63 @@ const (
 )
 
 func main() {
-	r := gin.Default()
+	// 1. Load Configuration & Connect to Database
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Jakarta",
+		os.Getenv("DB_HOST"),
+		os.Getenv("DB_USER"),
+		os.Getenv("DB_PASSWORD"),
+		os.Getenv("DB_NAME"),
+		os.Getenv("DB_PORT"),
+	)
 
-	// 1. CORS Middleware (Crucial for Vue)
-	r.Use(CORSMiddleware())
-
-	// 2. Public Routes (Auth)
-	// Note: Authentication usually happens via JSON REST, so we proxy normally.
-	r.POST("/login", reverseProxy(AuthServiceURL))
-	r.POST("/signup", reverseProxy(AuthServiceURL))
-
-	// 3. Protected API Routes
-	api := r.Group("/api")
-	api.Use(AuthMiddleware())
-	{
-		// Forward REST requests to Chat Service
-		// The Chat Service must have matching HTTP handlers (e.g., GET /chats)
-		api.GET("/chats", reverseProxy(ChatServiceURL))
-		api.GET("/chats/search", reverseProxy(ChatServiceURL)) // Search Implementation
-		api.GET("/chats/:id/messages", reverseProxy(ChatServiceURL))
-		
-		// Forward other service requests here...
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	// 4. WebSocket Route
-	// Use AuthMiddleware to ensure they have a token before upgrading connection
-	r.GET("/ws", AuthMiddleware(), func(c *gin.Context) {
-		proxyWebSocket(c, ChatServiceURL)
+	// Optional: AutoMigrate your models to ensure tables exist
+	// Make sure your domain models are correctly defined
+	err = db.AutoMigrate(&domain.Conversation{}, &domain.Participant{}, &domain.Message{})
+	if err != nil {
+		log.Printf("Warning: AutoMigration failed: %v", err)
+	}
+
+	// 2. Connect to Redis
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisAddr,
 	})
 
+	// 3. Initialize Architecture Layers
+	// Repository
+	chatRepo := repositories.NewChatRepository(db)
+
+	// WebSocket Hub
+	hub := ws.NewHub(rdb)
+	go hub.Run() // Run the hub in a separate goroutine to handle broadcasting
+
+	// Handler
+	chatHandler := chatHttp.NewChatHandler(chatRepo, hub)
+
+	// 4. Setup Router
+	r := gin.Default()
+
+	// 5. Register Routes
+	// This will register /chats, /ws, etc. matching what the Gateway forwards
+	chatHandler.RegisterRoutes(r)
+
+	// 6. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8000"
+		port = "8080"
 	}
-	log.Printf("Gateway running on port %s", port)
-	log.Fatal(r.Run(":" + port))
+	log.Printf("Chat Service running on port %s", port)
+	if err := r.Run(":" + port); err != nil {
+		log.Fatalf("Failed to run server: %v", err)
+	}
 }
 
 func getJWTSecret() string {

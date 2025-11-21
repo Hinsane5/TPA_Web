@@ -1,31 +1,60 @@
 import { ref, computed } from "vue";
 import type { Conversation, Message, User } from "../types/chat";
+import { usersApi } from "../services/apiService";
 
 // --- STATE ---
 const currentUser = ref<User | null>(null);
 const conversations = ref<Conversation[]>([]);
-const messages = ref<Message[]>([]); // Messages for the ACTIVE conversation
+const messages = ref<Message[]>([]);
 const selectedConversationId = ref<string | null>(null);
 const isConnected = ref(false);
 let socket: WebSocket | null = null;
 
 // --- CONFIG ---
-// Point this to your Gateway URL
-const API_URL = "http://localhost:8000/api";
-const WS_URL = "ws://localhost:8000/ws";
+// FIX 1: Use relative path '/api' to use the Vite Proxy (points to 8081)
+const API_URL = "/api";
+// FIX 2: Point WebSocket to the Gateway port (8081)
+const WS_URL = "ws://localhost:8081/ws";
 
 export function useChatStore() {
-  // 1. GET AUTH TOKEN (Helper)
-  const getToken = () => localStorage.getItem("token"); // Or use your useAuth composable
+  // FIX 3: Use 'accessToken' to match apiService.ts
+  const getToken = () => localStorage.getItem("accessToken");
 
-  // 2. INITIALIZE (Call this when App mounts or User logs in)
+  const resolveSenderInfo = (senderId: string, conversationId: string) => {
+    // 1. Is it Me?
+    if (currentUser.value && senderId === currentUser.value.id) {
+      return {
+        name: currentUser.value.fullName || currentUser.value.username || "Me",
+        avatar: currentUser.value.avatar || "/placeholder.svg",
+      };
+    }
+
+    // 2. Is it a Participant in the conversation?
+    const conversation = conversations.value.find(
+      (c) => c.id === conversationId
+    );
+    if (conversation) {
+      const participant = conversation.participants.find(
+        (p) => p.id === senderId
+      );
+      if (participant && participant.fullName) {
+        return {
+          name: participant.fullName,
+          avatar: participant.avatar,
+        };
+      }
+    }
+
+    // 3. Fallback
+    return { name: "Unknown", avatar: "/placeholder.svg" };
+  };
+
   const initialize = async (user: User) => {
     currentUser.value = user;
     await fetchConversations();
     connectWebSocket();
   };
 
-  // 3. REST API: Fetch Conversations
   const fetchConversations = async () => {
     try {
       const token = getToken();
@@ -37,49 +66,106 @@ export function useChatStore() {
 
       if (res.ok) {
         const data = await res.json();
-        // Map backend data to frontend shape if necessary
-        conversations.value = data.map((c: any) => ({
+
+        // 1. Map the basic structure
+        const mappedConversations = data.map((c: any) => ({
           ...c,
-          participants: c.Participants || [], // Handle capitalization differences
-          updatedAt: c.CreatedAt, // Or LastMessageAt if you have it
+          // FIX: Backend now sends 'participants' (lowercase)
+          participants: c.participants || [],
+          updatedAt: c.created_at || new Date().toISOString(),
         }));
+
+        // 2. Fetch User Details for each chat (enrichment)
+        // We need to find the "other person" in each chat and get their name/avatar
+        const enrichedConversations = await Promise.all(
+          mappedConversations.map(async (conv: any) => {
+            // Identify the partner (the one who isn't ME)
+            const myId = currentUser.value?.id;
+            const partner =
+              conv.participants.find((p: any) => p.id !== myId) ||
+              conv.participants[0];
+
+            if (partner && partner.id) {
+              try {
+                // Fetch their profile from User Service
+                const userRes = await usersApi.getUserProfile(partner.id);
+                const userData = userRes.data;
+
+                // Update the participant object with real data
+                partner.fullName = userData.name || userData.username;
+                partner.username = userData.username;
+                partner.avatar =
+                  userData.profile_picture_url || "/placeholder.svg";
+                partner.isOnline = false; // You can hook this up to WS later
+              } catch (err) {
+                console.warn("Failed to fetch user info for chat:", conv.id);
+                partner.fullName = "Unknown User";
+                partner.avatar = "/placeholder.svg";
+              }
+            }
+            return conv;
+          })
+        );
+
+        conversations.value = enrichedConversations;
       }
     } catch (error) {
       console.error("Failed to fetch chats:", error);
     }
   };
 
-  // 4. REST API: Fetch Messages for specific chat
   const selectConversation = async (conversationId: string) => {
     selectedConversationId.value = conversationId;
-    messages.value = []; // Clear old messages instantly
+    messages.value = [];
 
     try {
       const token = getToken();
+      if (!token) return;
+
       const res = await fetch(
         `${API_URL}/chats/${conversationId}/messages?limit=50`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.ok) {
-        const data = await res.json();
-        messages.value = data.reverse(); // Backend usually sends newest first, UI often needs oldest first
+        const rawData = await res.json();
+
+        // FIX: Map Snake_Case -> CamelCase & Enrich Sender
+        const mappedMessages = rawData.map((msg: any) => {
+          const { name, avatar } = resolveSenderInfo(
+            msg.sender_id,
+            conversationId
+          );
+          const isMedia = !!msg.media_url;
+
+          return {
+            id: msg.id,
+            conversationId: msg.conversation_id,
+            senderId: msg.sender_id, // Crucial Fix: sender_id -> senderId
+            senderName: name,
+            senderAvatar: avatar,
+            content: isMedia ? msg.media_url : msg.content,
+            mediaUrl: msg.media_url, // Crucial Fix: media_url -> mediaUrl
+            messageType: isMedia ? "image" : "text",
+            createdAt: msg.created_at,
+            timestamp: msg.created_at,
+            isUnsent: msg.is_unsent,
+          };
+        });
+
+        messages.value = mappedMessages.reverse();
       }
     } catch (error) {
       console.error("Failed to fetch history:", error);
     }
   };
 
-  // 5. WEBSOCKET CONNECTION
   const connectWebSocket = () => {
-    if (socket) return; // Already connected
+    if (socket) return;
 
     const token = getToken();
     if (!token) return;
 
-    // Connect via Gateway
     socket = new WebSocket(`${WS_URL}?token=${token}`);
 
     socket.onopen = () => {
@@ -99,19 +185,13 @@ export function useChatStore() {
     socket.onclose = () => {
       isConnected.value = false;
       socket = null;
-      // Optional: Implement reconnect logic here
       setTimeout(connectWebSocket, 3000);
     };
   };
 
-  // 6. HANDLE INCOMING MESSAGES
-  // ... inside useChatStore.ts ...
-
-  // 6. HANDLE INCOMING MESSAGES
   const handleIncomingMessage = (wsMsg: any) => {
-    // 1. Find Sender Info (Backend WS doesn't send name/avatar, so look it up locally)
     let senderName = "Unknown";
-    let senderAvatar = "/placeholder.svg"; // Default avatar
+    let senderAvatar = "/placeholder.svg";
 
     const conversation = conversations.value.find(
       (c) => c.id === wsMsg.conversation_id
@@ -127,29 +207,21 @@ export function useChatStore() {
         currentUser.value &&
         wsMsg.sender_id === currentUser.value.id
       ) {
-        // It's me
         senderName = currentUser.value.fullName;
         senderAvatar = currentUser.value.avatar;
       }
     }
 
-    // 2. Determine Type
     const isMedia = !!wsMsg.media_url;
 
-    // 3. Create Message Object
     const newMessage: Message = {
-      id: wsMsg.id || `msg-${Date.now()}`, // Prefer ID from backend if available
+      id: wsMsg.id || `msg-${Date.now()}`,
       conversationId: wsMsg.conversation_id,
       senderId: wsMsg.sender_id,
-      senderName: senderName, // Filled from local lookup
-      senderAvatar: senderAvatar, // Filled from local lookup
-
-      // UI expects the Image URL to be in 'content' if type is 'image'
+      senderName: senderName,
+      senderAvatar: senderAvatar,
       content: isMedia ? wsMsg.media_url : wsMsg.content,
-
-      // FIX: Correct property name 'messageType'
       messageType: isMedia ? "image" : "text",
-
       mediaUrl: wsMsg.media_url,
       createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
@@ -158,18 +230,15 @@ export function useChatStore() {
       canUnsend: false,
     };
 
-    // 4. Add to List (if chat is open)
     if (selectedConversationId.value === wsMsg.conversation_id) {
       messages.value.push(newMessage);
     }
 
-    // 5. Update Conversation List Preview
     if (conversation) {
       conversation.lastMessage = newMessage;
       if (selectedConversationId.value !== wsMsg.conversation_id) {
         conversation.unreadCount += 1;
       }
-      // Move to top
       conversations.value = [
         conversation,
         ...conversations.value.filter((c) => c.id !== conversation.id),
@@ -177,31 +246,26 @@ export function useChatStore() {
     }
   };
 
-  // 7. SEND MESSAGE
   const sendMessage = (content: string) => {
     if (!socket || !selectedConversationId.value || !currentUser.value) return;
 
     const payload = {
-      type: "chat", // Defined in your backend Hub
+      type: "chat",
       conversation_id: selectedConversationId.value,
       sender_id: currentUser.value.id,
       content: content,
     };
 
     socket.send(JSON.stringify(payload));
-
-    // Optimistic UI update (optional: show immediately before server confirms)
-    // logic similar to handleIncomingMessage...
   };
 
   const deleteConversation = async (conversationId: string) => {
-    // Call DELETE endpoint
     const token = getToken();
     await fetch(`${API_URL}/chats/${conversationId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-    // Update local state
+
     conversations.value = conversations.value.filter(
       (c) => c.id !== conversationId
     );
@@ -211,7 +275,6 @@ export function useChatStore() {
   };
 
   const unsendMessage = async (messageId: string) => {
-    // 1. Optimistic Update (Update UI immediately)
     const msg = messages.value.find((m) => m.id === messageId);
     if (msg) {
       msg.content = "This message was unsent";
@@ -220,12 +283,10 @@ export function useChatStore() {
       msg.messageType = "text";
     }
 
-    // 2. Call Backend API
-    // (Assuming your backend has a DELETE or PUT endpoint for this)
     try {
-      const token = localStorage.getItem("token");
-      await fetch(`http://localhost:8080/api/chats/messages/${messageId}`, {
-        method: "DELETE", // or PUT depending on your backend implementation
+      const token = getToken();
+      await fetch(`${API_URL}/chats/messages/${messageId}`, {
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
     } catch (err) {

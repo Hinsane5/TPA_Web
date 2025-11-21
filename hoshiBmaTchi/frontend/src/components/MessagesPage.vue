@@ -25,6 +25,7 @@ import { useRoute } from 'vue-router';   // Import router
 import MessagesList from "./MessagesList.vue";
 import ChatWindow from "./ChatWindow.vue";
 import { useChatStore } from "../composables/useChatStore";
+import { usersApi } from "../services/apiService";
 
 const {
   currentUser,
@@ -36,7 +37,7 @@ const {
   sendMessage,
   unsendMessage,
   deleteConversation,
-  // initialize, 
+  initialize, 
 } = useChatStore();
 
 const route = useRoute();
@@ -52,10 +53,17 @@ const handleDeepLink = async () => {
 };
 
 onMounted(async () => {
-  // If your store needs initialization, await it here:
-  // await initialize(); 
-  
-  handleDeepLink();
+  try {
+    const { data: user } = await usersApi.getMe();
+
+    // 2. Initialize the store (Fetch chats, connect WebSocket)
+    await initialize(user);
+
+    // 3. Select the conversation if redirected from Profile
+    await handleDeepLink();
+  } catch (error) {
+    console.error("Failed to initialize messages page:", error);
+  }
 });
 
 // Run if the URL changes while staying on the page

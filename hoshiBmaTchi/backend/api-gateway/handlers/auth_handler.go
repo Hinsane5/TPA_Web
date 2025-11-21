@@ -289,22 +289,30 @@ func (h *AuthHandler) PerformPasswordReset(c *gin.Context) {
 
 func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var tokenString string
+
+		// 1. Check Authorization Header (Standard REST API)
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header diperlukan"})
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				tokenString = parts[1]
+			}
+		}
+
+		// 2. Check Query Param (Fallback for WebSocket /ws?token=...)
+		if tokenString == "" {
+			tokenString = c.Query("token")
+		}
+
+		// 3. Fail if no token found
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization token"})
 			c.Abort()
 			return
 		}
 
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Format header tidak valid"})
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
-
+		// 4. Validate with Users Service
 		res, err := h.UserClient.ValidateToken(context.Background(), &pb.ValidateTokenRequest{
 			Token: tokenString,
 		})
@@ -321,6 +329,7 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// 5. Set User ID for downstream handlers/proxies
 		c.Set("userID", res.UserId)
 
 		c.Next()

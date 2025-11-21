@@ -141,7 +141,31 @@ export const usersApi = {
   },
 
   getMe: () => {
-    const userId = localStorage.getItem("userID");
+    // 1. Try to get ID from LocalStorage
+    let userId = localStorage.getItem("userID");
+
+    // 2. Fallback: Decode it from the Access Token if missing
+    if (!userId) {
+      const token = localStorage.getItem("accessToken");
+      if (token) {
+        try {
+          const parts = token.split(".");
+          if (parts.length >= 2) {
+            const payloadPart = parts[1]; // FIX: Assign to variable first
+
+            if (payloadPart) {
+              // FIX: Explicit check to ensure it's a string
+              const payload = JSON.parse(atob(payloadPart));
+              // Check common claims for the ID
+              userId = payload.user_id || payload.sub || payload.id;
+            }
+          }
+        } catch (e) {
+          console.error("Failed to decode token for User ID", e);
+        }
+      }
+    }
+
     if (!userId) return Promise.reject("No user ID found");
     return apiClient.get(`/v1/users/${userId}`);
   },
