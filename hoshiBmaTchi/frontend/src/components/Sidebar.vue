@@ -90,10 +90,6 @@
         <div class="user-name">{{ currentUser.username }}</div>
         <div class="user-fullname">{{ currentUser.fullName }}</div>
       </div>
-      <div v-else class="user-info loading">
-        <div class="skeleton-text"></div>
-        <div class="skeleton-text small"></div>
-      </div>
     </div>
   </aside>
 </template>
@@ -101,6 +97,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import type { DashboardPage, User } from '../types'
+import { useAuth } from '../composables/useAuth'
 
 interface NavItem {
   id: DashboardPage
@@ -125,6 +122,7 @@ const emit = defineEmits<{
 
 const isMoreMenuOpen = ref(false)
 const currentUser = ref<User | null>(null)
+const { logout } = useAuth()
 
 const navItems: NavItem[] = [
   { id: 'home', label: 'Home', iconPath: '/icons/home-icon.png' },
@@ -154,14 +152,12 @@ const toggleTheme = () => {
 }
 
 const handleLogout = () => {
-  emit('logout')
+  logout()
 }
 
-// Fetch current user from backend
+
 onMounted(() => {
-  // TODO: Fetch current user from backend
-  // const response = await fetch('/api/user/me')
-  // currentUser.value = await response.json()
+
 })
 </script>
 
@@ -363,7 +359,6 @@ onMounted(() => {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-top: 1px solid var(--border-color);
 }
 
 .user-avatar {

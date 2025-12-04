@@ -27,6 +27,10 @@ const (
 	PostsService_UnlikePost_FullMethodName         = "/posts.PostsService/UnlikePost"
 	PostsService_CreateComment_FullMethodName      = "/posts.PostsService/CreateComment"
 	PostsService_GetCommentsForPost_FullMethodName = "/posts.PostsService/GetCommentsForPost"
+	PostsService_GetHomeFeed_FullMethodName        = "/posts.PostsService/GetHomeFeed"
+	PostsService_ToggleSavePost_FullMethodName     = "/posts.PostsService/ToggleSavePost"
+	PostsService_CreateCollection_FullMethodName   = "/posts.PostsService/CreateCollection"
+	PostsService_GetUserCollections_FullMethodName = "/posts.PostsService/GetUserCollections"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -41,6 +45,10 @@ type PostsServiceClient interface {
 	UnlikePost(ctx context.Context, in *UnlikePostRequest, opts ...grpc.CallOption) (*UnlikePostResponse, error)
 	CreateComment(ctx context.Context, in *CreateCommentRequest, opts ...grpc.CallOption) (*CommentResponse, error)
 	GetCommentsForPost(ctx context.Context, in *GetCommentsForPostRequest, opts ...grpc.CallOption) (*GetCommentsForPostResponse, error)
+	GetHomeFeed(ctx context.Context, in *GetHomeFeedRequest, opts ...grpc.CallOption) (*GetHomeFeedResponse, error)
+	ToggleSavePost(ctx context.Context, in *ToggleSavePostRequest, opts ...grpc.CallOption) (*ToggleSavePostResponse, error)
+	CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error)
+	GetUserCollections(ctx context.Context, in *GetUserCollectionsRequest, opts ...grpc.CallOption) (*GetUserCollectionsResponse, error)
 }
 
 type postsServiceClient struct {
@@ -131,6 +139,46 @@ func (c *postsServiceClient) GetCommentsForPost(ctx context.Context, in *GetComm
 	return out, nil
 }
 
+func (c *postsServiceClient) GetHomeFeed(ctx context.Context, in *GetHomeFeedRequest, opts ...grpc.CallOption) (*GetHomeFeedResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetHomeFeedResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetHomeFeed_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) ToggleSavePost(ctx context.Context, in *ToggleSavePostRequest, opts ...grpc.CallOption) (*ToggleSavePostResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ToggleSavePostResponse)
+	err := c.cc.Invoke(ctx, PostsService_ToggleSavePost_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CollectionResponse)
+	err := c.cc.Invoke(ctx, PostsService_CreateCollection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) GetUserCollections(ctx context.Context, in *GetUserCollectionsRequest, opts ...grpc.CallOption) (*GetUserCollectionsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserCollectionsResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetUserCollections_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -143,6 +191,10 @@ type PostsServiceServer interface {
 	UnlikePost(context.Context, *UnlikePostRequest) (*UnlikePostResponse, error)
 	CreateComment(context.Context, *CreateCommentRequest) (*CommentResponse, error)
 	GetCommentsForPost(context.Context, *GetCommentsForPostRequest) (*GetCommentsForPostResponse, error)
+	GetHomeFeed(context.Context, *GetHomeFeedRequest) (*GetHomeFeedResponse, error)
+	ToggleSavePost(context.Context, *ToggleSavePostRequest) (*ToggleSavePostResponse, error)
+	CreateCollection(context.Context, *CreateCollectionRequest) (*CollectionResponse, error)
+	GetUserCollections(context.Context, *GetUserCollectionsRequest) (*GetUserCollectionsResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -176,6 +228,18 @@ func (UnimplementedPostsServiceServer) CreateComment(context.Context, *CreateCom
 }
 func (UnimplementedPostsServiceServer) GetCommentsForPost(context.Context, *GetCommentsForPostRequest) (*GetCommentsForPostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCommentsForPost not implemented")
+}
+func (UnimplementedPostsServiceServer) GetHomeFeed(context.Context, *GetHomeFeedRequest) (*GetHomeFeedResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHomeFeed not implemented")
+}
+func (UnimplementedPostsServiceServer) ToggleSavePost(context.Context, *ToggleSavePostRequest) (*ToggleSavePostResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ToggleSavePost not implemented")
+}
+func (UnimplementedPostsServiceServer) CreateCollection(context.Context, *CreateCollectionRequest) (*CollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateCollection not implemented")
+}
+func (UnimplementedPostsServiceServer) GetUserCollections(context.Context, *GetUserCollectionsRequest) (*GetUserCollectionsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserCollections not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -342,6 +406,78 @@ func _PostsService_GetCommentsForPost_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetHomeFeed_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHomeFeedRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetHomeFeed(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetHomeFeed_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetHomeFeed(ctx, req.(*GetHomeFeedRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_ToggleSavePost_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleSavePostRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).ToggleSavePost(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_ToggleSavePost_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).ToggleSavePost(ctx, req.(*ToggleSavePostRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_CreateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).CreateCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_CreateCollection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).CreateCollection(ctx, req.(*CreateCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_GetUserCollections_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserCollectionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetUserCollections(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetUserCollections_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetUserCollections(ctx, req.(*GetUserCollectionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +516,22 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCommentsForPost",
 			Handler:    _PostsService_GetCommentsForPost_Handler,
+		},
+		{
+			MethodName: "GetHomeFeed",
+			Handler:    _PostsService_GetHomeFeed_Handler,
+		},
+		{
+			MethodName: "ToggleSavePost",
+			Handler:    _PostsService_ToggleSavePost_Handler,
+		},
+		{
+			MethodName: "CreateCollection",
+			Handler:    _PostsService_CreateCollection_Handler,
+		},
+		{
+			MethodName: "GetUserCollections",
+			Handler:    _PostsService_GetUserCollections_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

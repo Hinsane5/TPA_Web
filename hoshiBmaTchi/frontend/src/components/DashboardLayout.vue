@@ -4,6 +4,8 @@
     <Sidebar 
       :current-page="currentPage" 
       :notification-count="notificationCount"
+      :is-search-active="isSearchOpen" 
+      @toggle-search="handleSearchToggle"
       @navigate="handleNavigation" 
       @logout="handleLogout"
       @open-search="isSearchOpen = true"
@@ -27,7 +29,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { DashboardPage } from '../types'
 import Sidebar from './Sidebar.vue'
@@ -35,6 +37,7 @@ import SearchPanel from './SearchPanel.vue'
 import NotificationPanel from './NotificationPanel.vue'
 import CreatePostOverlay from './CreatePostOverlay.vue'
 import MiniMessagesComponent from './MiniMessagesComponent.vue'
+import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 const route = useRoute()
@@ -43,6 +46,8 @@ const isSearchOpen = ref(false)
 const isNotificationOpen = ref(false)
 const isCreateOpen = ref(false)
 const notificationCount = ref(0)
+
+const { checkLoginState } = useAuth()
 
 const currentPage = computed(() => {
   const pageName = route.path.split('/').pop()
@@ -54,20 +59,25 @@ const handleNavigation = (page: DashboardPage) => {
 }
 
 const handleLogout = () => {
-  // TODO: Clear auth token/session from backend
   router.push({ name: 'login' })
 }
 
 const handleSearch = (query: string) => {
   console.log('Search for:', query)
-  // TODO: Implement search backend call
 }
+
+const handleSearchToggle = () => {
+  isSearchOpen.value = !isSearchOpen.value;
+};
 
 const handlePostUpload = (file: File, description: string) => {
   console.log('Upload post:', file.name, 'Description:', description)
-  // TODO: Implement post upload to backend with description
   isCreateOpen.value = false
 }
+
+onMounted(() => {
+  checkLoginState()
+})
 </script>
 
 <style scoped>

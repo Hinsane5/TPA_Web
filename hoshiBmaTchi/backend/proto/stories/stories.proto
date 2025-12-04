@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+package stories;
+
+option go_package = "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories";
+
+import "google/protobuf/timestamp.proto";
+
+service StoriesService {
+  rpc CreateStory(CreateStoryRequest) returns (CreateStoryResponse);
+  rpc GetStory(GetStoryRequest) returns (GetStoryResponse);
+  rpc GetUserStories(GetUserStoriesRequest) returns (GetUserStoriesResponse);
+  rpc GetFollowingStories(GetFollowingStoriesRequest) returns (GetFollowingStoriesResponse);
+  rpc DeleteStory(DeleteStoryRequest) returns (DeleteStoryResponse);
+  rpc ViewStory(ViewStoryRequest) returns (ViewStoryResponse);
+  rpc LikeStory(LikeStoryRequest) returns (LikeStoryResponse);
+  rpc UnlikeStory(UnlikeStoryRequest) returns (UnlikeStoryResponse);
+  rpc ReplyToStory(ReplyToStoryRequest) returns (ReplyToStoryResponse);
+  rpc GetStoryReplies(GetStoryRepliesRequest) returns (GetStoryRepliesResponse);
+  rpc GetStoryViewers(GetStoryViewersRequest) returns (GetStoryViewersResponse);
+  rpc ShareStory(ShareStoryRequest) returns (ShareStoryResponse);
+}
+
+enum MediaType {
+  IMAGE = 0;
+  VIDEO = 1;
+}
+
+message Story {
+  string id = 1;
+  string user_id = 2;
+  string media_url = 3;
+  MediaType media_type = 4;
+  int32 duration = 5; // in seconds, 5 for images, actual duration for videos
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp expires_at = 7;
+  int32 view_count = 8;
+  int32 like_count = 9;
+  int32 reply_count = 10;
+}
+
+message CreateStoryRequest {
+  string user_id = 1;
+  string media_url = 2;
+  MediaType media_type = 3;
+  int32 duration = 4;
+}
+
+message CreateStoryResponse {
+  Story story = 1;
+}
+
+message GetStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message GetStoryResponse {
+  Story story = 1;
+  bool is_liked = 2;
+  bool is_viewed = 3;
+}
+
+message GetUserStoriesRequest {
+  string user_id = 1;
+  string viewer_id = 2;
+}
+
+message GetUserStoriesResponse {
+  repeated Story stories = 1;
+}
+
+message GetFollowingStoriesRequest {
+  string user_id = 1;
+  int32 limit = 2;
+}
+
+message GetFollowingStoriesResponse {
+  repeated UserStories user_stories = 1;
+}
+
+message UserStories {
+  string user_id = 1;
+  repeated Story stories = 2;
+  bool has_unseen = 3;
+}
+
+message DeleteStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message DeleteStoryResponse {
+  bool success = 1;
+}
+
+message ViewStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message ViewStoryResponse {
+  bool success = 1;
+}
+
+message LikeStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message LikeStoryResponse {
+  bool success = 1;
+}
+
+message UnlikeStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message UnlikeStoryResponse {
+  bool success = 1;
+}
+
+message ReplyToStoryRequest {
+  string story_id = 1;
+  string user_id = 2;
+  string content = 3;
+}
+
+message ReplyToStoryResponse {
+  StoryReply reply = 1;
+}
+
+message StoryReply {
+  string id = 1;
+  string story_id = 2;
+  string user_id = 3;
+  string content = 4;
+  google.protobuf.Timestamp created_at = 5;
+}
+
+message GetStoryRepliesRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message GetStoryRepliesResponse {
+  repeated StoryReply replies = 1;
+}
+
+message GetStoryViewersRequest {
+  string story_id = 1;
+  string user_id = 2;
+}
+
+message GetStoryViewersResponse {
+  repeated StoryViewer viewers = 1;
+}
+
+message StoryViewer {
+  string user_id = 1;
+  google.protobuf.Timestamp viewed_at = 2;
+}
+
+message ShareStoryRequest {
+  string story_id = 1;
+  string sender_id = 2;
+  string recipient_id = 3;
+}
+
+message ShareStoryResponse {
+  bool success = 1;
+  string message_id = 2;
+}

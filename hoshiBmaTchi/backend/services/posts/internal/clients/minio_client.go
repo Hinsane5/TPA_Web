@@ -2,11 +2,19 @@ package clients
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+)
+
+const (
+	maxRetries     = 10
+	retryDelay     = 5 * time.Second
+	connectTimeout = 10 * time.Second
 )
 
 func NewMinIOClient() (*minio.Client, error) {
@@ -16,30 +24,96 @@ func NewMinIOClient() (*minio.Client, error) {
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
 	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
 
-	minioClient, err := minio.New(endpoint, &minio.Options{
-		Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
-		Secure: useSSL,
-	})
-	if err != nil {
-		log.Printf("Gagal terhubung ke MinIO: %v", err)
-		return nil, err
+	if endpoint == "" || accessKeyID == "" || secretAccessKey == "" || bucketName == "" {
+		return nil, fmt.Errorf("missing required MinIO environment variables")
 	}
-	
-	log.Println("Berhasil terhubung ke MinIO")
 
-	ctx := context.Background()
-	err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
-	if err != nil {
-		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
-		if errBucketExists == nil && exists {
-			log.Printf("Bucket '%s' sudah ada, tidak perlu dibuat", bucketName)
-		} else {
-			log.Fatalf("Gagal membuat/memeriksa bucket: %v", err)
-			return nil, err
+	log.Printf("Connecting to MinIO at %s (SSL: %v)", endpoint, useSSL)
+
+	var minioClient *minio.Client
+	var err error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		minioClient, err = minio.New(endpoint, &minio.Options{
+			Creds:  credentials.NewStaticV4(accessKeyID, secretAccessKey, ""),
+			Secure: useSSL,
+		})
+
+		if err != nil {
+			log.Printf("Failed to create MinIO client (attempt %d/%d): %v", attempt, maxRetries, err)
+			if attempt < maxRetries {
+				time.Sleep(retryDelay)
+				continue
+			}
+			return nil, fmt.Errorf("failed to create MinIO client after %d attempts: %w", maxRetries, err)
 		}
-	} else {
-		log.Printf("Berhasil membuat bucket '%s'", bucketName)
+
+		ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+		defer cancel()
+
+		exists, errBucketExists := minioClient.BucketExists(ctx, bucketName)
+		if errBucketExists != nil {
+			log.Printf("Failed to check bucket (attempt %d/%d): %v", attempt, maxRetries, errBucketExists)
+			if attempt < maxRetries {
+				time.Sleep(retryDelay)
+				continue
+			}
+			return nil, fmt.Errorf("failed to verify MinIO connection: %w", errBucketExists)
+		}
+
+		if !exists {
+			ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+			defer cancel()
+
+			err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+			if err != nil {
+				log.Printf("Failed to create bucket (attempt %d/%d): %v", attempt, maxRetries, err)
+				if attempt < maxRetries {
+					time.Sleep(retryDelay)
+					continue
+				}
+				return nil, fmt.Errorf("failed to create bucket: %w", err)
+			}
+			log.Printf("Successfully created bucket '%s'", bucketName)
+		} else {
+			log.Printf("Bucket '%s' already exists", bucketName)
+		}
+
+		if err := setBucketPolicy(minioClient, bucketName); err != nil {
+			log.Printf("Warning: Failed to set bucket policy (this is optional): %v", err)
+		}
+
+		log.Println("Successfully connected to MinIO")
+		return minioClient, nil
 	}
 
-	return minioClient, nil
+	return nil, fmt.Errorf("failed to initialize MinIO client after %d attempts", maxRetries)
 }
+
+func setBucketPolicy(client *minio.Client, bucketName string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), connectTimeout)
+	defer cancel()
+
+	policy := fmt.Sprintf(`{
+		"Version": "2012-10-17",
+		"Statement": [
+			{
+				"Effect": "Allow",
+				"Principal": {"AWS": ["*"]},
+				"Action": ["s3:GetObject"],
+				"Resource": ["arn:aws:s3:::%s/*"]
+			}
+		]
+	}`, bucketName)
+
+	err := client.SetBucketPolicy(ctx, bucketName, policy)
+	if err != nil {
+		return fmt.Errorf("failed to set bucket policy: %w", err)
+	}
+
+	
+
+	log.Printf("Successfully set bucket policy for '%s'", bucketName)
+	return nil
+}
+

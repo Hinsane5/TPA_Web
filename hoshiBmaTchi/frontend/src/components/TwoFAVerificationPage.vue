@@ -75,9 +75,19 @@ const handleSubmit = async () => {
 
     const response = await authApi.verify2FA(data)
 
-    console.log('2FA successful, tokens:', response.data)
-    
-    router.push('/home')
+    if (response.data.access_token) {
+        console.log("2FA successful, tokens:", response.data);
+
+        if (response.data.access_token && response.data.refresh_token) {
+          localStorage.setItem('accessToken', response.data.access_token)
+          localStorage.setItem('refreshToken', response.data.refresh_token)
+        }
+
+        router.push("/dashboard");
+
+      } else {
+        error.value = "Invalid token response from server.";
+      }
 
   } catch (err: any) {
     console.error('2FA verification failed:', err)

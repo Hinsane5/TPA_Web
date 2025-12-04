@@ -158,7 +158,6 @@ func (h *AuthHandler) SendOtp(c *gin.Context){
 	})
  
 	if err != nil {
-		// Handle gRPC errors (like rate limit)
 		if s, ok := status.FromError(err); ok {
 			switch s.Code() {
 			case codes.InvalidArgument:
@@ -219,11 +218,9 @@ func (h *AuthHandler) Register(c *gin.Context) {
 				return
 			
 			case codes.AlreadyExists:
-				// If user exists, return a 409 Conflict (or 400)
 				c.JSON(http.StatusConflict, gin.H{"error": s.Message()})
 				return
 			default:
-				// For any other gRPC error, return a 500
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "gRPC error: " + s.Message()})
 				return
 					
@@ -289,21 +286,25 @@ func (h *AuthHandler) PerformPasswordReset(c *gin.Context) {
 
 func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var tokenString string
+
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header diperlukan"})
+		if authHeader != "" {
+			parts := strings.Split(authHeader, " ")
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				tokenString = parts[1]
+			}
+		}
+
+		if tokenString == "" {
+			tokenString = c.Query("token")
+		}
+
+		if tokenString == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid Authorization token"})
 			c.Abort()
 			return
 		}
-
-		parts := strings.Split(authHeader, " ")
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Format header tidak valid"})
-			c.Abort()
-			return
-		}
-
-		tokenString := parts[1]
 
 		res, err := h.UserClient.ValidateToken(context.Background(), &pb.ValidateTokenRequest{
 			Token: tokenString,
@@ -333,3 +334,77 @@ func NewAuthHandler(userClient pb.UserServiceClient) *AuthHandler {
 	}
 }
 
+func (h *AuthHandler) GetUserProfile(c *gin.Context) {
+    userID := c.Param("id")
+
+    res, err := h.UserClient.GetUserProfile(context.Background(), &pb.GetUserProfileRequest{
+        UserId: userID,
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            if s.Code() == codes.NotFound {
+                c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+                return
+            }
+        }
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profile"})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}
+
+func (h *AuthHandler) FollowUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, _ := c.Get("userID")
+
+    _, err := h.UserClient.FollowUser(context.Background(), &pb.FollowUserRequest{
+        FollowerId:  currentUserID.(string),
+        FollowingId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Followed successfully"})
+}
+
+func (h *AuthHandler) UnfollowUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, _ := c.Get("userID")
+
+    _, err := h.UserClient.UnfollowUser(context.Background(), &pb.UnfollowUserRequest{
+        FollowerId:  currentUserID.(string),
+        FollowingId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Unfollowed successfully"})
+}
+
+func (h *AuthHandler) SearchUsers (c *gin.Context){
+	query := c.Query("q")
+	if query == ""{
+		c.JSON(http.StatusOK, gin.H{"users": []interface{}{}})
+		return
+	}
+
+	userID, _ := c.Get("userID")
+
+    res, err := h.UserClient.SearchUsers(context.Background(), &pb.SearchUsersRequest{
+        Query:  query,
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"users": res.Users})
+}

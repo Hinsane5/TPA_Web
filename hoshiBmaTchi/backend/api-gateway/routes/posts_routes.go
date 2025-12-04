@@ -23,5 +23,11 @@ func SetupPostsRoutes(r *gin.Engine, postsHandler *handlers.PostsHandler, authHa
 
         postsRoutes.POST("/:postID/comments", postsHandler.CreateComment)
         postsRoutes.GET("/:postID/comments", postsHandler.GetCommentsForPost)
+
+        postsRoutes.GET("/feed", postsHandler.GetHomeFeed)
+
+        postsRoutes.POST("/:postID/save", postsHandler.ToggleSavePost)
+        postsRoutes.GET("/collections", postsHandler.GetUserCollections)
+        postsRoutes.POST("/collections", postsHandler.CreateCollection)
     }
 }

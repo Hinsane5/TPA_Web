@@ -53,7 +53,7 @@ const error = ref('')
 const message = ref('')
 
 const validateEmail = () => {
-  error.value = '' // Hapus error lama
+  error.value = '' 
   const validation = validateEmailUtil(email.value.trim())
   if (!validation.isValid) {
     error.value = validation.message

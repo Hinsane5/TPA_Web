@@ -1,10 +1,9 @@
 package handlers
 
 import (
-	// Impor yang diperlukan: "net/http", "github.com/gin-gonic/gin",
-	// "google.golang.org/grpc/status", "google.golang.org/grpc/codes"
 	"context"
 	"net/http"
+	"strconv"
 
 	postsProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	usersProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -18,10 +17,14 @@ type PostsHandler struct {
 }
 
 type createPostJSON struct {
+    Media    []mediaItemJSON `json:"media" binding:"required"` 
+	Caption  string          `json:"caption"`
+	Location string          `json:"location"`
+}
+
+type mediaItemJSON struct {
     MediaObjectName string `json:"media_object_name" binding:"required"`
-	MediaType       string `json:"media_type" binding:"required"`
-	Caption         string `json:"caption"`
-	Location        string `json:"location"`
+    MediaType       string `json:"media_type" binding:"required"`
 }
 
 func NewPostsHandler(postsClient postsProto.PostsServiceClient, usersClient usersProto.UserServiceClient) *PostsHandler {
@@ -33,6 +36,14 @@ func NewPostsHandler(postsClient postsProto.PostsServiceClient, usersClient user
 
 type createCommentJSON struct {
 	Content string `json:"content" binding:"required"`
+}
+
+type toggleSaveJSON struct {
+    CollectionID string `json:"collection_id"`
+}
+
+type createCollectionJSON struct {
+    Name string `json:"name" binding:"required"`
 }
 
 func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
@@ -71,25 +82,31 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
     }
 
     userID, exists := c.Get("userID")
-
     if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "UserID not found in token"})
 		return
 	}
 
+    var protoMedia []*postsProto.PostMediaItem
+    for _, m := range jsonReq.Media {
+        protoMedia = append(protoMedia, &postsProto.PostMediaItem{
+            MediaObjectName: m.MediaObjectName,
+            MediaType:       m.MediaType,
+        })
+    }
+
     res, err := h.postsClient.CreatePost(context.Background(), &postsProto.CreatePostRequest{
-		UserId:          userID.(string),
-		MediaObjectName: jsonReq.MediaObjectName,
-		MediaType:       jsonReq.MediaType,
-		Caption:         jsonReq.Caption,
-		Location:        jsonReq.Location,
+		UserId:   userID.(string),
+		Media:    protoMedia, 
+		Caption:  jsonReq.Caption,
+		Location: jsonReq.Location,
 	})
 
     if err != nil {
 		if s, ok := status.FromError(err); ok {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
 		} else {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "gagal memanggil gRPC: " + err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call gRPC: " + err.Error()})
 		}
 		return
 	}
@@ -98,7 +115,7 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
 }
 
 func (h *PostsHandler) GetPostsByUserID (c *gin.Context){
-    userID := c.Param("userID") //antara userID atau gk UserID
+    userID := c.Param("userID") 
     if userID == "" {
         c.JSON(http.StatusBadRequest, gin.H{"error" : "Parameter userID diperlukan"})
         return
@@ -199,4 +216,124 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, res.Comments)
+}
+
+func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    limitStr := c.DefaultQuery("limit", "10")
+    offsetStr := c.DefaultQuery("offset", "0")
+    limit, _ := strconv.Atoi(limitStr)
+    offset, _ := strconv.Atoi(offsetStr)
+
+    res, err := h.postsClient.GetHomeFeed(context.Background(), &postsProto.GetHomeFeedRequest{
+        UserId: userID.(string),
+        Limit:  int32(limit),
+        Offset: int32(offset),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch feed: " + err.Error()})
+        return
+    }
+
+    var enrichedPosts []gin.H
+
+    for _, post := range res.Posts {
+        userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+            UserId: post.UserId,
+        })
+
+        username := "Unknown"
+        profilePic := ""
+        
+        if err == nil {
+            username = userRes.Username
+            profilePic = userRes.ProfilePictureUrl
+        }
+
+
+        var mediaList []gin.H
+        for _, m := range post.Media {
+            mediaList = append(mediaList, gin.H{
+                "media_url":  m.MediaUrl,
+                "media_type": m.MediaType,
+            })
+        }
+
+        enrichedPosts = append(enrichedPosts, gin.H{
+            "id":              post.Id,
+            "user_id":         post.UserId,
+            "media":           mediaList, 
+            "caption":         post.Caption,
+            "location":        post.Location,
+            "created_at":      post.CreatedAt,
+            "username":        username,          
+            "profile_picture": profilePic,        
+            "likes_count":     post.LikesCount,
+            "comments_count":  post.CommentsCount,
+            "is_liked":        post.IsLiked,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
+}
+
+func (h *PostsHandler) ToggleSavePost(c *gin.Context) {
+    postID := c.Param("postID")
+    userID, _ := c.Get("userID")
+    
+    var req toggleSaveJSON
+    c.ShouldBindJSON(&req)
+
+    res, err := h.postsClient.ToggleSavePost(context.Background(), &postsProto.ToggleSavePostRequest{
+        UserId:       userID.(string),
+        PostId:       postID,
+        CollectionId: req.CollectionID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}
+
+func (h *PostsHandler) CreateCollection(c *gin.Context) {
+    userID, _ := c.Get("userID")
+    var req createCollectionJSON
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    res, err := h.postsClient.CreateCollection(context.Background(), &postsProto.CreateCollectionRequest{
+        UserId: userID.(string),
+        Name:   req.Name,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusCreated, res)
+}
+
+func (h *PostsHandler) GetUserCollections(c *gin.Context) {
+    userID, _ := c.Get("userID")
+
+    res, err := h.postsClient.GetUserCollections(context.Background(), &postsProto.GetUserCollectionsRequest{
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, res.Collections)
 }

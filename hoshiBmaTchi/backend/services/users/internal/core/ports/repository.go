@@ -1,6 +1,10 @@
 package ports
 
-import "github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
+import (
+	"context"
+
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
+)
 
 type UserRepository interface{
 	Save(user *domain.User) error
@@ -8,4 +12,10 @@ type UserRepository interface{
 	FindByEmailOrUsername(identifier string) (*domain.User, error)
 	FindByID(userID string) (*domain.User, error)
 	UpdatePassword(userID string, newPassword string) error
+	GetUserProfileWithStats(userID string) (*domain.User, int64, int64, error)
+	CreateFollow(followerID, followingID string) error
+    DeleteFollow(followerID, followingID string) error
+    IsFollowing(followerID, followingID string) (bool, error)
+	GetFollowing(userID string) ([]string, error)
+	SearchUsers(ctx context.Context, query string) ([]*domain.User, error)
 }

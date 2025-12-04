@@ -1,0 +1,106 @@
+syntax = "proto3";
+
+package chat;
+
+option go_package = "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat";
+
+service ChatService {
+  // Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
+  rpc CreateGroupChat(CreateGroupRequest) returns (CreateGroupResponse);
+  rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
+  // Fetches the list of conversations for a specific user.
+  rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+  rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
+  // Fetches paginated message history for a specific conversation.
+  rpc GetMessageHistory(GetHistoryRequest) returns (GetHistoryResponse);
+}
+
+enum MessageType {
+  TEXT = 0;
+  IMAGE = 1;
+  VIDEO = 2;
+  AUDIO = 3;
+  FILE = 4;
+  STORY_SHARE = 5;
+  POST_SHARE = 6;
+}
+
+message CreateGroupRequest {
+  string name = 1;
+  repeated string user_ids = 2; // List of participant User IDs
+}
+
+message CreateGroupResponse {
+  string conversation_id = 1;
+}
+
+message GetConversationsRequest {
+  string user_id = 1;
+}
+
+message GetConversationsResponse {
+  repeated Conversation conversations = 1;
+}
+
+message Conversation {
+  string id = 1;
+  string name = 2;
+  bool is_group = 3;
+  string last_message = 4;    // Optional: for preview in the list
+  string last_message_at = 5; // Timestamp string
+}
+
+message GetHistoryRequest {
+  string conversation_id = 1;
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetHistoryResponse {
+  repeated Message messages = 1;
+}
+
+message Message {
+  string id = 1;
+  string sender_id = 2;
+  string content = 3;
+  string media_url = 4;
+  string created_at = 5;
+  bool is_unsent = 6;
+}
+
+message SendMessageRequest {
+  string sender_id = 1;
+  string recipient_id = 2;
+  string content = 3;
+  MessageType message_type = 4;
+  string media_url = 5;
+  string story_id = 6;
+  string post_id = 7;
+}
+
+message SendMessageResponse {
+  Message message = 1;
+  string message_id = 2;
+}
+
+message GetMessagesRequest {
+  string user_id = 1;
+  string other_user_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message GetMessagesResponse {
+  repeated Message messages = 1;
+}
+
+message DeleteMessageRequest {
+  string message_id = 1;
+  string user_id = 2;
+}
+
+message DeleteMessageResponse {
+  bool success = 1;
+}

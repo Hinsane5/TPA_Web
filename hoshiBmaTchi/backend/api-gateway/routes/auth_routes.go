@@ -22,4 +22,13 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 		authGroup.POST("/request-password-reset", authHandler.RequestPasswordReset)
 		authGroup.POST("/reset-password", authHandler.PerformPasswordReset)
 	}
+
+	usersGroup := router.Group("/api/v1/users")
+	usersGroup.Use(authHandler.AuthMiddleware())
+	{
+		usersGroup.GET("/:id", authHandler.GetUserProfile)
+		usersGroup.POST("/:id/follow", authHandler.FollowUser) 
+    	usersGroup.DELETE("/:id/follow", authHandler.UnfollowUser)
+		usersGroup.GET("/search", authHandler.SearchUsers)
+	}
 }

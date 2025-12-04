@@ -6,11 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"net/url"
 	"os"
 	"regexp"
+	"sort"
+	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -200,39 +203,6 @@ func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoog
 	email := payload.Claims["email"].(string)
 	name := payload.Claims["name"].(string)
 	picture := payload.Claims["picture"].(string)
-
-	
-
-	// payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-	// if err != nil {
-	// 	log.Printf("Google token validation failed: %v", err)
-	// 	return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-	// }
-
-	// email := payload.Claims["email"].(string)
-	// name := payload.Claims["name"].(string)
-	// picture := payload.Claims["picture"].(string)
-
-	// var email string
-	// var name string
-	// var picture string
-
-	// if req.IdToken == "test_token_123" {
-	// 	log.Println("--- MOCK GOOGLE LOGIN: Using test token ---")
-	// 	email = "testuser_google@example.com"
-	// 	name = "Google Test User"
-	// 	picture = "http://example.com/google.jpg"
-	// } else {
-	// 	payload, err := idtoken.Validate(ctx, req.IdToken, googleClientID)
-	// 	if err != nil {
-	// 		log.Printf("Google token validation failed: %v", err)
-	// 		return nil, status.Error(codes.Unauthenticated, "Invalid Google token")
-	// 	}
-
-	// 	email = payload.Claims["email"].(string)
-	// 	name = payload.Claims["name"].(string)
-	// 	picture = payload.Claims["picture"].(string)
-	// }
 
 	user, err := h.repo.FindByEmail(email)
 	if err != nil && err != gorm.ErrRecordNotFound{
@@ -546,31 +516,6 @@ func (h *UserHandler) RegisterUser(ctx context.Context, req *pb.RegisterUserRequ
 		dobTimestamp = timestamppb.New(newUser.DateOfBirth)
 	}
 
-	// otp := fmt.Sprintf("%06d", rand.Intn(1000000))
-
-	// err = h.redis.Set(ctx, "otp:"+req.Email, otp, 5*time.Minute).Err()
-
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, "failed to store OTP")
-	// }
-
-	// emailBody := fmt.Sprintf("Your verification code is %s", otp)
-
-	// err = h.amqpChan.PublishWithContext(ctx, 
-	// 	"email_exchange",
-	// 	"send_email",
-	// 	false,
-	// 	false,
-	// 	amqp.Publishing{
-	// 		ContentType: "application/json",
-	// 		Body: []byte(fmt.Sprintf(`{"email" : "%s", "subject": "Verify your email", "body": "%s"}`, req.Email, emailBody)),
-	// 	},
-	// )
-
-	// if err != nil {
-	// 	return nil, status.Error(codes.Internal, "failed to publish email task")
-	// }
-
 	return &pb.RegisterUserResponse{
 		UserId:            newUser.ID.String(),
 		Name:              newUser.Name,
@@ -606,5 +551,195 @@ func (h *UserHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 	}, nil
 }
 
+func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.GetUserProfileResponse, error){
+	if req.UserId == ""{
+		return nil, status.Error(codes.InvalidArgument, "User ID is required")
+	}
 
+	user, followers, following, err := h.repo.GetUserProfileWithStats(req.UserId)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound{
+			return nil, status.Error(codes.NotFound, "User not found")
+		}
+
+		return nil, status.Error(codes.Internal, "Failed to fetch user profile")
+	}
+
+	return &pb.GetUserProfileResponse{
+        Id:                user.ID.String(),
+        Username:          user.Username,
+        Name:              user.Name,
+        Bio:               user.Bio,
+        ProfilePictureUrl: user.ProfilePictureURL,
+        FollowersCount:    followers,
+        FollowingCount:    following,
+        IsFollowing:       false, 
+    }, nil
+}
+
+func (h *UserHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest) (*pb.FollowUserResponse, error) {
+    if req.FollowerId == req.FollowingId {
+        return nil, status.Error(codes.InvalidArgument, "You cannot follow yourself")
+    }
+
+    exists, _ := h.repo.IsFollowing(req.FollowerId, req.FollowingId)
+    if exists {
+        return &pb.FollowUserResponse{Message: "Already following"}, nil
+    }
+
+    err := h.repo.CreateFollow(req.FollowerId, req.FollowingId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to follow user")
+    }
+
+    return &pb.FollowUserResponse{Message: "Successfully followed user"}, nil
+}
+
+func (h *UserHandler) UnfollowUser(ctx context.Context, req *pb.UnfollowUserRequest) (*pb.UnfollowUserResponse, error) {
+    err := h.repo.DeleteFollow(req.FollowerId, req.FollowingId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to unfollow user")
+    }
+    return &pb.UnfollowUserResponse{Message: "Successfully unfollowed user"}, nil
+}
+
+func (h *UserHandler) GetFollowingList (ctx context.Context, req *pb.GetFollowingListRequest) (*pb.GetFollowingListResponse, error){
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User ID is required")
+	}
+
+	followingIDs, err := h.repo.GetFollowing(req.UserId)
+
+	if err != nil {
+		log.Printf("Failed to fetch following list for user %s: %v", req.UserId, err)
+        return nil, status.Error(codes.Internal, "Failed to fetch following list")
+	}
+
+	return &pb.GetFollowingListResponse{
+		FollowingIds: followingIDs,
+	}, nil
+}
+
+func min(a, b int) int { 
+	if a < b { 
+		return a 
+	}; 
+	return b 
+}
+
+func max(a, b int) int { 
+	if a > b { 
+		return a 
+	}; 
+
+	return b 
+}
+
+func jaroWinkler(s1, s2 string) float64{
+	s1, s2 = strings.ToLower(s1), strings.ToLower(s2)
+	if s1 == s2 {
+		return 1.0
+	}
+
+	matchDistance := int(math.Floor(float64(max(len(s1), len(s2)))/2.0) - 1)
+	matches := 0
+	transpositions := 0
+
+	s1Matches := make([]bool, len(s1))
+	s2Matches := make([]bool, len(s2))
+
+	for i := 0; i < len(s1); i++{
+		start := max(0, i - matchDistance)
+		end := min(i + matchDistance + 1, len(s2))
+
+		for j := start; j < end; j++ {
+			if s2Matches[j] { 
+				continue 
+			}
+
+            if s1[i] != s2[j] { 
+				continue 
+			}
+
+            s1Matches[i] = true
+            s2Matches[j] = true
+            matches++
+            break
+		}
+	}
+
+	if matches == 0 { 
+		return 0.0 
+	}
+    
+    k := 0
+    for i := 0; i < len(s1); i++ {
+        if !s1Matches[i] { 
+			continue 
+		}
+
+        for !s2Matches[k] { k++ }
+        if s1[i] != s2[k] { transpositions++ }
+        k++
+    }
+    
+    jaro := (float64(matches)/float64(len(s1)) + 
+             float64(matches)/float64(len(s2)) + 
+             float64(matches-transpositions/2)/float64(matches)) / 3.0
+
+    prefix := 0
+    for i := 0; i < min(len(s1), len(s2)); i++ {
+        if s1[i] == s2[i] { prefix++ } else { break }
+    }
+    prefix = min(prefix, 4)
+    
+    return jaro + 0.1*float64(prefix)*(1.0-jaro)
+}
+
+func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error){
+	candidates, err := h.repo.SearchUsers(ctx, req.Query)
+	if err != nil {
+		return nil, err
+	}
+
+	type match struct {
+		User *domain.User
+		Score float64
+	}
+
+	var matches []match
+
+	for _, u := range candidates {
+		score := jaroWinkler(req.Query, u.Username)
+		nameScore := jaroWinkler(req.Query, u.Name)
+
+		if nameScore > score {
+			score = nameScore
+		}
+
+		matches = append(matches, match{User: u, Score: score})
+	}
+
+    sort.Slice(matches, func(i, j int) bool {
+        return matches[i].Score > matches[j].Score
+    })
+
+    limit := 5
+    if len(matches) < 5 {
+        limit = len(matches)
+    }
+
+    var responseUsers []*pb.UserProfile
+    for i := 0; i < limit; i++ {
+        u := matches[i].User
+        responseUsers = append(responseUsers, &pb.UserProfile{
+            UserId:            u.ID.String(),
+            Username:          u.Username,
+            Name:              u.Name,
+            ProfilePictureUrl: u.ProfilePictureURL,
+        })
+    }
+
+    return &pb.SearchUsersResponse{Users: responseUsers}, nil
+}
 

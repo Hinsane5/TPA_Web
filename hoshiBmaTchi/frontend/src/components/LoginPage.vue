@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
-import { authApi } from "../services/apiService";
+import { authApi, setAuthHeader } from "../services/apiService";
 // import { useGoogleSignIn } from 'vue3-google-signin'
 
 const router = useRouter();
@@ -92,7 +92,15 @@ const handleLogin = async () => {
       });
     } else {
       console.log("Login successful, tokens:", response.data);
-      router.push("/home");
+
+      if (response.data.tokens) {
+        localStorage.setItem('accessToken', response.data.tokens.access_token)
+        localStorage.setItem('refreshToken', response.data.tokens.refresh_token)
+      }
+      
+      setAuthHeader(response.data.access_token);
+
+      router.push("/dashboard");
     }
   } catch (err: any) {
     console.error("Login failed:", err);

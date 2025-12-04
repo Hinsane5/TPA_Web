@@ -44,6 +44,11 @@ const router = createRouter({
       component: ResetPasswordPage,
     },
     {
+      path: "/verify-2fa",
+      name: "verify-2fa",
+      component: TwoFAVerificationPage,
+    },
+    {
       path: "/dashboard",
       component: DashboardLayout,
       redirect: "/dashboard/home",
@@ -69,13 +74,31 @@ const router = createRouter({
           component: MessagesPage,
         },
         {
-          path: "profile",
+          path: "profile/:id?",
           name: "profile",
           component: ProfilePage,
         },
       ],
     },
   ],
+});
+
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("accessToken");
+
+  if (to.matched.some((record) => record.path.startsWith("/dashboard"))) {
+    if (!token) {
+      next({ name: "login" });
+    } else {
+      next();
+    }
+  }
+  else if (token && (to.name === "login" || to.name === "register")) {
+    next({ name: "home" });
+  }
+  else {
+    next();
+  }
 });
 
 export default router;

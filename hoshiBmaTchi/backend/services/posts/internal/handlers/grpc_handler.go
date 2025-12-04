@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"log"
+	"net/http"
+	"net/url"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
+	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
 	"github.com/google/uuid"
@@ -18,34 +21,45 @@ import (
 
 type Server struct {
 	pb.UnimplementedPostsServiceServer 
-	repo ports.PostRepository         
-	minio *minio.Client   
-	bucketName string           
+	repo           ports.PostRepository         
+	minio          *minio.Client 
+	presignClient  *minio.Client  
+	bucketName     string  
+	publicEndPoint string    
+	userClient     userPb.UserServiceClient     
 }
 
-func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, bucketName string) *Server {
+func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string, userClient userPb.UserServiceClient) *Server {
 	return &Server{
-		repo:  repo,
-		minio: minio,
-		bucketName: bucketName,
+		repo:           repo,
+		minio:          minio,
+		presignClient:  presignClient,
+		bucketName:     bucketName,
+		publicEndPoint: publicEndPoint,
+		userClient:     userClient,
 	}
 }
 
 func (s *Server) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadURLRequest) (*pb.GenerateUploadURLResponse, error){
 	bucketName := s.bucketName
-
 	objectName := uuid.New().String() + "-" + req.GetFileName()
-
 	expiry := 15 * time.Minute
 
-	presignedURL, err := s.minio.PresignedPutObject(ctx, bucketName, objectName, expiry)
+	headers := make(http.Header)
+	if req.GetFileType() != "" {
+		headers.Set("Content-Type", req.GetFileType())
+	}
+
+	reqParams := make(url.Values)
+
+	presignedURL, err := s.presignClient.PresignHeader(ctx, "PUT", bucketName, objectName, expiry, reqParams, headers)
 	if err != nil {
 		log.Printf("Failed to generate presigned URL: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to generate posts url")
 	}
 
 	return &pb.GenerateUploadURLResponse{
-		UploadUrl: presignedURL.String(),
+		UploadUrl:  presignedURL.String(),
 		ObjectName: objectName,
 	}, nil
 }
@@ -56,14 +70,20 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, status.Errorf(codes.InvalidArgument, "UserID tidak valid")
 	}
 
+	var mediaItems []domain.PostMedia
+	for i, item := range req.GetMedia() {
+		mediaItems = append(mediaItems, domain.PostMedia{
+			MediaObjectName: item.MediaObjectName,
+			MediaType:       item.MediaType,
+			Sequence:        i,
+		})
+	}
 
 	newPost := &domain.Post{
-		UserID:          userID,
-		MediaObjectName: req.GetMediaObjectName(),
-		MediaType:       req.GetMediaType(),
-		Caption:         req.GetCaption(),
-		Location:        req.GetLocation(),
-
+		UserID:   userID,
+		Caption:  req.GetCaption(),
+		Location: req.GetLocation(),
+		Media:    mediaItems, 
 	}
 
 	err = s.repo.CreatePost(ctx, newPost)
@@ -72,13 +92,21 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		return nil, status.Error(codes.Internal, "Failed to create post")
 	}
 
+	var pbMedia []*pb.PostMediaResponse
+
+	for _, m := range newPost.Media {
+		pbMedia = append(pbMedia, &pb.PostMediaResponse{
+			MediaType: m.MediaType,
+		})
+	}
+
 	return &pb.CreatePostResponse{
 		Post: &pb.PostResponse{
-			Id: newPost.ID.String(),
-			UserId: newPost.UserID.String(),
-			MediaType: newPost.MediaType,
-			Caption: newPost.Caption,
-			Location: newPost.Location,
+			Id:        newPost.ID.String(),
+			UserId:    newPost.UserID.String(),
+			Media:     pbMedia, 
+			Caption:   newPost.Caption,
+			Location:  newPost.Location,
 			CreatedAt: newPost.CreatedAt.Format(time.RFC3339),
 		},
 	}, nil
@@ -90,7 +118,6 @@ func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDR
 	}
 
 	posts, err := s.repo.GetPostsByUserID(ctx, req.GetUserId())
-
 	if err != nil {
 		log.Printf("Failed to takes post from DB: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to takes post")
@@ -100,35 +127,104 @@ func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDR
 	expiry := time.Hour * 1
 
 	for _, post := range posts{
-		presignedURL, err := s.minio.PresignedGetObject(ctx, s.bucketName, post.MediaObjectName, expiry, nil)
+		var pbMedia []*pb.PostMediaResponse
+		
+		for _, m := range post.Media {
+			reqParams := make(url.Values)
+			reqParams.Set("response-content-type", m.MediaType)
 
-		if err != nil {
-			log.Printf("Failed to to make Presigned GET URL for %s: %v", post.MediaObjectName, err)
-			presignedURL = nil
-		}
+			presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+			
+			mediaURLString := ""
+			if err != nil {
+				log.Printf("Failed to make Presigned GET URL for %s: %v", m.MediaObjectName, err)
+			} else {
+				mediaURLString = presignedURL.String()
+			}
 
-		mediaURLString := ""
-		if presignedURL != nil {
-			mediaURLString = presignedURL.String()
+			pbMedia = append(pbMedia, &pb.PostMediaResponse{
+				MediaUrl:  mediaURLString,
+				MediaType: m.MediaType,
+			})
 		}
 
 		pbPosts = append(pbPosts, &pb.PostResponse{
-			Id:        post.ID.String(),
-			UserId:    post.UserID.String(),
-			MediaUrl:  mediaURLString, 
-			MediaType: post.MediaType,
-			Caption:   post.Caption,
-			Location:  post.Location,
-			CreatedAt: post.CreatedAt.Format(time.RFC3339),
+			Id:            post.ID.String(),
+			UserId:        post.UserID.String(),
+			Media:         pbMedia, 
+			Caption:       post.Caption,
+			Location:      post.Location,
+			CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			IsLiked:       post.IsLiked,
 		})
 	}
 
 	return &pb.GetPostsResponse{Posts: pbPosts}, nil
 }
 
+func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*pb.GetHomeFeedResponse, error){
+	userRes, err := s.userClient.GetFollowingList(ctx, &userPb.GetFollowingListRequest{
+		UserId: req.UserId,
+	})
+
+	if err != nil {
+		log.Printf("Failed to get following list from user service: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to fetch feed configuration")
+	}
+
+	authorIDs := append(userRes.FollowingIds, req.UserId)
+
+	posts, err := s.repo.GetFeedPosts(ctx, authorIDs, req.UserId, int(req.Limit), int(req.Offset))
+	if err != nil {
+		log.Printf("Failed to fetch feed posts from DB: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to fetch posts")
+	}
+
+	var pbPosts []*pb.PostResponse
+	expiry := time.Hour * 1
+
+	for _, post := range posts {
+		var pbMedia []*pb.PostMediaResponse
+
+		for _, m := range post.Media {
+			reqParams := make(url.Values)
+			reqParams.Set("response-content-type", m.MediaType)
+
+			presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+			
+			mediaURLString := ""
+			if err != nil {
+				log.Printf("Failed to make Presigned GET URL for %s: %v", m.MediaObjectName, err)
+			} else {
+				mediaURLString = presignedURL.String()
+			}
+
+			pbMedia = append(pbMedia, &pb.PostMediaResponse{
+				MediaUrl:  mediaURLString,
+				MediaType: m.MediaType,
+			})
+		}
+
+		pbPosts = append(pbPosts, &pb.PostResponse{
+			Id:            post.ID.String(),
+			UserId:        post.UserID.String(),
+			Media:         pbMedia,
+			Caption:       post.Caption,
+			Location:      post.Location,
+			CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+			LikesCount:    post.LikesCount,
+			CommentsCount: post.CommentsCount,
+			IsLiked:       post.IsLiked,
+		})
+	}
+
+	return &pb.GetHomeFeedResponse{Posts: pbPosts}, nil
+}
+
 func (s *Server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error){
 	userID, err := uuid.Parse(req.GetUserId())
-
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid UserID")
 	}
@@ -219,4 +315,68 @@ func (s *Server) GetCommentsForPost(ctx context.Context, req *pb.GetCommentsForP
 	}
 
 	return &pb.GetCommentsForPostResponse{Comments: pbComments}, nil
+}
+
+func (h *Server) CreateCollection(ctx context.Context, req *pb.CreateCollectionRequest) (*pb.CollectionResponse, error) {
+	collection := &domain.Collection{
+		UserID: uuid.MustParse(req.UserId),
+		Name:   req.Name,
+	}
+
+	if err := h.repo.CreateCollection(ctx, collection); err != nil {
+		return nil, err
+	}
+
+	return &pb.CollectionResponse{
+		Id:     collection.ID.String(),
+		Name:   collection.Name,
+		UserId: collection.UserID.String(),
+	}, nil
+}
+
+func (h *Server) GetUserCollections(ctx context.Context, req *pb.GetUserCollectionsRequest) (*pb.GetUserCollectionsResponse, error) {
+	collections, err := h.repo.GetUserCollections(ctx, req.UserId)
+	if err != nil {
+		return nil, err
+	}
+
+	var protoCollections []*pb.CollectionResponse
+	for _, c := range collections {
+		var covers []string
+		for _, sp := range c.SavedPosts {
+			if len(sp.Post.Media) > 0 {
+				covers = append(covers, sp.Post.Media[0].MediaObjectName)
+			}
+		}
+
+		protoCollections = append(protoCollections, &pb.CollectionResponse{
+			Id:          c.ID.String(),
+			Name:        c.Name,
+			UserId:      c.UserID.String(),
+			CoverImages: covers,
+		})
+	}
+
+	return &pb.GetUserCollectionsResponse{Collections: protoCollections}, nil
+}
+
+func (h *Server) ToggleSavePost(ctx context.Context, req *pb.ToggleSavePostRequest) (*pb.ToggleSavePostResponse, error) {
+	isSaved, err := h.repo.ToggleSavePost(ctx, req.UserId, req.PostId, req.CollectionId)
+	if err != nil {
+		return nil, err
+	}
+
+	msg := "Post unsaved"
+	if isSaved {
+		msg = "Post saved"
+	}
+
+	return &pb.ToggleSavePostResponse{
+		IsSaved: isSaved,
+		Message: msg,
+	}, nil
+}
+
+func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
+	return nil, nil
 }

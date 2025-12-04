@@ -4,7 +4,8 @@ use (
 	./backend/api-gateway
 	./backend/proto
 	// ./backend/services/admin
-	// ./backend/services/chat
+	./backend/services/stories
+	./backend/services/chat
 	./backend/services/notifications
 	./backend/services/posts
 	./backend/services/users

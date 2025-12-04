@@ -4,14 +4,20 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"os"
+	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
+	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/repositories"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -32,16 +38,36 @@ func main() {
 	}
 	log.Println("Connected to database")
 
-	err = db.AutoMigrate(&domain.Post{}, &domain.PostLike{}, &domain.PostComment{})
+	err = db.AutoMigrate(
+        &domain.Post{}, 
+        &domain.PostLike{}, 
+        &domain.PostComment{}, 
+        &domain.Collection{}, 
+        &domain.SavedPost{},
+        &domain.PostMedia{}, 
+    )
 	if err != nil {
 		log.Fatalf("Failed to automigrate: %v", err)
 	}
 
 	log.Println("Automigrate successfully")
 
-	minioClient, err := clients.NewMinIOClient()
-	if err != nil {
-		log.Fatalf("Failed to initialize MinIO client: %v", err)
+	var minioClient *minio.Client 
+	var minioErr error
+	
+	const maxRetries = 10
+	for i := 0; i < maxRetries; i++ {
+		minioClient, minioErr = clients.NewMinIOClient()
+		if minioErr == nil {
+			break
+		}
+		
+		log.Printf("Gagal terhubung ke MinIO (attempt %d/%d): %v. Retrying in 5 seconds...", i+1, maxRetries, minioErr)
+		time.Sleep(5 * time.Second)
+	}
+	
+	if minioErr != nil {
+		log.Fatalf("Failed to initialize MinIO client after multiple retries: %v", minioErr)
 	}
 
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
@@ -49,8 +75,36 @@ func main() {
 		log.Fatal("FATAL: MINIO_BUCKET_NAME environment variable is not set.")
 	}
 
+	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+	if publicEndpoint == "" {
+		log.Fatal("FATAL: MINIO_PUBLIC_ENDPOINT environment variable is not set.")
+	}
+
+	publicURL, err := url.Parse(publicEndpoint)
+	if err != nil {
+		log.Fatalf("Failed to parse MINIO_PUBLIC_ENDPOINT: %v", err)
+	}
+
+	presignClient, err := minio.New(publicURL.Host, &minio.Options{
+		Creds:  credentials.NewStaticV4(os.Getenv("MINIO_ACCESS_KEY_ID"), os.Getenv("MINIO_SECRET_ACCESS_KEY"), ""),
+		Secure: publicURL.Scheme == "https",
+		Region: "us-east-1",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create presign MinIO client: %v", err)
+	}
+
+	userServiceAddr := "users-service:50051" 
+	userConn, err := grpc.Dial(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect to users-service: %v", err)
+	}
+	defer userConn.Close()
+	
+	userClient := userPb.NewUserServiceClient(userConn)
+
 	postRepo := repositories.NewGormPostRepository(db)
-	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, bucketName)
+	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, presignClient, bucketName, publicEndpoint, userClient)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

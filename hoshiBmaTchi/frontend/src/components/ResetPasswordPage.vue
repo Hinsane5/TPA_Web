@@ -31,7 +31,7 @@
             {{ showNewPassword ? "👁️" : "👁️‍🗨️" }}
           </button>
         </div>
-        <div v-if="passwordValidation.criteria" class="password-criteria">
+        <!-- <div v-if="passwordValidation.criteria" class="password-criteria">
           <div
             :class="['criterion', { met: passwordValidation.criteria.length }]"
           >
@@ -63,7 +63,7 @@
           >
             ✓ Special character
           </div>
-        </div>
+        </div> -->
         <p
           v-if="newPassword && !passwordValidation.isValid"
           class="error-message"

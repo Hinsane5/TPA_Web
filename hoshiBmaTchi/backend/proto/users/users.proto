@@ -16,6 +16,11 @@ service UserService {
   rpc RequestPasswordReset(RequestPasswordResetRequest) returns (SendOtpResponse);
   rpc PerformPasswordReset(PerformPasswordResetRequest) returns (SendOtpResponse);
   rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUserProfile(GetUserProfileRequest) returns (GetUserProfileResponse);
+  rpc FollowUser(FollowUserRequest) returns (FollowUserResponse);
+  rpc UnfollowUser(UnfollowUserRequest) returns (UnfollowUserResponse);
+  rpc GetFollowingList(GetFollowingListRequest) returns (GetFollowingListResponse);
+  rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -93,4 +98,63 @@ message ValidateTokenRequest{
 message ValidateTokenResponse{
   bool valid = 1;
   string user_id = 2;
+}
+
+message GetUserProfileRequest {
+  string user_id = 1;     
+  string viewer_id = 2;  
+}
+
+message GetUserProfileResponse {
+  string id = 1;
+  string username = 2;
+  string name = 3;
+  string bio = 4;
+  string profile_picture_url = 5;
+  int64 followers_count = 6;
+  int64 following_count = 7;
+  bool is_following = 8;
+}
+
+message FollowUserRequest {
+  string follower_id = 1; 
+  string following_id = 2; 
+}
+
+message FollowUserResponse {
+  string message = 1;
+}
+
+message UnfollowUserRequest {
+  string follower_id = 1;
+  string following_id = 2;
+}
+
+message UnfollowUserResponse {
+  string message = 1;
+}
+
+message GetFollowingListRequest {
+  string user_id = 1;
+}
+
+message GetFollowingListResponse {
+  repeated string following_ids = 1;
+}
+
+message UserProfile {
+  string user_id = 1;
+  string username = 2;
+  string name = 3;
+  string profile_picture_url = 4;
+  bool is_following = 5;
+}
+
+message SearchUsersRequest {
+  string query = 1;
+  string user_id = 2;
+}
+
+message SearchUsersResponse {
+  repeated UserProfile users = 1;
 }

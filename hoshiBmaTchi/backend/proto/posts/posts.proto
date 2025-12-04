@@ -13,6 +13,10 @@ service PostsService {
     rpc UnlikePost(UnlikePostRequest) returns (UnlikePostResponse);
     rpc CreateComment(CreateCommentRequest) returns (CommentResponse);
     rpc GetCommentsForPost(GetCommentsForPostRequest) returns (GetCommentsForPostResponse);
+    rpc GetHomeFeed(GetHomeFeedRequest) returns (GetHomeFeedResponse);
+    rpc ToggleSavePost(ToggleSavePostRequest) returns (ToggleSavePostResponse);
+    rpc CreateCollection(CreateCollectionRequest) returns (CollectionResponse);
+    rpc GetUserCollections(GetUserCollectionsRequest) returns (GetUserCollectionsResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -27,11 +31,17 @@ message GenerateUploadURLResponse {
 
 message CreatePostRequest {
     string user_id = 1;
-    string media_object_name = 2; // Nama yang didapat dari GenerateUploadURLResponse
-    string media_type = 3;
+    repeated PostMediaItem media = 2; 
     string caption = 4;
     string location = 5;
 }
+
+message PostMediaItem {
+    string media_object_name = 1;
+    string media_type = 2;
+}
+
+
 
 message CreatePostResponse {
     PostResponse post = 1;
@@ -52,11 +62,18 @@ message GetPostByIDRequest {
 message PostResponse {
     string id = 1;
     string user_id = 2;
-    string media_url = 3; // Ini akan menjadi URL Presigned untuk *melihat*
-    string media_type = 4;
+    repeated PostMediaResponse media = 3; 
     string caption = 5;
     string location = 6;
     string created_at = 7;
+    int32 likes_count = 8;
+    bool is_liked = 9;
+    int32 comments_count = 10;
+}
+
+message PostMediaResponse {
+    string media_url = 1;
+    string media_type = 2;
 }
 
 message LikePostRequest{
@@ -98,3 +115,45 @@ message CommentResponse {
     string content = 4;
     string created_at = 5;
 }
+
+message GetHomeFeedRequest {
+  string user_id = 1; 
+  int32 limit = 2;
+  int32 offset = 3;
+}
+
+message GetHomeFeedResponse {
+  repeated PostResponse posts = 1;
+}
+
+message ToggleSavePostRequest {
+    string user_id = 1;
+    string post_id = 2;
+    string collection_id = 3;
+}
+
+message ToggleSavePostResponse {
+    bool is_saved = 1; 
+    string message = 2;
+}
+
+message CreateCollectionRequest {
+    string user_id = 1;
+    string name = 2;
+}
+
+message CollectionResponse {
+    string id = 1;
+    string name = 2;
+    string user_id = 3;
+    repeated string cover_images = 4; // For the profile grid preview
+}
+
+message GetUserCollectionsRequest {
+    string user_id = 1;
+}
+
+message GetUserCollectionsResponse {
+    repeated CollectionResponse collections = 1;
+}
+

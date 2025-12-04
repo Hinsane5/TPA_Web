@@ -27,6 +27,11 @@ services:
     networks:
       - ${NETWORK_NAME}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:18
@@ -59,6 +64,10 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: http://localhost:9000
+      # MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:5173"
+      # MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,DELETE"
+      # MINIO_API_CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,User-Agent"
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"
@@ -68,6 +77,12 @@ services:
     networks:
       - ${NETWORK_NAME}
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/ready"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
 
   rabbitmq:
     image: rabbitmq:4.2.0-management
@@ -96,6 +111,7 @@ services:
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+
     networks:
       - ${NETWORK_NAME}
     volumes:
@@ -108,6 +124,50 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: unless-stopped
+
+  stories-service:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: ${PROJECT_NAME}-stories-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/stories
+    networks:
+      - ${NETWORK_NAME}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      users-service:
+        condition: service_started
+      chat-service:
+        condition: service_started
+    restart: unless-stopped
+    environment:
+      # Database configuration
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=hoshi_stories_db
+
+      # gRPC configuration
+      - GRPC_PORT=50053
+
+      # Service URLs
+      - USER_SERVICE_URL=${PROJECT_NAME}-users-service:50051
+      - CHAT_SERVICE_URL=${PROJECT_NAME}-chat-service:50054
+
+      # MinIO configuration for stories media
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=stories
 
   notification-service:
     build:
@@ -130,6 +190,54 @@ services:
       - SMTP_PORT=${SMTP_PORT}
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_APP_PASSWORD=${EMAIL_APP_PASSWORD}
+
+  chat-service:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile.dev
+    container_name: ${PROJECT_NAME}-chat-service
+    volumes:
+      - .:/app
+    command: air
+    working_dir: /app/backend/services/chat
+    networks:
+      - ${NETWORK_NAME}
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=hoshi_chat_db
+      - REDIS_ADDR=redis:6379
+      - PORT=8080
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      
+      # MinIO configuration for chat media uploads
+      - MINIO_ENDPOINT=minio:9000
+      - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
+      - MINIO_USE_SSL=false
+      - MINIO_BUCKET_NAME=chat-media
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.chat-ws.rule=Host(`api.hoshi.localhost`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.chat-ws.entrypoints=websecure"
+      - "traefik.http.routers.chat-ws.tls=true"
+      - "traefik.http.routers.chat-upload.rule=Host(`api.hoshi.localhost`) && PathPrefix(`/chat/upload`)"
+      - "traefik.http.routers.chat-upload.entrypoints=websecure"
+      - "traefik.http.routers.chat-upload.tls=true"
+      - "traefik.http.services.chat-service.loadbalancer.server.port=8080"
 
   api-gateway:
     build:
@@ -174,6 +282,8 @@ services:
         condition: service_healthy
       rabbitmq: 
         condition: service_healthy
+      minio:
+        condition: service_healthy
     restart: unless-stopped
     
     environment:
@@ -185,6 +295,7 @@ services:
 
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
       - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
       - MINIO_USE_SSL=false
       - MINIO_BUCKET_NAME=posts
