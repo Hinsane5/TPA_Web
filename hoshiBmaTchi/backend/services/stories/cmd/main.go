@@ -2,111 +2,88 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"os"
-	"os/signal"
-	"syscall"
 	"time"
 
-	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
-	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/clients"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/domain"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/repositories"
+	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable",
-		getEnv("DB_HOST", "postgres"),
-		getEnv("DB_USER", "postgres"),
-		getEnv("DB_PASSWORD", "postgres"),
-		getEnv("DB_NAME", "stories_db"),
-		getEnv("DB_PORT", "5432"),
-	)
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found")
+	}
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	dsn := os.Getenv("DATABASE_URL")
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
-	if err := db.AutoMigrate(
-		&domain.Story{},
-		&domain.StoryView{},
-		&domain.StoryLike{},
-		&domain.StoryReply{},
-		&domain.StoryShare{},
-	); err != nil {
-		log.Fatalf("Failed to migrate database: %v", err)
-	}
+	err = db.AutoMigrate(
+        &domain.Story{},
+        &domain.StoryView{},
+        &domain.StoryLike{},
+        &domain.StoryVisibility{},
+    )
+    if err != nil {
+        log.Fatalf("Failed to migrate database: %v", err)
+    }
 
-	db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_story_user_view ON story_views(story_id, user_id) WHERE deleted_at IS NULL")
-	db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_story_user_like ON story_likes(story_id, user_id) WHERE deleted_at IS NULL")
+	rdb := redis.NewClient(&redis.Options{
+		Addr: os.Getenv("REDIS_URL"),
+	})
 
 	repo := repositories.NewGormStoryRepository(db)
+	redisRepo := repositories.NewRedisStoryRepository(rdb)
 
-	userClient, err := clients.NewUserServiceClient(getEnv("USER_SERVICE_URL", "users-service:50051"))
+	userClient, err := clients.NewUserServiceClient(os.Getenv("USER_SERVICE_URL"))
 	if err != nil {
-		log.Fatalf("Failed to connect to user service: %v", err)
+		log.Fatalf("Failed to create user client: %v", err)
 	}
-	defer userClient.Close()
 
-	chatClient, err := clients.NewChatServiceClient(getEnv("CHAT_SERVICE_URL", "chat-service:50052"))
+	chatClient, err := clients.NewChatServiceClient(os.Getenv("CHAT_SERVICE_URL"))
 	if err != nil {
-		log.Fatalf("Failed to connect to chat service: %v", err)
+		log.Fatalf("Failed to create chat client: %v", err)
 	}
-	defer chatClient.Close()
 
-	handler := handlers.NewGRPCHandler(repo, userClient, chatClient)
+	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient)
 
+	// 6. Start Cleanup Routine
+	// Fixed "does not implement" error by updating ports (see step 2 below)
 	go startCleanupRoutine(repo)
 
-	port := getEnv("GRPC_PORT", "50053")
-	lis, err := net.Listen("tcp", ":"+port)
+	// 7. Start Server
+	lis, err := net.Listen("tcp", ":50054") // Ensure port matches docker-compose
 	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
-	pb.RegisterStoriesServiceServer(grpcServer, handler)
-	reflection.Register(grpcServer)
+	s := grpc.NewServer()
+	stories.RegisterStoriesServiceServer(s, handler)
 
-	go func() {
-		log.Printf("Stories service listening on :%s", port)
-		if err := grpcServer.Serve(lis); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
-	log.Println("Shutting down server...")
-	grpcServer.GracefulStop()
-	log.Println("Server stopped")
+	log.Printf("Stories service listening on %v", lis.Addr())
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 
 func startCleanupRoutine(repo ports.StoryRepository) {
 	ticker := time.NewTicker(1 * time.Hour)
-	defer ticker.Stop()
-
 	for range ticker.C {
-		ctx := context.Background()
-		if err := repo.DeleteExpiredStories(ctx); err != nil {
-			log.Printf("Error cleaning up expired stories: %v", err)
-		} else {
-			log.Println("Successfully cleaned up expired stories")
-		}
+		// Ensure this method exists in your repo interface
+		repo.DeleteExpiredStories(context.Background())
 	}
 }
 

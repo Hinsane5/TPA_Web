@@ -32,17 +32,20 @@ func (r *GormStoryRepository) GetStoryByID(ctx context.Context, storyID string) 
 	return &story, nil
 }
 
-func (r *GormStoryRepository) GetUserStories(ctx context.Context, userID string) ([]*domain.Story, error) {
-	var stories []*domain.Story
-	err := r.db.WithContext(ctx).
-		Where("user_id = ? AND expires_at > ?", userID, time.Now()).
-		Order("created_at DESC").
-		Find(&stories).Error
+func (r *GormStoryRepository) GetUserStories(ctx context.Context, userID string, includeExpired bool) ([]*domain.Story, error) {
+	query := r.db.WithContext(ctx).Where("user_id = ?", userID)
 
+	// Only filter by expiration if we are NOT looking at the archive
+	if !includeExpired {
+		query = query.Where("expires_at > ?", time.Now())
+	}
+
+	var stories []*domain.Story
+	err := query.Order("created_at DESC").Find(&stories).Error
 	return stories, err
 }
 
-func (r *GormStoryRepository) GetFollowingStories(ctx context.Context, userIDs []string, limit int) (map[string][]*domain.Story, error) {
+func (r *GormStoryRepository) GetFollowingStories(ctx context.Context, userIDs []string, viewerID string,limit int) (map[string][]*domain.Story, error) {
 	if len(userIDs) == 0 {
 		return make(map[string][]*domain.Story), nil
 	}
@@ -50,6 +53,7 @@ func (r *GormStoryRepository) GetFollowingStories(ctx context.Context, userIDs [
 	var stories []*domain.Story
 	err := r.db.WithContext(ctx).
 		Where("user_id IN ? AND expires_at > ?", userIDs, time.Now()).
+		Where("user_id NOT IN (?)", r.db.Table("story_visibilities").Select("user_id").Where("hidden_viewer_id = ?", viewerID)).
 		Order("created_at DESC").
 		Limit(limit).
 		Find(&stories).Error

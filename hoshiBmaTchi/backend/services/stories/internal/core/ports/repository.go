@@ -9,8 +9,8 @@ import (
 type StoryRepository interface {
     CreateStory(ctx context.Context, story *domain.Story) error
     GetStoryByID(ctx context.Context, storyID string) (*domain.Story, error)
-    GetUserStories(ctx context.Context, userID string) ([]*domain.Story, error)
-    GetFollowingStories(ctx context.Context, userIDs []string, limit int) (map[string][]*domain.Story, error)
+    GetUserStories(ctx context.Context, userID string, includeExpired bool) ([]*domain.Story, error)
+    GetFollowingStories(ctx context.Context, userIDs []string, viewerID string, limit int) (map[string][]*domain.Story, error)
     DeleteStory(ctx context.Context, storyID, userID string) error
     DeleteExpiredStories(ctx context.Context) error
     
@@ -34,4 +34,9 @@ type UserServiceClient interface {
 
 type ChatServiceClient interface {
     SendMessage(ctx context.Context, senderID, recipientID, content, storyID string) (string, error)
+}
+
+type RedisRepository interface {
+	SetUserFeed(ctx context.Context, userID string, stories []*domain.Story) error
+	GetUserFeed(ctx context.Context, userID string) ([]*domain.Story, error)
 }

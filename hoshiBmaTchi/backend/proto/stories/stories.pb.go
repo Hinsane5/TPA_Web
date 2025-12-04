@@ -412,6 +412,7 @@ type GetUserStoriesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	ViewerId      string                 `protobuf:"bytes,2,opt,name=viewer_id,json=viewerId,proto3" json:"viewer_id,omitempty"`
+	IsArchive     bool                   `protobuf:"varint,3,opt,name=is_archive,json=isArchive,proto3" json:"is_archive,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -458,6 +459,13 @@ func (x *GetUserStoriesRequest) GetViewerId() string {
 		return x.ViewerId
 	}
 	return ""
+}
+
+func (x *GetUserStoriesRequest) GetIsArchive() bool {
+	if x != nil {
+		return x.IsArchive
+	}
+	return false
 }
 
 type GetUserStoriesResponse struct {
@@ -1617,10 +1625,12 @@ const file_stories_stories_proto_rawDesc = "" +
 	"\x10GetStoryResponse\x12$\n" +
 	"\x05story\x18\x01 \x01(\v2\x0e.stories.StoryR\x05story\x12\x19\n" +
 	"\bis_liked\x18\x02 \x01(\bR\aisLiked\x12\x1b\n" +
-	"\tis_viewed\x18\x03 \x01(\bR\bisViewed\"M\n" +
+	"\tis_viewed\x18\x03 \x01(\bR\bisViewed\"l\n" +
 	"\x15GetUserStoriesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
-	"\tviewer_id\x18\x02 \x01(\tR\bviewerId\"B\n" +
+	"\tviewer_id\x18\x02 \x01(\tR\bviewerId\x12\x1d\n" +
+	"\n" +
+	"is_archive\x18\x03 \x01(\bR\tisArchive\"B\n" +
 	"\x16GetUserStoriesResponse\x12(\n" +
 	"\astories\x18\x01 \x03(\v2\x0e.stories.StoryR\astories\"K\n" +
 	"\x1aGetFollowingStoriesRequest\x12\x17\n" +

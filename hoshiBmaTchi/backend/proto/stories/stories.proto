@@ -64,6 +64,7 @@ message GetStoryResponse {
 message GetUserStoriesRequest {
   string user_id = 1;
   string viewer_id = 2;
+  bool is_archive = 3;
 }
 
 message GetUserStoriesResponse {

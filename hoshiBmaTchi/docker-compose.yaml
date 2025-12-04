@@ -111,9 +111,12 @@ services:
     environment:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
-
+      - GRPC_PORT=50051 
+      - DATABASE_URL=host=postgres user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=hoshi_users_db port=5432 sslmode=disable TimeZone=Asia/Jakarta
     networks:
       - ${NETWORK_NAME}
+    ports:
+      - "50051:50051"
     volumes:
       - .:/app
     command: air
@@ -136,8 +139,12 @@ services:
     working_dir: /app/backend/services/stories
     networks:
       - ${NETWORK_NAME}
+    ports:
+      - "${STORIES_GRPC_PORT:-50054}:50054"
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -147,27 +154,20 @@ services:
         condition: service_started
     restart: unless-stopped
     environment:
-      # Database configuration
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_USER=${POSTGRES_USER}
-      - DB_PASSWORD=${POSTGRES_PASSWORD}
-      - DB_NAME=hoshi_stories_db
-
-      # gRPC configuration
-      - GRPC_PORT=50053
-
-      # Service URLs
+      - DATABASE_URL=host=postgres user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${STORIES_DB_NAME} port=5432 sslmode=disable
+      - REDIS_URL=redis:6379
+      - GRPC_PORT=50054
+      
       - USER_SERVICE_URL=${PROJECT_NAME}-users-service:50051
-      - CHAT_SERVICE_URL=${PROJECT_NAME}-chat-service:50054
+      - CHAT_SERVICE_URL=${PROJECT_NAME}-chat-service:50053 
 
-      # MinIO configuration for stories media
+      # --- MINIO ---
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY_ID=${MINIO_ROOT_USER}
       - MINIO_SECRET_ACCESS_KEY=${MINIO_ROOT_PASSWORD}
-      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
-      - MINIO_USE_SSL=false
       - MINIO_BUCKET_NAME=stories
+      - MINIO_USE_SSL=false
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
 
   notification-service:
     build:
@@ -204,6 +204,7 @@ services:
       - ${NETWORK_NAME}
     ports:
       - "8082:8080"
+      - "50053:50053"
     depends_on:
       postgres:
         condition: service_healthy
@@ -221,6 +222,7 @@ services:
       - REDIS_ADDR=redis:6379
       - PORT=8080
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+      - GRPC_PORT=50053
       
       # MinIO configuration for chat media uploads
       - MINIO_ENDPOINT=minio:9000

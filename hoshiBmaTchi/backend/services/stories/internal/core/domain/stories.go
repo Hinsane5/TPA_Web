@@ -21,8 +21,8 @@ type Story struct {
 	MediaURL   string    `gorm:"type:text;not null"`
 	MediaType  MediaType `gorm:"type:varchar(10);not null"`
 	Duration   int       `gorm:"default:5"`
-	ViewCount  int       `gorm:"default:0"`
-	LikeCount  int       `gorm:"default:0"`
+	Views []StoryView `gorm:"foreignKey:StoryID;constraint:OnDelete:CASCADE;"`
+    Likes []StoryLike `gorm:"foreignKey:StoryID;constraint:OnDelete:CASCADE;"`
 	ReplyCount int       `gorm:"default:0"`
 	CreatedAt  time.Time `gorm:"index"`
 	ExpiresAt  time.Time `gorm:"index"`
@@ -64,16 +64,15 @@ type StoryLike struct {
 	ID        string    `gorm:"type:uuid;primary_key"`
 	StoryID   string    `gorm:"type:uuid;not null;index"`
 	UserID    string    `gorm:"type:uuid;not null;index"`
-	CreatedAt time.Time `gorm:"not null"`
-	DeletedAt gorm.DeletedAt
+	LikedAt   time.Time `gorm:"autoCreateTime"`
 }
 
 func (sl *StoryLike) BeforeCreate(tx *gorm.DB) error {
 	if sl.ID == "" {
 		sl.ID = uuid.New().String()
 	}
-	if sl.CreatedAt.IsZero() {
-		sl.CreatedAt = time.Now()
+	if sl.LikedAt.IsZero() {
+		sl.LikedAt = time.Now()
 	}
 	return nil
 }
@@ -116,3 +115,10 @@ func (ss *StoryShare) BeforeCreate(tx *gorm.DB) error {
 	}
 	return nil
 }
+
+type StoryVisibility struct {
+    ID             string `gorm:"type:uuid;primary_key"`
+    UserID         string `gorm:"type:uuid;index"` // The story owner
+    HiddenViewerID string `gorm:"type:uuid;index"` // The person blocked from seeing stories
+}
+
