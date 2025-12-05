@@ -2,7 +2,12 @@
   <div class="home-container">
     <div class="stories-section">
       <div class="stories-carousel">
-        <div class="story-item" v-for="n in 8" :key="`story-${n}`">
+        <div 
+          class="story-item" 
+          v-for="(n, idx) in 8" 
+          :key="`story-${n}`"
+          @click="openStoriesCarousel(idx)"
+        >
           <div class="story-avatar">
             <span>👤</span>
           </div>
@@ -10,6 +15,11 @@
         </div>
       </div>
     </div>
+
+    <StoriesCarouselOverlay 
+      :isOpen="isStoriesOverlayOpen"
+      @close="closeStoriesOverlay"
+    />
 
     <div class="feed-container">
       <div class="feed-section">
@@ -95,6 +105,7 @@ const page = ref(0)
 const limit = 5
 const scrollTrigger = ref<HTMLElement | null>(null);
 const selectedPost = ref<Post | null>(null);
+const isStoriesOverlayOpen = ref(false);
 
 const fetchFeed = async () => {
   if (isLoading.value) return;
@@ -120,11 +131,18 @@ const openOverlay = (post: any) => {
   window.history.pushState({}, '', `/p/${post.id}`);
 };
 
-
 const closeOverlay = () => {
   selectedPost.value = null;
   window.history.pushState({}, '', '/'); 
 }; 
+
+const openStoriesCarousel = (storyIndex: number) => {
+  isStoriesOverlayOpen.value = true;
+};
+
+const closeStoriesOverlay = () => {
+  isStoriesOverlayOpen.value = false;
+};
 
 const handleCommentAdded = () => {
   if (selectedPost.value) {
