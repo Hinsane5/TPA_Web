@@ -413,6 +413,8 @@ type GetUserStoriesRequest struct {
 	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	ViewerId      string                 `protobuf:"bytes,2,opt,name=viewer_id,json=viewerId,proto3" json:"viewer_id,omitempty"`
 	IsArchive     bool                   `protobuf:"varint,3,opt,name=is_archive,json=isArchive,proto3" json:"is_archive,omitempty"`
+	Limit         int32                  `protobuf:"varint,4,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,5,opt,name=offset,proto3" json:"offset,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -466,6 +468,20 @@ func (x *GetUserStoriesRequest) GetIsArchive() bool {
 		return x.IsArchive
 	}
 	return false
+}
+
+func (x *GetUserStoriesRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetUserStoriesRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
 }
 
 type GetUserStoriesResponse struct {
@@ -1588,6 +1604,294 @@ func (x *ShareStoryResponse) GetMessageId() string {
 	return ""
 }
 
+type GenerateUploadURLRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	FileName      string                 `protobuf:"bytes,1,opt,name=file_name,json=fileName,proto3" json:"file_name,omitempty"`
+	FileType      string                 `protobuf:"bytes,2,opt,name=file_type,json=fileType,proto3" json:"file_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GenerateUploadURLRequest) Reset() {
+	*x = GenerateUploadURLRequest{}
+	mi := &file_stories_stories_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateUploadURLRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateUploadURLRequest) ProtoMessage() {}
+
+func (x *GenerateUploadURLRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateUploadURLRequest.ProtoReflect.Descriptor instead.
+func (*GenerateUploadURLRequest) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GenerateUploadURLRequest) GetFileName() string {
+	if x != nil {
+		return x.FileName
+	}
+	return ""
+}
+
+func (x *GenerateUploadURLRequest) GetFileType() string {
+	if x != nil {
+		return x.FileType
+	}
+	return ""
+}
+
+type GenerateUploadURLResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
+	ObjectName    string                 `protobuf:"bytes,2,opt,name=object_name,json=objectName,proto3" json:"object_name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GenerateUploadURLResponse) Reset() {
+	*x = GenerateUploadURLResponse{}
+	mi := &file_stories_stories_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GenerateUploadURLResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GenerateUploadURLResponse) ProtoMessage() {}
+
+func (x *GenerateUploadURLResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GenerateUploadURLResponse.ProtoReflect.Descriptor instead.
+func (*GenerateUploadURLResponse) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *GenerateUploadURLResponse) GetUploadUrl() string {
+	if x != nil {
+		return x.UploadUrl
+	}
+	return ""
+}
+
+func (x *GenerateUploadURLResponse) GetObjectName() string {
+	if x != nil {
+		return x.ObjectName
+	}
+	return ""
+}
+
+type ToggleStoryVisibilityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	TargetId      string                 `protobuf:"bytes,2,opt,name=target_id,json=targetId,proto3" json:"target_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleStoryVisibilityRequest) Reset() {
+	*x = ToggleStoryVisibilityRequest{}
+	mi := &file_stories_stories_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleStoryVisibilityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleStoryVisibilityRequest) ProtoMessage() {}
+
+func (x *ToggleStoryVisibilityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleStoryVisibilityRequest.ProtoReflect.Descriptor instead.
+func (*ToggleStoryVisibilityRequest) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ToggleStoryVisibilityRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ToggleStoryVisibilityRequest) GetTargetId() string {
+	if x != nil {
+		return x.TargetId
+	}
+	return ""
+}
+
+type ToggleStoryVisibilityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	IsHidden      bool                   `protobuf:"varint,1,opt,name=is_hidden,json=isHidden,proto3" json:"is_hidden,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ToggleStoryVisibilityResponse) Reset() {
+	*x = ToggleStoryVisibilityResponse{}
+	mi := &file_stories_stories_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ToggleStoryVisibilityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ToggleStoryVisibilityResponse) ProtoMessage() {}
+
+func (x *ToggleStoryVisibilityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ToggleStoryVisibilityResponse.ProtoReflect.Descriptor instead.
+func (*ToggleStoryVisibilityResponse) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ToggleStoryVisibilityResponse) GetIsHidden() bool {
+	if x != nil {
+		return x.IsHidden
+	}
+	return false
+}
+
+type GetHiddenUsersRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetHiddenUsersRequest) Reset() {
+	*x = GetHiddenUsersRequest{}
+	mi := &file_stories_stories_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHiddenUsersRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHiddenUsersRequest) ProtoMessage() {}
+
+func (x *GetHiddenUsersRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHiddenUsersRequest.ProtoReflect.Descriptor instead.
+func (*GetHiddenUsersRequest) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *GetHiddenUsersRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetHiddenUsersResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	HiddenUserIds []string               `protobuf:"bytes,1,rep,name=hidden_user_ids,json=hiddenUserIds,proto3" json:"hidden_user_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetHiddenUsersResponse) Reset() {
+	*x = GetHiddenUsersResponse{}
+	mi := &file_stories_stories_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHiddenUsersResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHiddenUsersResponse) ProtoMessage() {}
+
+func (x *GetHiddenUsersResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_stories_stories_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHiddenUsersResponse.ProtoReflect.Descriptor instead.
+func (*GetHiddenUsersResponse) Descriptor() ([]byte, []int) {
+	return file_stories_stories_proto_rawDescGZIP(), []int{33}
+}
+
+func (x *GetHiddenUsersResponse) GetHiddenUserIds() []string {
+	if x != nil {
+		return x.HiddenUserIds
+	}
+	return nil
+}
+
 var File_stories_stories_proto protoreflect.FileDescriptor
 
 const file_stories_stories_proto_rawDesc = "" +
@@ -1625,12 +1929,14 @@ const file_stories_stories_proto_rawDesc = "" +
 	"\x10GetStoryResponse\x12$\n" +
 	"\x05story\x18\x01 \x01(\v2\x0e.stories.StoryR\x05story\x12\x19\n" +
 	"\bis_liked\x18\x02 \x01(\bR\aisLiked\x12\x1b\n" +
-	"\tis_viewed\x18\x03 \x01(\bR\bisViewed\"l\n" +
+	"\tis_viewed\x18\x03 \x01(\bR\bisViewed\"\x9a\x01\n" +
 	"\x15GetUserStoriesRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
 	"\tviewer_id\x18\x02 \x01(\tR\bviewerId\x12\x1d\n" +
 	"\n" +
-	"is_archive\x18\x03 \x01(\bR\tisArchive\"B\n" +
+	"is_archive\x18\x03 \x01(\bR\tisArchive\x12\x14\n" +
+	"\x05limit\x18\x04 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x05 \x01(\x05R\x06offset\"B\n" +
 	"\x16GetUserStoriesResponse\x12(\n" +
 	"\astories\x18\x01 \x03(\v2\x0e.stories.StoryR\astories\"K\n" +
 	"\x1aGetFollowingStoriesRequest\x12\x17\n" +
@@ -1697,10 +2003,27 @@ const file_stories_stories_proto_rawDesc = "" +
 	"\x12ShareStoryResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x1d\n" +
 	"\n" +
-	"message_id\x18\x02 \x01(\tR\tmessageId*!\n" +
+	"message_id\x18\x02 \x01(\tR\tmessageId\"T\n" +
+	"\x18GenerateUploadURLRequest\x12\x1b\n" +
+	"\tfile_name\x18\x01 \x01(\tR\bfileName\x12\x1b\n" +
+	"\tfile_type\x18\x02 \x01(\tR\bfileType\"[\n" +
+	"\x19GenerateUploadURLResponse\x12\x1d\n" +
+	"\n" +
+	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x1f\n" +
+	"\vobject_name\x18\x02 \x01(\tR\n" +
+	"objectName\"T\n" +
+	"\x1cToggleStoryVisibilityRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
+	"\ttarget_id\x18\x02 \x01(\tR\btargetId\"<\n" +
+	"\x1dToggleStoryVisibilityResponse\x12\x1b\n" +
+	"\tis_hidden\x18\x01 \x01(\bR\bisHidden\"0\n" +
+	"\x15GetHiddenUsersRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\"@\n" +
+	"\x16GetHiddenUsersResponse\x12&\n" +
+	"\x0fhidden_user_ids\x18\x01 \x03(\tR\rhiddenUserIds*!\n" +
 	"\tMediaType\x12\t\n" +
 	"\x05IMAGE\x10\x00\x12\t\n" +
-	"\x05VIDEO\x10\x012\xac\a\n" +
+	"\x05VIDEO\x10\x012\xc3\t\n" +
 	"\x0eStoriesService\x12H\n" +
 	"\vCreateStory\x12\x1b.stories.CreateStoryRequest\x1a\x1c.stories.CreateStoryResponse\x12?\n" +
 	"\bGetStory\x12\x18.stories.GetStoryRequest\x1a\x19.stories.GetStoryResponse\x12Q\n" +
@@ -1714,7 +2037,10 @@ const file_stories_stories_proto_rawDesc = "" +
 	"\x0fGetStoryReplies\x12\x1f.stories.GetStoryRepliesRequest\x1a .stories.GetStoryRepliesResponse\x12T\n" +
 	"\x0fGetStoryViewers\x12\x1f.stories.GetStoryViewersRequest\x1a .stories.GetStoryViewersResponse\x12E\n" +
 	"\n" +
-	"ShareStory\x12\x1a.stories.ShareStoryRequest\x1a\x1b.stories.ShareStoryResponseB8Z6github.com/Hinsane5/hoshiBmaTchi/backend/proto/storiesb\x06proto3"
+	"ShareStory\x12\x1a.stories.ShareStoryRequest\x1a\x1b.stories.ShareStoryResponse\x12Z\n" +
+	"\x11GenerateUploadURL\x12!.stories.GenerateUploadURLRequest\x1a\".stories.GenerateUploadURLResponse\x12f\n" +
+	"\x15ToggleStoryVisibility\x12%.stories.ToggleStoryVisibilityRequest\x1a&.stories.ToggleStoryVisibilityResponse\x12Q\n" +
+	"\x0eGetHiddenUsers\x12\x1e.stories.GetHiddenUsersRequest\x1a\x1f.stories.GetHiddenUsersResponseB8Z6github.com/Hinsane5/hoshiBmaTchi/backend/proto/storiesb\x06proto3"
 
 var (
 	file_stories_stories_proto_rawDescOnce sync.Once
@@ -1729,43 +2055,49 @@ func file_stories_stories_proto_rawDescGZIP() []byte {
 }
 
 var file_stories_stories_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_stories_stories_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_stories_stories_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
 var file_stories_stories_proto_goTypes = []any{
-	(MediaType)(0),                      // 0: stories.MediaType
-	(*Story)(nil),                       // 1: stories.Story
-	(*CreateStoryRequest)(nil),          // 2: stories.CreateStoryRequest
-	(*CreateStoryResponse)(nil),         // 3: stories.CreateStoryResponse
-	(*GetStoryRequest)(nil),             // 4: stories.GetStoryRequest
-	(*GetStoryResponse)(nil),            // 5: stories.GetStoryResponse
-	(*GetUserStoriesRequest)(nil),       // 6: stories.GetUserStoriesRequest
-	(*GetUserStoriesResponse)(nil),      // 7: stories.GetUserStoriesResponse
-	(*GetFollowingStoriesRequest)(nil),  // 8: stories.GetFollowingStoriesRequest
-	(*GetFollowingStoriesResponse)(nil), // 9: stories.GetFollowingStoriesResponse
-	(*UserStories)(nil),                 // 10: stories.UserStories
-	(*DeleteStoryRequest)(nil),          // 11: stories.DeleteStoryRequest
-	(*DeleteStoryResponse)(nil),         // 12: stories.DeleteStoryResponse
-	(*ViewStoryRequest)(nil),            // 13: stories.ViewStoryRequest
-	(*ViewStoryResponse)(nil),           // 14: stories.ViewStoryResponse
-	(*LikeStoryRequest)(nil),            // 15: stories.LikeStoryRequest
-	(*LikeStoryResponse)(nil),           // 16: stories.LikeStoryResponse
-	(*UnlikeStoryRequest)(nil),          // 17: stories.UnlikeStoryRequest
-	(*UnlikeStoryResponse)(nil),         // 18: stories.UnlikeStoryResponse
-	(*ReplyToStoryRequest)(nil),         // 19: stories.ReplyToStoryRequest
-	(*ReplyToStoryResponse)(nil),        // 20: stories.ReplyToStoryResponse
-	(*StoryReply)(nil),                  // 21: stories.StoryReply
-	(*GetStoryRepliesRequest)(nil),      // 22: stories.GetStoryRepliesRequest
-	(*GetStoryRepliesResponse)(nil),     // 23: stories.GetStoryRepliesResponse
-	(*GetStoryViewersRequest)(nil),      // 24: stories.GetStoryViewersRequest
-	(*GetStoryViewersResponse)(nil),     // 25: stories.GetStoryViewersResponse
-	(*StoryViewer)(nil),                 // 26: stories.StoryViewer
-	(*ShareStoryRequest)(nil),           // 27: stories.ShareStoryRequest
-	(*ShareStoryResponse)(nil),          // 28: stories.ShareStoryResponse
-	(*timestamppb.Timestamp)(nil),       // 29: google.protobuf.Timestamp
+	(MediaType)(0),                        // 0: stories.MediaType
+	(*Story)(nil),                         // 1: stories.Story
+	(*CreateStoryRequest)(nil),            // 2: stories.CreateStoryRequest
+	(*CreateStoryResponse)(nil),           // 3: stories.CreateStoryResponse
+	(*GetStoryRequest)(nil),               // 4: stories.GetStoryRequest
+	(*GetStoryResponse)(nil),              // 5: stories.GetStoryResponse
+	(*GetUserStoriesRequest)(nil),         // 6: stories.GetUserStoriesRequest
+	(*GetUserStoriesResponse)(nil),        // 7: stories.GetUserStoriesResponse
+	(*GetFollowingStoriesRequest)(nil),    // 8: stories.GetFollowingStoriesRequest
+	(*GetFollowingStoriesResponse)(nil),   // 9: stories.GetFollowingStoriesResponse
+	(*UserStories)(nil),                   // 10: stories.UserStories
+	(*DeleteStoryRequest)(nil),            // 11: stories.DeleteStoryRequest
+	(*DeleteStoryResponse)(nil),           // 12: stories.DeleteStoryResponse
+	(*ViewStoryRequest)(nil),              // 13: stories.ViewStoryRequest
+	(*ViewStoryResponse)(nil),             // 14: stories.ViewStoryResponse
+	(*LikeStoryRequest)(nil),              // 15: stories.LikeStoryRequest
+	(*LikeStoryResponse)(nil),             // 16: stories.LikeStoryResponse
+	(*UnlikeStoryRequest)(nil),            // 17: stories.UnlikeStoryRequest
+	(*UnlikeStoryResponse)(nil),           // 18: stories.UnlikeStoryResponse
+	(*ReplyToStoryRequest)(nil),           // 19: stories.ReplyToStoryRequest
+	(*ReplyToStoryResponse)(nil),          // 20: stories.ReplyToStoryResponse
+	(*StoryReply)(nil),                    // 21: stories.StoryReply
+	(*GetStoryRepliesRequest)(nil),        // 22: stories.GetStoryRepliesRequest
+	(*GetStoryRepliesResponse)(nil),       // 23: stories.GetStoryRepliesResponse
+	(*GetStoryViewersRequest)(nil),        // 24: stories.GetStoryViewersRequest
+	(*GetStoryViewersResponse)(nil),       // 25: stories.GetStoryViewersResponse
+	(*StoryViewer)(nil),                   // 26: stories.StoryViewer
+	(*ShareStoryRequest)(nil),             // 27: stories.ShareStoryRequest
+	(*ShareStoryResponse)(nil),            // 28: stories.ShareStoryResponse
+	(*GenerateUploadURLRequest)(nil),      // 29: stories.GenerateUploadURLRequest
+	(*GenerateUploadURLResponse)(nil),     // 30: stories.GenerateUploadURLResponse
+	(*ToggleStoryVisibilityRequest)(nil),  // 31: stories.ToggleStoryVisibilityRequest
+	(*ToggleStoryVisibilityResponse)(nil), // 32: stories.ToggleStoryVisibilityResponse
+	(*GetHiddenUsersRequest)(nil),         // 33: stories.GetHiddenUsersRequest
+	(*GetHiddenUsersResponse)(nil),        // 34: stories.GetHiddenUsersResponse
+	(*timestamppb.Timestamp)(nil),         // 35: google.protobuf.Timestamp
 }
 var file_stories_stories_proto_depIdxs = []int32{
 	0,  // 0: stories.Story.media_type:type_name -> stories.MediaType
-	29, // 1: stories.Story.created_at:type_name -> google.protobuf.Timestamp
-	29, // 2: stories.Story.expires_at:type_name -> google.protobuf.Timestamp
+	35, // 1: stories.Story.created_at:type_name -> google.protobuf.Timestamp
+	35, // 2: stories.Story.expires_at:type_name -> google.protobuf.Timestamp
 	0,  // 3: stories.CreateStoryRequest.media_type:type_name -> stories.MediaType
 	1,  // 4: stories.CreateStoryResponse.story:type_name -> stories.Story
 	1,  // 5: stories.GetStoryResponse.story:type_name -> stories.Story
@@ -1773,10 +2105,10 @@ var file_stories_stories_proto_depIdxs = []int32{
 	10, // 7: stories.GetFollowingStoriesResponse.user_stories:type_name -> stories.UserStories
 	1,  // 8: stories.UserStories.stories:type_name -> stories.Story
 	21, // 9: stories.ReplyToStoryResponse.reply:type_name -> stories.StoryReply
-	29, // 10: stories.StoryReply.created_at:type_name -> google.protobuf.Timestamp
+	35, // 10: stories.StoryReply.created_at:type_name -> google.protobuf.Timestamp
 	21, // 11: stories.GetStoryRepliesResponse.replies:type_name -> stories.StoryReply
 	26, // 12: stories.GetStoryViewersResponse.viewers:type_name -> stories.StoryViewer
-	29, // 13: stories.StoryViewer.viewed_at:type_name -> google.protobuf.Timestamp
+	35, // 13: stories.StoryViewer.viewed_at:type_name -> google.protobuf.Timestamp
 	2,  // 14: stories.StoriesService.CreateStory:input_type -> stories.CreateStoryRequest
 	4,  // 15: stories.StoriesService.GetStory:input_type -> stories.GetStoryRequest
 	6,  // 16: stories.StoriesService.GetUserStories:input_type -> stories.GetUserStoriesRequest
@@ -1789,20 +2121,26 @@ var file_stories_stories_proto_depIdxs = []int32{
 	22, // 23: stories.StoriesService.GetStoryReplies:input_type -> stories.GetStoryRepliesRequest
 	24, // 24: stories.StoriesService.GetStoryViewers:input_type -> stories.GetStoryViewersRequest
 	27, // 25: stories.StoriesService.ShareStory:input_type -> stories.ShareStoryRequest
-	3,  // 26: stories.StoriesService.CreateStory:output_type -> stories.CreateStoryResponse
-	5,  // 27: stories.StoriesService.GetStory:output_type -> stories.GetStoryResponse
-	7,  // 28: stories.StoriesService.GetUserStories:output_type -> stories.GetUserStoriesResponse
-	9,  // 29: stories.StoriesService.GetFollowingStories:output_type -> stories.GetFollowingStoriesResponse
-	12, // 30: stories.StoriesService.DeleteStory:output_type -> stories.DeleteStoryResponse
-	14, // 31: stories.StoriesService.ViewStory:output_type -> stories.ViewStoryResponse
-	16, // 32: stories.StoriesService.LikeStory:output_type -> stories.LikeStoryResponse
-	18, // 33: stories.StoriesService.UnlikeStory:output_type -> stories.UnlikeStoryResponse
-	20, // 34: stories.StoriesService.ReplyToStory:output_type -> stories.ReplyToStoryResponse
-	23, // 35: stories.StoriesService.GetStoryReplies:output_type -> stories.GetStoryRepliesResponse
-	25, // 36: stories.StoriesService.GetStoryViewers:output_type -> stories.GetStoryViewersResponse
-	28, // 37: stories.StoriesService.ShareStory:output_type -> stories.ShareStoryResponse
-	26, // [26:38] is the sub-list for method output_type
-	14, // [14:26] is the sub-list for method input_type
+	29, // 26: stories.StoriesService.GenerateUploadURL:input_type -> stories.GenerateUploadURLRequest
+	31, // 27: stories.StoriesService.ToggleStoryVisibility:input_type -> stories.ToggleStoryVisibilityRequest
+	33, // 28: stories.StoriesService.GetHiddenUsers:input_type -> stories.GetHiddenUsersRequest
+	3,  // 29: stories.StoriesService.CreateStory:output_type -> stories.CreateStoryResponse
+	5,  // 30: stories.StoriesService.GetStory:output_type -> stories.GetStoryResponse
+	7,  // 31: stories.StoriesService.GetUserStories:output_type -> stories.GetUserStoriesResponse
+	9,  // 32: stories.StoriesService.GetFollowingStories:output_type -> stories.GetFollowingStoriesResponse
+	12, // 33: stories.StoriesService.DeleteStory:output_type -> stories.DeleteStoryResponse
+	14, // 34: stories.StoriesService.ViewStory:output_type -> stories.ViewStoryResponse
+	16, // 35: stories.StoriesService.LikeStory:output_type -> stories.LikeStoryResponse
+	18, // 36: stories.StoriesService.UnlikeStory:output_type -> stories.UnlikeStoryResponse
+	20, // 37: stories.StoriesService.ReplyToStory:output_type -> stories.ReplyToStoryResponse
+	23, // 38: stories.StoriesService.GetStoryReplies:output_type -> stories.GetStoryRepliesResponse
+	25, // 39: stories.StoriesService.GetStoryViewers:output_type -> stories.GetStoryViewersResponse
+	28, // 40: stories.StoriesService.ShareStory:output_type -> stories.ShareStoryResponse
+	30, // 41: stories.StoriesService.GenerateUploadURL:output_type -> stories.GenerateUploadURLResponse
+	32, // 42: stories.StoriesService.ToggleStoryVisibility:output_type -> stories.ToggleStoryVisibilityResponse
+	34, // 43: stories.StoriesService.GetHiddenUsers:output_type -> stories.GetHiddenUsersResponse
+	29, // [29:44] is the sub-list for method output_type
+	14, // [14:29] is the sub-list for method input_type
 	14, // [14:14] is the sub-list for extension type_name
 	14, // [14:14] is the sub-list for extension extendee
 	0,  // [0:14] is the sub-list for field type_name
@@ -1819,7 +2157,7 @@ func file_stories_stories_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_stories_stories_proto_rawDesc), len(file_stories_stories_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   28,
+			NumMessages:   34,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -27,49 +27,72 @@ func (h *StoriesHandler) CreateStory(c *gin.Context) {
 		return
 	}
 
-	if err := c.Request.ParseMultipartForm(100 << 20); err != nil { 
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to parse form"})
-		return
+	var req struct {
+		MediaObjectName string `json:"media_object_name" binding:"required"`
+		MediaType       string `json:"media_type" binding:"required"`
+		Duration        int32  `json:"duration"`
 	}
 
-	mediaURL := c.PostForm("media_url")
-	mediaTypeStr := c.PostForm("media_type")
-	durationStr := c.PostForm("duration")
-
-	if mediaURL == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Media URL is required"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var mediaType pb.MediaType
-	if mediaTypeStr == "VIDEO" {
+	if req.MediaType == "VIDEO" {
 		mediaType = pb.MediaType_VIDEO
 	} else {
 		mediaType = pb.MediaType_IMAGE
 	}
 
-	duration := int32(5) 
-	if durationStr != "" {
-		if d, err := strconv.Atoi(durationStr); err == nil {
-			duration = int32(d)
-		}
+	if req.Duration == 0 {
+		req.Duration = 5
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	resp, err := h.client.CreateStory(ctx, &pb.CreateStoryRequest{
 		UserId:    userID.(string),
-		MediaUrl:  mediaURL,
+		MediaUrl:  req.MediaObjectName, 
 		MediaType: mediaType,
-		Duration:  duration,
+		Duration:  req.Duration,
 	})
+
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create story"})
 		return
 	}
 
 	c.JSON(http.StatusCreated, resp.Story)
+}
+
+func (h *StoriesHandler) GenerateUploadURL(c *gin.Context) {
+	fileName := c.Query("file_name")
+	fileType := c.Query("file_type")
+
+	if fileName == "" || fileType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file_name and file_type are required"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	resp, err := h.client.GenerateUploadURL(ctx, &pb.GenerateUploadURLRequest{
+		FileName: fileName,
+		FileType: fileType,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate upload URL"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"upload_url":  resp.UploadUrl,
+		"object_name": resp.ObjectName,
+	})
 }
 
 func (h *StoriesHandler) GetStory(c *gin.Context) {

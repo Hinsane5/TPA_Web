@@ -2,11 +2,18 @@ package handlers
 
 import (
 	"context"
+	"fmt"
+	"log"
+	"os"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/ports"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/events"
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -16,23 +23,40 @@ type GRPCHandler struct {
 	pb.UnimplementedStoriesServiceServer
 	repo              ports.StoryRepository
 	redisRepo         ports.RedisRepository
-	userServiceClient ports.UserServiceClient
-	chatServiceClient ports.ChatServiceClient
+	userServiceClient *clients.UserServiceClient
+	chatServiceClient *clients.ChatServiceClient 
+	publisher         *events.EventPublisher
+	minioClient *minio.Client
+    bucketName  string
 }
 
-func NewGRPCHandler(repo ports.StoryRepository,redisRepo ports.RedisRepository, userClient ports.UserServiceClient, chatClient ports.ChatServiceClient) *GRPCHandler {
+func NewGRPCHandler(
+	repo ports.StoryRepository,
+	redisRepo ports.RedisRepository,
+	userClient *clients.UserServiceClient,
+	chatClient *clients.ChatServiceClient,
+	publisher *events.EventPublisher,
+	minioClient *minio.Client,
+    bucketName string,
+) *GRPCHandler {
 	return &GRPCHandler{
 		repo:              repo,
 		redisRepo:         redisRepo,
 		userServiceClient: userClient,
 		chatServiceClient: chatClient,
+		publisher:         publisher,
+		minioClient: minioClient,
+        bucketName:  bucketName,
 	}
 }
 
 func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryRequest) (*pb.CreateStoryResponse, error) {
+
+	fullMediaURL := fmt.Sprintf("http://%s/%s/%s", os.Getenv("MINIO_ENDPOINT"), h.bucketName, req.MediaUrl)
+	
 	story := &domain.Story{
 		UserID:    req.UserId,
-		MediaURL:  req.MediaUrl,
+		MediaURL:  fullMediaURL,
 		MediaType: domain.MediaType(req.MediaType.String()),
 		Duration:  int(req.Duration),
 		CreatedAt: time.Now(),
@@ -46,6 +70,22 @@ func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryReques
 	return &pb.CreateStoryResponse{
 		Story: h.domainStoryToPb(story),
 	}, nil
+}
+
+func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadURLRequest) (*pb.GenerateUploadURLResponse, error) {
+    objectName := uuid.New().String() + "-" + req.FileName
+    expiry := 15 * time.Minute
+
+    // Generate Presigned URL
+    presignedURL, err := h.minioClient.PresignedPutObject(ctx, h.bucketName, objectName, expiry)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to generate upload url: %v", err)
+    }
+
+    return &pb.GenerateUploadURLResponse{
+        UploadUrl:  presignedURL.String(),
+        ObjectName: objectName,
+    }, nil
 }
 
 func (h *GRPCHandler) GetStory(ctx context.Context, req *pb.GetStoryRequest) (*pb.GetStoryResponse, error) {
@@ -65,8 +105,13 @@ func (h *GRPCHandler) GetStory(ctx context.Context, req *pb.GetStoryRequest) (*p
 }
 
 func (h *GRPCHandler) GetUserStories(ctx context.Context, req *pb.GetUserStoriesRequest) (*pb.GetUserStoriesResponse, error) {
-    // Use the flag from the request to determine if we show expired stories
-    stories, err := h.repo.GetUserStories(ctx, req.UserId, req.IsArchive)
+    limit := int(req.Limit)
+    if limit <= 0 {
+        limit = 20 
+    }
+    offset := int(req.Offset)
+
+    stories, err := h.repo.GetUserStories(ctx, req.UserId, req.IsArchive, limit, offset)
     if err != nil {
         return nil, status.Errorf(codes.Internal, "failed to get user stories: %v", err)
     }
@@ -178,14 +223,38 @@ func (h *GRPCHandler) ViewStory(ctx context.Context, req *pb.ViewStoryRequest) (
 }
 
 func (h *GRPCHandler) LikeStory(ctx context.Context, req *pb.LikeStoryRequest) (*pb.LikeStoryResponse, error) {
+	// 1. Check if story exists to get Owner ID
+	story, err := h.repo.GetStoryByID(ctx, req.StoryId)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "story not found")
+	}
+
+	// 2. Save Like to DB
 	like := &domain.StoryLike{
 		StoryID:   req.StoryId,
 		UserID:    req.UserId,
-		CreatedAt: time.Now(),
+		LikedAt: time.Now(),
 	}
 
 	if err := h.repo.LikeStory(ctx, like); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to like story: %v", err)
+	}
+
+	// 3. Publish Notification Event (if not liking own story)
+	if story.UserID != req.UserId && h.publisher != nil {
+		go func() {
+			err := h.publisher.PublishNotification(context.Background(), events.NotificationEvent{
+				Type:       "story_like",
+				ActorID:    req.UserId,
+				TargetID:   story.UserID,
+				ResourceID: story.ID,
+				Message:    "liked your story.",
+				CreatedAt:  time.Now(),
+			})
+			if err != nil {
+				log.Printf("Failed to publish notification: %v", err)
+			}
+		}()
 	}
 
 	return &pb.LikeStoryResponse{Success: true}, nil
@@ -200,6 +269,12 @@ func (h *GRPCHandler) UnlikeStory(ctx context.Context, req *pb.UnlikeStoryReques
 }
 
 func (h *GRPCHandler) ReplyToStory(ctx context.Context, req *pb.ReplyToStoryRequest) (*pb.ReplyToStoryResponse, error) {
+	// 1. Get Story for Owner ID
+	story, err := h.repo.GetStoryByID(ctx, req.StoryId)
+	if err != nil {
+		return nil, status.Errorf(codes.NotFound, "story not found")
+	}
+
 	reply := &domain.StoryReply{
 		StoryID:   req.StoryId,
 		UserID:    req.UserId,
@@ -209,6 +284,23 @@ func (h *GRPCHandler) ReplyToStory(ctx context.Context, req *pb.ReplyToStoryRequ
 
 	if err := h.repo.CreateReply(ctx, reply); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to reply to story: %v", err)
+	}
+
+	// 2. Publish Notification Event
+	if story.UserID != req.UserId && h.publisher != nil {
+		go func() {
+			err := h.publisher.PublishNotification(context.Background(), events.NotificationEvent{
+				Type:       "story_reply",
+				ActorID:    req.UserId,
+				TargetID:   story.UserID,
+				ResourceID: story.ID,
+				Message:    fmt.Sprintf("replied to your story: %s", req.Content),
+				CreatedAt:  time.Now(),
+			})
+			if err != nil {
+				log.Printf("Failed to publish notification: %v", err)
+			}
+		}()
 	}
 
 	return &pb.ReplyToStoryResponse{
@@ -311,8 +403,38 @@ func (h *GRPCHandler) domainStoryToPb(story *domain.Story) *pb.Story {
 		Duration:   int32(story.Duration),
 		CreatedAt:  timestamppb.New(story.CreatedAt),
 		ExpiresAt:  timestamppb.New(story.ExpiresAt),
-		ViewCount:  int32(story.ViewCount),
-		LikeCount:  int32(story.LikeCount),
+		ViewCount:  int32(len(story.Views)),
+		LikeCount:  int32(len(story.Likes)),
 		ReplyCount: int32(story.ReplyCount),
 	}
+}
+
+func (h *GRPCHandler) ToggleStoryVisibility(ctx context.Context, req *pb.ToggleStoryVisibilityRequest) (*pb.ToggleStoryVisibilityResponse, error) {
+    if req.UserId == "" || req.TargetId == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id and target_id are required")
+    }
+
+    isHidden, err := h.repo.ToggleStoryVisibility(ctx, req.UserId, req.TargetId)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to toggle visibility: %v", err)
+    }
+
+    return &pb.ToggleStoryVisibilityResponse{
+        IsHidden: isHidden,
+    }, nil
+}
+
+func (h *GRPCHandler) GetHiddenUsers(ctx context.Context, req *pb.GetHiddenUsersRequest) (*pb.GetHiddenUsersResponse, error) {
+    if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "user_id is required")
+    }
+
+    hiddenIDs, err := h.repo.GetHiddenUsers(ctx, req.UserId)
+    if err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to get hidden users: %v", err)
+    }
+
+    return &pb.GetHiddenUsersResponse{
+        HiddenUserIds: hiddenIDs,
+    }, nil
 }

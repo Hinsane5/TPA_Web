@@ -8,12 +8,15 @@ import (
 	"time"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
-	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/clients"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/ports"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/events"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/repositories"
 	"github.com/joho/godotenv"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"gorm.io/driver/postgres"
@@ -33,9 +36,11 @@ func main() {
 
 	err = db.AutoMigrate(
         &domain.Story{},
-        &domain.StoryView{},
-        &domain.StoryLike{},
-        &domain.StoryVisibility{},
+		&domain.StoryView{},
+		&domain.StoryLike{},
+		&domain.StoryReply{},
+		&domain.StoryShare{},
+		&domain.StoryVisibility{},
     )
     if err != nil {
         log.Fatalf("Failed to migrate database: %v", err)
@@ -53,19 +58,37 @@ func main() {
 		log.Fatalf("Failed to create user client: %v", err)
 	}
 
+	rabbitURL := os.Getenv("RABBITMQ_URL")
+    if rabbitURL == "" {
+        rabbitURL = "amqp://guest:guest@localhost:5672/"
+    }
+
+	publisher, err := events.NewEventPublisher(rabbitURL)
+    if err != nil {
+        log.Printf("Failed to initialize RabbitMQ publisher: %v", err)
+    } else {
+        defer publisher.Close()
+        log.Println("Connected to RabbitMQ")
+    }
+
 	chatClient, err := clients.NewChatServiceClient(os.Getenv("CHAT_SERVICE_URL"))
 	if err != nil {
 		log.Fatalf("Failed to create chat client: %v", err)
 	}
 
-	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient)
+	minioClient, err := minio.New(os.Getenv("MINIO_ENDPOINT"), &minio.Options{
+        Creds:  credentials.NewStaticV4(os.Getenv("MINIO_ACCESS_KEY_ID"), os.Getenv("MINIO_SECRET_ACCESS_KEY"), ""),
+        Secure: os.Getenv("MINIO_USE_SSL") == "true",
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	// 6. Start Cleanup Routine
-	// Fixed "does not implement" error by updating ports (see step 2 below)
+	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient, publisher, minioClient, os.Getenv("MINIO_BUCKET_NAME"),)
+
 	go startCleanupRoutine(repo)
 
-	// 7. Start Server
-	lis, err := net.Listen("tcp", ":50054") // Ensure port matches docker-compose
+	lis, err := net.Listen("tcp", ":50054")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

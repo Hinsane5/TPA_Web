@@ -9,7 +9,7 @@ import (
 type StoryRepository interface {
     CreateStory(ctx context.Context, story *domain.Story) error
     GetStoryByID(ctx context.Context, storyID string) (*domain.Story, error)
-    GetUserStories(ctx context.Context, userID string, includeExpired bool) ([]*domain.Story, error)
+    GetUserStories(ctx context.Context, userID string, includeExpired bool, limit, offset int) ([]*domain.Story, error)
     GetFollowingStories(ctx context.Context, userIDs []string, viewerID string, limit int) (map[string][]*domain.Story, error)
     DeleteStory(ctx context.Context, storyID, userID string) error
     DeleteExpiredStories(ctx context.Context) error
@@ -24,7 +24,10 @@ type StoryRepository interface {
     
     CreateReply(ctx context.Context, reply *domain.StoryReply) error
     GetStoryReplies(ctx context.Context, storyID string) ([]*domain.StoryReply, error)
-    
+
+    ToggleStoryVisibility(ctx context.Context, userID, targetID string) (bool, error)
+    GetHiddenUsers(ctx context.Context, userID string) ([]string, error)
+
     ShareStory(ctx context.Context, share *domain.StoryShare) error
 }
 

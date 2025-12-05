@@ -19,18 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	StoriesService_CreateStory_FullMethodName         = "/stories.StoriesService/CreateStory"
-	StoriesService_GetStory_FullMethodName            = "/stories.StoriesService/GetStory"
-	StoriesService_GetUserStories_FullMethodName      = "/stories.StoriesService/GetUserStories"
-	StoriesService_GetFollowingStories_FullMethodName = "/stories.StoriesService/GetFollowingStories"
-	StoriesService_DeleteStory_FullMethodName         = "/stories.StoriesService/DeleteStory"
-	StoriesService_ViewStory_FullMethodName           = "/stories.StoriesService/ViewStory"
-	StoriesService_LikeStory_FullMethodName           = "/stories.StoriesService/LikeStory"
-	StoriesService_UnlikeStory_FullMethodName         = "/stories.StoriesService/UnlikeStory"
-	StoriesService_ReplyToStory_FullMethodName        = "/stories.StoriesService/ReplyToStory"
-	StoriesService_GetStoryReplies_FullMethodName     = "/stories.StoriesService/GetStoryReplies"
-	StoriesService_GetStoryViewers_FullMethodName     = "/stories.StoriesService/GetStoryViewers"
-	StoriesService_ShareStory_FullMethodName          = "/stories.StoriesService/ShareStory"
+	StoriesService_CreateStory_FullMethodName           = "/stories.StoriesService/CreateStory"
+	StoriesService_GetStory_FullMethodName              = "/stories.StoriesService/GetStory"
+	StoriesService_GetUserStories_FullMethodName        = "/stories.StoriesService/GetUserStories"
+	StoriesService_GetFollowingStories_FullMethodName   = "/stories.StoriesService/GetFollowingStories"
+	StoriesService_DeleteStory_FullMethodName           = "/stories.StoriesService/DeleteStory"
+	StoriesService_ViewStory_FullMethodName             = "/stories.StoriesService/ViewStory"
+	StoriesService_LikeStory_FullMethodName             = "/stories.StoriesService/LikeStory"
+	StoriesService_UnlikeStory_FullMethodName           = "/stories.StoriesService/UnlikeStory"
+	StoriesService_ReplyToStory_FullMethodName          = "/stories.StoriesService/ReplyToStory"
+	StoriesService_GetStoryReplies_FullMethodName       = "/stories.StoriesService/GetStoryReplies"
+	StoriesService_GetStoryViewers_FullMethodName       = "/stories.StoriesService/GetStoryViewers"
+	StoriesService_ShareStory_FullMethodName            = "/stories.StoriesService/ShareStory"
+	StoriesService_GenerateUploadURL_FullMethodName     = "/stories.StoriesService/GenerateUploadURL"
+	StoriesService_ToggleStoryVisibility_FullMethodName = "/stories.StoriesService/ToggleStoryVisibility"
+	StoriesService_GetHiddenUsers_FullMethodName        = "/stories.StoriesService/GetHiddenUsers"
 )
 
 // StoriesServiceClient is the client API for StoriesService service.
@@ -49,6 +52,9 @@ type StoriesServiceClient interface {
 	GetStoryReplies(ctx context.Context, in *GetStoryRepliesRequest, opts ...grpc.CallOption) (*GetStoryRepliesResponse, error)
 	GetStoryViewers(ctx context.Context, in *GetStoryViewersRequest, opts ...grpc.CallOption) (*GetStoryViewersResponse, error)
 	ShareStory(ctx context.Context, in *ShareStoryRequest, opts ...grpc.CallOption) (*ShareStoryResponse, error)
+	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
+	ToggleStoryVisibility(ctx context.Context, in *ToggleStoryVisibilityRequest, opts ...grpc.CallOption) (*ToggleStoryVisibilityResponse, error)
+	GetHiddenUsers(ctx context.Context, in *GetHiddenUsersRequest, opts ...grpc.CallOption) (*GetHiddenUsersResponse, error)
 }
 
 type storiesServiceClient struct {
@@ -179,6 +185,36 @@ func (c *storiesServiceClient) ShareStory(ctx context.Context, in *ShareStoryReq
 	return out, nil
 }
 
+func (c *storiesServiceClient) GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GenerateUploadURLResponse)
+	err := c.cc.Invoke(ctx, StoriesService_GenerateUploadURL_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storiesServiceClient) ToggleStoryVisibility(ctx context.Context, in *ToggleStoryVisibilityRequest, opts ...grpc.CallOption) (*ToggleStoryVisibilityResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ToggleStoryVisibilityResponse)
+	err := c.cc.Invoke(ctx, StoriesService_ToggleStoryVisibility_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storiesServiceClient) GetHiddenUsers(ctx context.Context, in *GetHiddenUsersRequest, opts ...grpc.CallOption) (*GetHiddenUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetHiddenUsersResponse)
+	err := c.cc.Invoke(ctx, StoriesService_GetHiddenUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoriesServiceServer is the server API for StoriesService service.
 // All implementations must embed UnimplementedStoriesServiceServer
 // for forward compatibility.
@@ -195,6 +231,9 @@ type StoriesServiceServer interface {
 	GetStoryReplies(context.Context, *GetStoryRepliesRequest) (*GetStoryRepliesResponse, error)
 	GetStoryViewers(context.Context, *GetStoryViewersRequest) (*GetStoryViewersResponse, error)
 	ShareStory(context.Context, *ShareStoryRequest) (*ShareStoryResponse, error)
+	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
+	ToggleStoryVisibility(context.Context, *ToggleStoryVisibilityRequest) (*ToggleStoryVisibilityResponse, error)
+	GetHiddenUsers(context.Context, *GetHiddenUsersRequest) (*GetHiddenUsersResponse, error)
 	mustEmbedUnimplementedStoriesServiceServer()
 }
 
@@ -240,6 +279,15 @@ func (UnimplementedStoriesServiceServer) GetStoryViewers(context.Context, *GetSt
 }
 func (UnimplementedStoriesServiceServer) ShareStory(context.Context, *ShareStoryRequest) (*ShareStoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ShareStory not implemented")
+}
+func (UnimplementedStoriesServiceServer) GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GenerateUploadURL not implemented")
+}
+func (UnimplementedStoriesServiceServer) ToggleStoryVisibility(context.Context, *ToggleStoryVisibilityRequest) (*ToggleStoryVisibilityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ToggleStoryVisibility not implemented")
+}
+func (UnimplementedStoriesServiceServer) GetHiddenUsers(context.Context, *GetHiddenUsersRequest) (*GetHiddenUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHiddenUsers not implemented")
 }
 func (UnimplementedStoriesServiceServer) mustEmbedUnimplementedStoriesServiceServer() {}
 func (UnimplementedStoriesServiceServer) testEmbeddedByValue()                        {}
@@ -478,6 +526,60 @@ func _StoriesService_ShareStory_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoriesService_GenerateUploadURL_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GenerateUploadURLRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoriesServiceServer).GenerateUploadURL(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoriesService_GenerateUploadURL_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoriesServiceServer).GenerateUploadURL(ctx, req.(*GenerateUploadURLRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoriesService_ToggleStoryVisibility_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleStoryVisibilityRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoriesServiceServer).ToggleStoryVisibility(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoriesService_ToggleStoryVisibility_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoriesServiceServer).ToggleStoryVisibility(ctx, req.(*ToggleStoryVisibilityRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _StoriesService_GetHiddenUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHiddenUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoriesServiceServer).GetHiddenUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoriesService_GetHiddenUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoriesServiceServer).GetHiddenUsers(ctx, req.(*GetHiddenUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoriesService_ServiceDesc is the grpc.ServiceDesc for StoriesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -532,6 +634,18 @@ var StoriesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ShareStory",
 			Handler:    _StoriesService_ShareStory_Handler,
+		},
+		{
+			MethodName: "GenerateUploadURL",
+			Handler:    _StoriesService_GenerateUploadURL_Handler,
+		},
+		{
+			MethodName: "ToggleStoryVisibility",
+			Handler:    _StoriesService_ToggleStoryVisibility_Handler,
+		},
+		{
+			MethodName: "GetHiddenUsers",
+			Handler:    _StoriesService_GetHiddenUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

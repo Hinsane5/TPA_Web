@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/stories/internal/core/domain"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -32,16 +33,18 @@ func (r *GormStoryRepository) GetStoryByID(ctx context.Context, storyID string) 
 	return &story, nil
 }
 
-func (r *GormStoryRepository) GetUserStories(ctx context.Context, userID string, includeExpired bool) ([]*domain.Story, error) {
+func (r *GormStoryRepository) GetUserStories(ctx context.Context, userID string, includeExpired bool, limit, offset int) ([]*domain.Story, error) {
 	query := r.db.WithContext(ctx).Where("user_id = ?", userID)
 
-	// Only filter by expiration if we are NOT looking at the archive
 	if !includeExpired {
 		query = query.Where("expires_at > ?", time.Now())
 	}
 
 	var stories []*domain.Story
-	err := query.Order("created_at DESC").Find(&stories).Error
+	err := query.Order("created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Find(&stories).Error
 	return stories, err
 }
 
@@ -149,4 +152,36 @@ func (r *GormStoryRepository) GetStoryReplies(ctx context.Context, storyID strin
 
 func (r *GormStoryRepository) ShareStory(ctx context.Context, share *domain.StoryShare) error {
 	return r.db.WithContext(ctx).Create(share).Error
+}
+
+func (r *GormStoryRepository) ToggleStoryVisibility(ctx context.Context, userID, targetID string) (bool, error) {
+    var visibility domain.StoryVisibility
+    err := r.db.WithContext(ctx).
+        Where("user_id = ? AND hidden_viewer_id = ?", userID, targetID).
+        First(&visibility).Error
+
+    if err == nil {
+        // Exists, so delete it (Unhide)
+        r.db.WithContext(ctx).Delete(&visibility)
+        return false, nil
+    } else if err == gorm.ErrRecordNotFound {
+        // Doesn't exist, create it (Hide)
+        newVis := domain.StoryVisibility{
+            ID:             uuid.New().String(),
+            UserID:         userID,
+            HiddenViewerID: targetID,
+        }
+        r.db.WithContext(ctx).Create(&newVis)
+        return true, nil
+    }
+    return false, err
+}
+
+func (r *GormStoryRepository) GetHiddenUsers(ctx context.Context, userID string) ([]string, error) {
+    var hiddenIDs []string
+    err := r.db.WithContext(ctx).
+        Model(&domain.StoryVisibility{}).
+        Where("user_id = ?", userID).
+        Pluck("hidden_viewer_id", &hiddenIDs).Error
+    return hiddenIDs, err
 }

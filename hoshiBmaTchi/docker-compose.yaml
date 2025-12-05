@@ -152,6 +152,8 @@ services:
         condition: service_started
       chat-service:
         condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: unless-stopped
     environment:
       - DATABASE_URL=host=postgres user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=${STORIES_DB_NAME} port=5432 sslmode=disable
@@ -160,6 +162,7 @@ services:
       
       - USER_SERVICE_URL=${PROJECT_NAME}-users-service:50051
       - CHAT_SERVICE_URL=${PROJECT_NAME}-chat-service:50053 
+      - RABBITMQ_URL=amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
 
       # --- MINIO ---
       - MINIO_ENDPOINT=minio:9000

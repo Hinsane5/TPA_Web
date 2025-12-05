@@ -19,6 +19,9 @@ service StoriesService {
   rpc GetStoryReplies(GetStoryRepliesRequest) returns (GetStoryRepliesResponse);
   rpc GetStoryViewers(GetStoryViewersRequest) returns (GetStoryViewersResponse);
   rpc ShareStory(ShareStoryRequest) returns (ShareStoryResponse);
+  rpc GenerateUploadURL(GenerateUploadURLRequest) returns (GenerateUploadURLResponse);
+  rpc ToggleStoryVisibility(ToggleStoryVisibilityRequest) returns (ToggleStoryVisibilityResponse);
+  rpc GetHiddenUsers(GetHiddenUsersRequest) returns (GetHiddenUsersResponse);
 }
 
 enum MediaType {
@@ -65,6 +68,8 @@ message GetUserStoriesRequest {
   string user_id = 1;
   string viewer_id = 2;
   bool is_archive = 3;
+  int32 limit = 4; 
+  int32 offset = 5;
 }
 
 message GetUserStoriesResponse {
@@ -172,4 +177,31 @@ message ShareStoryRequest {
 message ShareStoryResponse {
   bool success = 1;
   string message_id = 2;
+}
+
+message GenerateUploadURLRequest {
+  string file_name = 1;
+  string file_type = 2;
+}
+
+message GenerateUploadURLResponse {
+  string upload_url = 1;
+  string object_name = 2;
+}
+
+message ToggleStoryVisibilityRequest {
+  string user_id = 1; 
+  string target_id = 2; 
+}
+
+message ToggleStoryVisibilityResponse {
+  bool is_hidden = 1; 
+}
+
+message GetHiddenUsersRequest {
+  string user_id = 1;
+}
+
+message GetHiddenUsersResponse {
+  repeated string hidden_user_ids = 1;
 }
