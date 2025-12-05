@@ -2,21 +2,32 @@
   <div class="home-container">
     <div class="stories-section">
       <div class="stories-carousel">
+        <div v-if="isLoadingStories && stories.length === 0" class="story-loading">
+          Loading...
+        </div>
+
         <div 
           class="story-item" 
-          v-for="(n, idx) in 8" 
-          :key="`story-${n}`"
+          v-for="(story, idx) in stories" 
+          :key="story.id"
           @click="openStoriesCarousel(idx)"
         >
-          <div class="story-avatar">
-            <span>👤</span>
+          <div class="story-avatar" :class="{ 'has-unseen': !story.isViewed }">
+            <img 
+              v-if="story.userAvatar" 
+              :src="story.userAvatar" 
+              class="avatar-img" 
+              alt="User"
+            />
+            <span v-else>👤</span>
           </div>
-          <p class="story-username">User {{ n }}</p>
+          <p class="story-username">{{ story.username }}</p>
         </div>
       </div>
     </div>
 
     <StoriesCarouselOverlay 
+      v-if="isStoriesOverlayOpen"
       :isOpen="isStoriesOverlayOpen"
       @close="closeStoriesOverlay"
     />
@@ -80,11 +91,14 @@
   </div>
 </template>
 
+
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import PostComponent from './PostComponent.vue';
 import { postsApi } from '../services/apiService';
 import PostDetailOverlay from './PostDetailOverlay.vue';
+import StoriesCarouselOverlay from './StoriesCarouselOverlay.vue'; 
+import { useStories } from '../composables/useStories';
 
 interface Post {
   id: string;
@@ -104,20 +118,19 @@ const isLoading = ref(false)
 const page = ref(0)
 const limit = 5
 const scrollTrigger = ref<HTMLElement | null>(null);
+const isLoadingStories = ref(false);
 const selectedPost = ref<Post | null>(null);
 const isStoriesOverlayOpen = ref(false);
+
+const { stories, fetchStories, currentStoryIndex } = useStories();
 
 const fetchFeed = async () => {
   if (isLoading.value) return;
   isLoading.value = true;
-
   try {
-    const offset = page.value * limit;
-    const response = await postsApi.getHomeFeed(limit, offset);
-
-    if (response.data.data && response.data.data.length > 0){
-      posts.value.push(...response.data.data);
-      page.value++;
+    const response = await postsApi.getHomeFeed(5, 0);
+    if (response.data.data) {
+      posts.value = response.data.data;
     }
   } catch(error){
     console.error("Failed to fetch feed:", error);
@@ -136,12 +149,14 @@ const closeOverlay = () => {
   window.history.pushState({}, '', '/'); 
 }; 
 
-const openStoriesCarousel = (storyIndex: number) => {
+const openStoriesCarousel = (index: number) => {
+  currentStoryIndex.value = index; 
   isStoriesOverlayOpen.value = true;
 };
 
 const closeStoriesOverlay = () => {
   isStoriesOverlayOpen.value = false;
+  fetchStories(); 
 };
 
 const handleCommentAdded = () => {

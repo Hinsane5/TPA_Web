@@ -3,10 +3,10 @@ package handlers
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
+	usersPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/gin-gonic/gin"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -14,10 +14,14 @@ import (
 
 type StoriesHandler struct {
 	client pb.StoriesServiceClient
+	userClient usersPb.UserServiceClient
 }
 
-func NewStoriesHandler(client pb.StoriesServiceClient) *StoriesHandler {
-	return &StoriesHandler{client: client}
+func NewStoriesHandler(client pb.StoriesServiceClient, userClient usersPb.UserServiceClient) *StoriesHandler {
+	return &StoriesHandler{
+		client:     client,
+		userClient: userClient,
+	}
 }
 
 func (h *StoriesHandler) CreateStory(c *gin.Context) {
@@ -161,22 +165,34 @@ func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
 		return
 	}
 
-	limitStr := c.DefaultQuery("limit", "50")
-	limit, _ := strconv.Atoi(limitStr)
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	resp, err := h.client.GetFollowingStories(ctx, &pb.GetFollowingStoriesRequest{
+	followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
 		UserId: userID.(string),
-		Limit:  int32(limit),
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stories"})
+		return
+	}
+	
+	authorIDs := followedResp.FollowingIds
+
+	if len(authorIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"user_stories": []interface{}{}})
+		return
+	}
+
+	resp, err := h.client.GetStoriesByAuthors(ctx, &pb.GetStoriesByAuthorsRequest{
+		AuthorIds: authorIDs,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stories"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"user_stories": resp.UserStories})
+	c.JSON(http.StatusOK, gin.H{"user_stories": resp.Stories})
 }
 
 func (h *StoriesHandler) DeleteStory(c *gin.Context) {
@@ -417,4 +433,49 @@ func (h *StoriesHandler) ShareStory(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
+}
+
+func (h *StoriesHandler) GetFollowedStories(c *gin.Context) {
+    // 1. Get current User ID from context (set by your Auth Middleware)
+    userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+    // 2. Call Users Service to get the list of people I follow
+    // (Assuming you have a userClient setup in your handler)
+    followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
+		UserId: userID.(string),
+	})
+	
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch followed users"})
+        return
+    }
+
+    // Extract IDs
+   authorIDs := followedResp.FollowingIds // [CORRECTED HERE] Use FollowingIds
+
+	// If following no one, return empty list immediately
+	if len(authorIDs) == 0 {
+		c.JSON(http.StatusOK, gin.H{"user_stories": []interface{}{}})
+		return
+	}
+
+	// 2. Call Stories Service to get stories for these authors
+	// Ensure you have added GetStoriesByAuthors to your stories.proto!
+	storiesResp, err := h.client.GetStoriesByAuthors(ctx, &pb.GetStoriesByAuthorsRequest{
+		AuthorIds: authorIDs,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stories"})
+		return
+	}
+
+	// 3. Return aggregated data
+	c.JSON(http.StatusOK, gin.H{"user_stories": storiesResp.Stories})
 }

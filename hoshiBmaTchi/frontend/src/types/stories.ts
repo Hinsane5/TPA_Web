@@ -4,12 +4,14 @@ export interface Story {
   username: string;
   userAvatar: string;
   isVerified: boolean;
-  imageUrl: string;
+  mediaUrl: string; 
+  mediaType: "image" | "video"; 
   timestamp: Date;
   viewedBy: string[];
   replies: StoryReply[];
   likes: number;
   isLiked: boolean;
+  isViewed: boolean; 
 }
 
 export interface StoryReply {

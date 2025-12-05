@@ -199,3 +199,34 @@ export const chatApi = {
     });
   },
 };
+
+export const storiesApi = {
+  getFollowingStories: () => {
+    return apiClient.get("/stories/following");
+  },
+
+  getUserStories: (userId: string) => {
+    return apiClient.get(`/stories/user/${userId}`);
+  },
+
+  viewStory: (storyId: string) => {
+    return apiClient.post(`/stories/${storyId}/view`);
+  },
+
+  likeStory: (storyId: string) => {
+    return apiClient.post(`/stories/${storyId}/like`);
+  },
+
+  unlikeStory: (storyId: string) => {
+    return apiClient.delete(`/stories/${storyId}/like`);
+  },
+
+  deleteStory: (storyId: string) => {
+    return apiClient.delete(`/stories/${storyId}`);
+  },
+  
+  replyToStory: (storyId: string, content: string) => {
+    return apiClient.post(`/stories/${storyId}/reply`, { content });
+  },
+
+};

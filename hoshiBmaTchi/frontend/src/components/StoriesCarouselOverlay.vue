@@ -34,13 +34,26 @@
       </div>
 
       <!-- Story content -->
-      <div class="story-content">
-        <img 
-          v-if="currentStory" 
-          :src="currentStory.imageUrl" 
-          :alt="`Story by ${currentStory.username}`"
-          class="story-image"
-        />
+      <div class="story-content" @click="togglePlayPause">
+        <template v-if="currentStory">
+          <img 
+            v-if="currentStory.mediaType === 'image'"
+            :src="currentStory.mediaUrl" 
+            :alt="`Story by ${currentStory.username}`"
+            class="story-media"
+          />
+          
+          <video 
+            v-else-if="currentStory.mediaType === 'video'"
+            ref="videoPlayer"
+            :src="currentStory.mediaUrl"
+            class="story-media"
+            autoplay
+            muted
+            playsinline
+            @ended="handleVideoEnd"
+          ></video>
+        </template>
       </div>
 
       <!-- Navigation arrows -->
@@ -116,54 +129,91 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch, nextTick } from 'vue';
 import { useStories } from '../composables/useStories';
 import ShareStoryModal from './ShareStoryModal.vue';
 import ProgressBarsContainer from './ProgressBarsContainer.vue';
-import MiniCarouselContainer from './MiniCarouselContainer.vue';
 
-interface Props {
+const props = defineProps<{
   isOpen: boolean;
-  storyId?: string;
-}
+}>();
 
 const emit = defineEmits<{
   close: [];
 }>();
 
 const showShareModal = ref(false);
+const videoPlayer = ref<HTMLVideoElement | null>(null);
 
+// Destructure all required properties, including the ones that were missing
 const {
   stories,
   currentStoryIndex,
   currentStory,
-  storyReplyText,
-  toggleLike,
+  progress,
+  isPlaying,
+  storyReplyText, 
+  addReply,       
   nextStory,
   previousStory,
-  addReply,
+  toggleLike,
+  startProgress,
+  stopProgress,
+  sendStory
 } = useStories();
 
+// Handle closing
 const closeOverlay = () => {
   emit('close');
 };
 
-const formatTime = (date: Date | undefined) => {
-  if (!date) return '';
-  const now = new Date();
-  const diff = now.getTime() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+// Video handling
+const handleVideoEnd = () => {
+  nextStory();
 };
 
-const sendStory = () => {
-  console.log('Story sent');
-  showShareModal.value = false;
+const togglePlayPause = () => {
+  if (isPlaying.value) {
+    pauseStory();
+  } else {
+    resumeStory();
+  }
+};
+
+const pauseStory = () => {
+  isPlaying.value = false;
+  if (videoPlayer.value) videoPlayer.value.pause();
+  stopProgress();
+};
+
+const resumeStory = () => {
+  isPlaying.value = true;
+  if (videoPlayer.value) videoPlayer.value.play();
+  startProgress();
+};
+
+// Watch for story changes to reset video
+watch(currentStory, async (newStory) => {
+  if (newStory?.mediaType === 'video') {
+    await nextTick();
+    if (videoPlayer.value) {
+      videoPlayer.value.currentTime = 0;
+      videoPlayer.value.play().catch(() => console.log('Autoplay blocked'));
+    }
+  }
+});
+
+const formatTime = (date: Date | string | undefined) => {
+  if (!date) return '';
+  const d = new Date(date);
+  const now = new Date();
+  const diff = now.getTime() - d.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  
+  if (minutes < 60) return `${minutes}m`;
+  if (hours < 24) return `${hours}h`;
+  return `${Math.floor(diff / 86400000)}d`;
 };
 </script>
 

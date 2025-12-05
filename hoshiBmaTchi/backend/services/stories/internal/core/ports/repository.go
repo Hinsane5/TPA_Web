@@ -29,6 +29,7 @@ type StoryRepository interface {
     GetHiddenUsers(ctx context.Context, userID string) ([]string, error)
 
     ShareStory(ctx context.Context, share *domain.StoryShare) error
+    GetStoriesByAuthors(authorIDs []string) ([]domain.Story, error)
 }
 
 type UserServiceClient interface {

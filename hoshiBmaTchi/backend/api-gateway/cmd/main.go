@@ -44,7 +44,7 @@ func main(){
 
 	authHandler := handlers.NewAuthHandler(userClient)
 	postsHandler := handlers.NewPostsHandler(postsClient, userClient)
-	storiesHandler := handlers.NewStoriesHandler(storiesClient)
+	storiesHandler := handlers.NewStoriesHandler(storiesClient, userClient)
 
 	routes.SetupAuthRoutes(router, userClient)
 

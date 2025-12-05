@@ -1,29 +1,35 @@
 package routes
 
 import (
-	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/handlers"
-	"github.com/gin-gonic/gin"
+    "github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/handlers"
+    "github.com/gin-gonic/gin"
 )
 
 func SetupStoriesRoutes(router *gin.Engine, storiesHandler *handlers.StoriesHandler, authHandler *handlers.AuthHandler) {
-	stories := router.Group("/api/stories")
-	stories.Use(authHandler.AuthMiddleware())
-	{
-		stories.POST("/", storiesHandler.CreateStory)
+    stories := router.Group("/stories") 
+    
+    stories.Use(authHandler.AuthMiddleware())
+    {
+        stories.POST("/", storiesHandler.CreateStory)
+        
+        stories.GET("/upload-url", storiesHandler.GenerateUploadURL) 
 
-		stories.GET("/user/:userId", storiesHandler.GetUserStories)
-		stories.GET("/following", storiesHandler.GetFollowingStories)
-		stories.GET("/:storyId", storiesHandler.GetStory)
+        stories.GET("/", storiesHandler.GetStory) 
+        stories.DELETE("/", storiesHandler.DeleteStory) 
 
-		stories.POST("/:storyId/view", storiesHandler.ViewStory)
-		stories.POST("/:storyId/like", storiesHandler.LikeStory)
-		stories.DELETE("/:storyId/like", storiesHandler.UnlikeStory)
-		stories.POST("/:storyId/reply", storiesHandler.ReplyToStory)
-		stories.GET("/:storyId/replies", storiesHandler.GetStoryReplies)
-		stories.POST("/:storyId/share", storiesHandler.ShareStory)
+        stories.GET("/user", storiesHandler.GetUserStories)
+        
+        stories.GET("/following", storiesHandler.GetFollowingStories)
 
-		stories.GET("/:storyId/viewers", storiesHandler.GetStoryViewers)
-
-		stories.DELETE("/:storyId", storiesHandler.DeleteStory)
-	}
+        stories.POST("/view", storiesHandler.ViewStory)
+        stories.POST("/like", storiesHandler.LikeStory)
+        
+        stories.POST("/unlike", storiesHandler.UnlikeStory) 
+        
+        stories.POST("/reply", storiesHandler.ReplyToStory)
+        stories.GET("/replies", storiesHandler.GetStoryReplies)
+        
+        stories.POST("/share", storiesHandler.ShareStory)
+        stories.GET("/viewers", storiesHandler.GetStoryViewers)
+    }
 }

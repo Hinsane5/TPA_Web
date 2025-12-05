@@ -185,3 +185,17 @@ func (r *GormStoryRepository) GetHiddenUsers(ctx context.Context, userID string)
         Pluck("hidden_viewer_id", &hiddenIDs).Error
     return hiddenIDs, err
 }
+
+func (r *GormStoryRepository) GetStoriesByAuthors(authorIDs []string) ([]domain.Story, error) {
+	var stories []domain.Story
+
+	err := r.db.Where("user_id IN ? AND created_at >= ?", authorIDs, time.Now().Add(-24*time.Hour)).
+		Order("created_at DESC").
+		Find(&stories).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return stories, nil
+}
+

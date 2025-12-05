@@ -34,6 +34,7 @@ const (
 	StoriesService_GenerateUploadURL_FullMethodName     = "/stories.StoriesService/GenerateUploadURL"
 	StoriesService_ToggleStoryVisibility_FullMethodName = "/stories.StoriesService/ToggleStoryVisibility"
 	StoriesService_GetHiddenUsers_FullMethodName        = "/stories.StoriesService/GetHiddenUsers"
+	StoriesService_GetStoriesByAuthors_FullMethodName   = "/stories.StoriesService/GetStoriesByAuthors"
 )
 
 // StoriesServiceClient is the client API for StoriesService service.
@@ -55,6 +56,7 @@ type StoriesServiceClient interface {
 	GenerateUploadURL(ctx context.Context, in *GenerateUploadURLRequest, opts ...grpc.CallOption) (*GenerateUploadURLResponse, error)
 	ToggleStoryVisibility(ctx context.Context, in *ToggleStoryVisibilityRequest, opts ...grpc.CallOption) (*ToggleStoryVisibilityResponse, error)
 	GetHiddenUsers(ctx context.Context, in *GetHiddenUsersRequest, opts ...grpc.CallOption) (*GetHiddenUsersResponse, error)
+	GetStoriesByAuthors(ctx context.Context, in *GetStoriesByAuthorsRequest, opts ...grpc.CallOption) (*GetStoriesResponse, error)
 }
 
 type storiesServiceClient struct {
@@ -215,6 +217,16 @@ func (c *storiesServiceClient) GetHiddenUsers(ctx context.Context, in *GetHidden
 	return out, nil
 }
 
+func (c *storiesServiceClient) GetStoriesByAuthors(ctx context.Context, in *GetStoriesByAuthorsRequest, opts ...grpc.CallOption) (*GetStoriesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStoriesResponse)
+	err := c.cc.Invoke(ctx, StoriesService_GetStoriesByAuthors_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // StoriesServiceServer is the server API for StoriesService service.
 // All implementations must embed UnimplementedStoriesServiceServer
 // for forward compatibility.
@@ -234,6 +246,7 @@ type StoriesServiceServer interface {
 	GenerateUploadURL(context.Context, *GenerateUploadURLRequest) (*GenerateUploadURLResponse, error)
 	ToggleStoryVisibility(context.Context, *ToggleStoryVisibilityRequest) (*ToggleStoryVisibilityResponse, error)
 	GetHiddenUsers(context.Context, *GetHiddenUsersRequest) (*GetHiddenUsersResponse, error)
+	GetStoriesByAuthors(context.Context, *GetStoriesByAuthorsRequest) (*GetStoriesResponse, error)
 	mustEmbedUnimplementedStoriesServiceServer()
 }
 
@@ -288,6 +301,9 @@ func (UnimplementedStoriesServiceServer) ToggleStoryVisibility(context.Context, 
 }
 func (UnimplementedStoriesServiceServer) GetHiddenUsers(context.Context, *GetHiddenUsersRequest) (*GetHiddenUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetHiddenUsers not implemented")
+}
+func (UnimplementedStoriesServiceServer) GetStoriesByAuthors(context.Context, *GetStoriesByAuthorsRequest) (*GetStoriesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStoriesByAuthors not implemented")
 }
 func (UnimplementedStoriesServiceServer) mustEmbedUnimplementedStoriesServiceServer() {}
 func (UnimplementedStoriesServiceServer) testEmbeddedByValue()                        {}
@@ -580,6 +596,24 @@ func _StoriesService_GetHiddenUsers_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _StoriesService_GetStoriesByAuthors_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStoriesByAuthorsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StoriesServiceServer).GetStoriesByAuthors(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: StoriesService_GetStoriesByAuthors_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StoriesServiceServer).GetStoriesByAuthors(ctx, req.(*GetStoriesByAuthorsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // StoriesService_ServiceDesc is the grpc.ServiceDesc for StoriesService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -646,6 +680,10 @@ var StoriesService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetHiddenUsers",
 			Handler:    _StoriesService_GetHiddenUsers_Handler,
+		},
+		{
+			MethodName: "GetStoriesByAuthors",
+			Handler:    _StoriesService_GetStoriesByAuthors_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

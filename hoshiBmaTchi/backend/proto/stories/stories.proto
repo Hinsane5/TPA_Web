@@ -22,6 +22,7 @@ service StoriesService {
   rpc GenerateUploadURL(GenerateUploadURLRequest) returns (GenerateUploadURLResponse);
   rpc ToggleStoryVisibility(ToggleStoryVisibilityRequest) returns (ToggleStoryVisibilityResponse);
   rpc GetHiddenUsers(GetHiddenUsersRequest) returns (GetHiddenUsersResponse);
+  rpc GetStoriesByAuthors (GetStoriesByAuthorsRequest) returns (GetStoriesResponse);
 }
 
 enum MediaType {
@@ -204,4 +205,12 @@ message GetHiddenUsersRequest {
 
 message GetHiddenUsersResponse {
   repeated string hidden_user_ids = 1;
+}
+
+message GetStoriesByAuthorsRequest {
+  repeated string author_ids = 1;
+}
+
+message GetStoriesResponse {
+  repeated Story stories = 1;
 }

@@ -127,46 +127,36 @@ func (h *GRPCHandler) GetUserStories(ctx context.Context, req *pb.GetUserStories
 }
 
 func (h *GRPCHandler) GetFollowingStories(ctx context.Context, req *pb.GetFollowingStoriesRequest) (*pb.GetFollowingStoriesResponse, error) {
-	// 1. Try to get the feed from Redis first
 	cachedStories, err := h.redisRepo.GetUserFeed(ctx, req.UserId)
 	if err == nil && cachedStories != nil {
-		// Cache Hit: Group the flat list into the response format and return
 		return h.groupStoriesToResponse(ctx, cachedStories, req.UserId), nil
 	}
 
-	// 2. Cache Miss: Get following list from User Service
 	followingIDs, err := h.userServiceClient.GetFollowing(ctx, req.UserId)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get following: %v", err)
 	}
 
-	// 3. Get Stories from Database (with privacy check for 'req.UserId')
 	storiesMap, err := h.repo.GetFollowingStories(ctx, followingIDs, req.UserId, int(req.Limit))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get following stories: %v", err)
 	}
 
-	// 4. Flatten the map to a list for caching
 	var allStories []*domain.Story
 	for _, userStories := range storiesMap {
 		allStories = append(allStories, userStories...)
 	}
 
-	// 5. Cache the result asynchronously (fire and forget)
 	go func(uid string, stories []*domain.Story) {
-		// Use a new background context so it doesn't get cancelled when the request ends
 		bgCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = h.redisRepo.SetUserFeed(bgCtx, uid, stories)
 	}(req.UserId, allStories)
 
-	// 6. Convert the DB result (map) directly to response
-	// We reuse the helper but need to pass a flat list, so we use 'allStories'
 	return h.groupStoriesToResponse(ctx, allStories, req.UserId), nil
 }
 
 func (h *GRPCHandler) groupStoriesToResponse(ctx context.Context, stories []*domain.Story, viewerID string) *pb.GetFollowingStoriesResponse {
-	// Group by UserID locally
 	grouped := make(map[string][]*domain.Story)
 	for _, s := range stories {
 		grouped[s.UserID] = append(grouped[s.UserID], s)
@@ -437,4 +427,28 @@ func (h *GRPCHandler) GetHiddenUsers(ctx context.Context, req *pb.GetHiddenUsers
     return &pb.GetHiddenUsersResponse{
         HiddenUserIds: hiddenIDs,
     }, nil
+}
+
+// [ADD THIS FUNCTION]
+func (h *GRPCHandler) GetStoriesByAuthors(ctx context.Context, req *pb.GetStoriesByAuthorsRequest) (*pb.GetStoriesResponse, error) {
+    // 1. Call the repo
+    stories, err := h.repo.GetStoriesByAuthors(req.AuthorIds)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch stories")
+    }
+
+    var protoStories []*pb.Story
+    for _, s := range stories {
+        protoStories = append(protoStories, &pb.Story{
+            Id:        s.ID,
+            UserId:    s.UserID,
+            MediaUrl:  s.MediaURL,
+            MediaType: pb.MediaType(pb.MediaType_value[string(s.MediaType)]),
+            Duration:  int32(s.Duration),
+            CreatedAt: timestamppb.New(s.CreatedAt),
+            ExpiresAt: timestamppb.New(s.ExpiresAt),
+        })
+    }
+
+    return &pb.GetStoriesResponse{Stories: protoStories}, nil
 }
