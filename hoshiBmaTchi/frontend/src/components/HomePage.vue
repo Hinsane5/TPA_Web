@@ -1,28 +1,19 @@
 <template>
   <div class="home-container">
     <div class="stories-section">
-      <div class="stories-carousel">
-        <div v-if="isLoadingStories && stories.length === 0" class="story-loading">
-          Loading...
-        </div>
-
-        <div 
-          class="story-item" 
-          v-for="(story, idx) in stories" 
-          :key="story.id"
-          @click="openStoriesCarousel(idx)"
-        >
-          <div class="story-avatar" :class="{ 'has-unseen': !story.isViewed }">
-            <img 
-              v-if="story.userAvatar" 
-              :src="story.userAvatar" 
-              class="avatar-img" 
-              alt="User"
-            />
-            <span v-else>👤</span>
-          </div>
-          <p class="story-username">{{ story.username }}</p>
-        </div>
+      <MiniCarouselContainer 
+        v-if="!isLoadingStories && stories.length > 0"
+        :stories="stories"
+        :currentStoryIndex="currentStoryIndex"
+        @select-story="openStoriesCarousel"
+      />
+      
+      <div v-if="isLoadingStories && stories.length === 0" class="story-loading">
+        Loading...
+      </div>
+      
+      <div v-else-if="stories.length === 0" class="story-placeholder">
+        <p>No stories yet</p>
       </div>
     </div>
 
@@ -98,6 +89,7 @@ import PostComponent from './PostComponent.vue';
 import { postsApi } from '../services/apiService';
 import PostDetailOverlay from './PostDetailOverlay.vue';
 import StoriesCarouselOverlay from './StoriesCarouselOverlay.vue'; 
+import MiniCarouselContainer from './MiniCarouselContainer.vue';
 import { useStories } from '../composables/useStories';
 
 interface Post {
@@ -193,6 +185,8 @@ const handleToggleLike = async (post: Post) => {
 
 onMounted(() => {
   fetchFeed();
+
+  fetchStories();
 
   const observer = new IntersectionObserver((entries) => {
     if (entries[0]?.isIntersecting){

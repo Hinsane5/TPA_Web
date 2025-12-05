@@ -1,17 +1,18 @@
 export interface Story {
   id: string;
+  user: User;
   userId: string;
   username: string;
   userAvatar: string;
   isVerified: boolean;
-  mediaUrl: string; 
-  mediaType: "image" | "video"; 
+  mediaUrl: string;
+  mediaType: "image" | "video";
   timestamp: Date;
   viewedBy: string[];
   replies: StoryReply[];
   likes: number;
   isLiked: boolean;
-  isViewed: boolean; 
+  isViewed: boolean;
 }
 
 export interface StoryReply {

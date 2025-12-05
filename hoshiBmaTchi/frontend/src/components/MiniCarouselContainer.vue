@@ -3,8 +3,8 @@
     <MiniStoryItem 
       v-for="(story, idx) in stories" 
       :key="story.id"
-      :avatar="story.userAvatar"
-      :username="story.username"
+      :avatar="story.user?.userAvatar" 
+      :username="story.user?.username"
       :isActive="idx === currentStoryIndex"
       @click="emit('select-story', idx)"
     />

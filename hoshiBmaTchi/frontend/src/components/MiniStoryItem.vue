@@ -5,19 +5,35 @@
     @click="handleClick"
     :title="`Story by ${username}`"
   >
-    <div class="mini-avatar">{{ avatar }}</div>
+    <div class="mini-avatar-container">
+        <img 
+          v-if="avatar" 
+          :src="avatar" 
+          alt="User" 
+          class="mini-avatar-img"
+        />
+        <div v-else class="mini-avatar-placeholder">
+            {{ username.charAt(0).toUpperCase() }}
+        </div>
+    </div>
+    
     <span class="mini-username">{{ username }}</span>
   </button>
 </template>
 
 <script setup lang="ts">
 interface Props {
-  avatar: string;
-  username: string;
+  avatar?: string; // Made optional
+  username?: string; // Made optional
   isActive: boolean;
 }
 
-const props = defineProps<Props>();
+// Default values to prevent crashes
+withDefaults(defineProps<Props>(), {
+    avatar: '',
+    username: 'User'
+});
+
 const emit = defineEmits<{
   click: [];
 }>();

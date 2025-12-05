@@ -1,9 +1,10 @@
 <template>
   <div v-if="isOpen" class="create-overlay" @click="closeCreate">
     <div class="create-modal" @click.stop>
+      
       <div v-if="selectedFiles.length === 0" class="upload-step">
         <div class="modal-header">
-          <h2>Create new post</h2>
+          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
           <button class="close-btn" @click="closeCreate">✕</button>
         </div>
         <div class="modal-body">
@@ -27,7 +28,7 @@
       <div v-else class="edit-step">
         <div class="modal-header">
           <button class="back-btn" @click="goBack">← Back</button>
-          <h2>Create new post</h2>
+          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
           <button 
             class="share-btn" 
             @click="handleSharePost"
@@ -38,7 +39,7 @@
         </div>
         
         <div class="edit-container">
-          <div class="preview-area">
+          <div class="preview-area" :class="{ 'full-width': isStoryMode }">
             <div class="media-wrapper" v-if="currentFile">
               <video 
                 v-if="currentFile.type.startsWith('video/')" 
@@ -54,30 +55,32 @@
               />
             </div>
 
-            <button 
-              v-if="selectedFiles.length > 1 && currentIndex > 0" 
-              class="nav-btn left" 
-              @click="currentIndex--"
-            >❮</button>
-            
-            <button 
-              v-if="selectedFiles.length > 1 && currentIndex < selectedFiles.length - 1" 
-              class="nav-btn right" 
-              @click="currentIndex++"
-            >❯</button>
-            
-            <div class="dots-container" v-if="selectedFiles.length > 1">
-              <span 
-                v-for="(_, index) in selectedFiles" 
-                :key="index" 
-                class="dot"
-                :class="{ active: index === currentIndex }"
-                @click="currentIndex = index"
-              ></span>
-            </div>
+            <template v-if="selectedFiles.length > 1">
+                <button 
+                v-if="currentIndex > 0" 
+                class="nav-btn left" 
+                @click="currentIndex--"
+                >❮</button>
+                
+                <button 
+                v-if="currentIndex < selectedFiles.length - 1" 
+                class="nav-btn right" 
+                @click="currentIndex++"
+                >❯</button>
+                
+                <div class="dots-container">
+                <span 
+                    v-for="(_, index) in selectedFiles" 
+                    :key="index" 
+                    class="dot"
+                    :class="{ active: index === currentIndex }"
+                    @click="currentIndex = index"
+                ></span>
+                </div>
+            </template>
           </div>
 
-          <div class="caption-area">
+          <div v-if="!isStoryMode" class="caption-area">
             <textarea 
               v-model="postDescription"
               placeholder="Write a caption..."
@@ -106,6 +109,16 @@
               {{ errorMessage }}
             </div>
           </div>
+
+          <div v-if="isStoryMode && isUploading" class="story-upload-overlay">
+             <div class="upload-progress" style="width: 60%; text-align: center;">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+              </div>
+              <p class="progress-text" style="color: white; margin-top: 8px;">Uploading Story...</p>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -117,12 +130,15 @@ import { ref, computed } from 'vue'
 import axios from 'axios'
 
 const props = defineProps<{
-  isOpen: boolean
+  isOpen: boolean;
+  isStoryMode?: boolean; // New prop to toggle modes
 }>()
 
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'success'): void
+  (e: 'post-created'): void
+  (e: 'story-created'): void
 }>()
 
 const fileInput = ref<HTMLInputElement>()
@@ -221,8 +237,55 @@ const handleSharePost = async () => {
 
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
-      errorMessage.value = 'You must be logged in to create a post'
+      errorMessage.value = 'You must be logged in to create content'
       return
+    }
+
+    // ==========================================
+    // STORY UPLOAD LOGIC
+    // ==========================================
+    if (props.isStoryMode) {
+        // Upload the first selected file
+        const file = selectedFiles.value[0];
+        if (!file) return; // TS Guard
+
+        // 1. Get Upload URL
+        const urlResponse = await axios.get('/api/stories/upload-url', {
+            params: { file_name: file.name, file_type: file.type },
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        const { upload_url, object_name } = urlResponse.data;
+
+        // 2. Upload to MinIO
+        await axios.put(upload_url, file, {
+            headers: { 'Content-Type': file.type },
+            onUploadProgress: (progressEvent) => {
+                if(progressEvent.total) {
+                    uploadProgress.value = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                }
+            }
+        });
+
+        await axios.post('/api/stories', {
+            media_object_name: object_name,
+            media_type: file.type.startsWith('video') ? 'VIDEO' : 'IMAGE',
+            duration: 5 
+        }, { 
+            headers: { 
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json' 
+            }
+        });
+
+        uploadProgress.value = 100;
+        
+        setTimeout(() => {
+            resetForm();
+            emit('story-created'); 
+            emit('close');
+        }, 500);
+        return; 
     }
 
     const mediaObjects = []
@@ -231,7 +294,6 @@ const handleSharePost = async () => {
 
     for (let i = 0; i < totalFiles; i++) {
       const file = selectedFiles.value[i]
-      
       if (!file) continue 
 
       const urlResponse = await axios.get('/api/v1/posts/generate-upload-url', {
@@ -247,6 +309,7 @@ const handleSharePost = async () => {
       await axios.put(upload_url, file, {
         headers: { 'Content-Type': file.type },
         onUploadProgress: (progressEvent) => {
+
         }
       })
 
@@ -273,14 +336,14 @@ const handleSharePost = async () => {
 
     setTimeout(() => {
       resetForm()
-      emit('success')
+      emit('post-created')
       emit('close')
     }, 500)
 
   } catch (error: any) {
-    console.error('Failed to make post:', error)
+    console.error('Failed to create content:', error)
     if (error.response) {
-      errorMessage.value = error.response.data?.error || 'Failed to create post. Please try again.'
+      errorMessage.value = error.response.data?.error || 'Failed to upload. Please try again.'
     } else {
       errorMessage.value = 'An unexpected error occurred. Please try again.'
     }
@@ -300,7 +363,7 @@ const handleSharePost = async () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.85);
   z-index: 600;
   display: flex;
   align-items: center;
@@ -311,10 +374,10 @@ const handleSharePost = async () => {
 .create-modal {
   background: var(--background-dark);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 750px; /* Increased slightly to accommodate carousel better */
-  max-height: 80vh;
+  max-width: 850px; 
+  max-height: 85vh;
   overflow: hidden;
   animation: slideUp 0.3s ease;
   display: flex;
@@ -330,9 +393,10 @@ const handleSharePost = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 16px; /* Compact header */
+  padding: 10px 16px;
   border-bottom: 1px solid var(--border-color);
   height: 45px;
+  background-color: var(--background-dark);
 }
 
 .modal-header h2 {
@@ -348,7 +412,8 @@ const handleSharePost = async () => {
   background: none;
   border: none;
   color: var(--text-primary);
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
   padding: 0;
 }
@@ -372,10 +437,9 @@ const handleSharePost = async () => {
   color: var(--text-primary);
 }
 
-/* Upload Step */
 .modal-body {
   padding: 40px;
-  height: 400px;
+  height: 500px; 
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -401,6 +465,7 @@ const handleSharePost = async () => {
   color: var(--text-primary);
   margin: 0 0 20px 0;
   font-size: 20px;
+  font-weight: 300;
 }
 
 .select-btn {
@@ -414,20 +479,29 @@ const handleSharePost = async () => {
   font-weight: 600;
 }
 
-/* Edit Step */
+
 .edit-container {
   display: flex;
-  height: 500px; /* Fixed height for split view */
+  height: 500px; 
+  position: relative;
 }
 
+
 .preview-area {
-  flex: 1.5; /* Takes up more space */
+  flex: 1.5; 
   background: #000;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+
+.preview-area.full-width {
+  flex: 1; 
+  width: 100%;
+  border-right: none;
 }
 
 .media-wrapper {
@@ -488,13 +562,12 @@ const handleSharePost = async () => {
   transform: scale(1.2);
 }
 
-/* Caption Area */
 .caption-area {
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid var(--border-color);
   padding: 16px;
+  background-color: var(--background-dark);
 }
 
 .caption-input {
@@ -506,6 +579,7 @@ const handleSharePost = async () => {
   font-family: inherit;
   font-size: 14px;
   resize: none;
+  line-height: 1.5;
 }
 
 .caption-input:focus {
@@ -567,6 +641,21 @@ const handleSharePost = async () => {
   text-align: center;
 }
 
+/* Story Upload Overlay */
+.story-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
 @media (max-width: 768px) {
   .create-modal {
     max-width: 100%;
@@ -584,6 +673,17 @@ const handleSharePost = async () => {
   .preview-area {
     height: 300px;
     flex: none;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .preview-area.full-width {
+      height: 100%; 
+      border-bottom: none;
+  }
+  
+  .caption-area {
+      flex: 1;
   }
 }
 </style>

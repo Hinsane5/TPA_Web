@@ -158,43 +158,6 @@ func (h *StoriesHandler) GetUserStories(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"stories": resp.Stories})
 }
 
-func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
-	userID, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
-		UserId: userID.(string),
-	})
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stories"})
-		return
-	}
-	
-	authorIDs := followedResp.FollowingIds
-
-	if len(authorIDs) == 0 {
-		c.JSON(http.StatusOK, gin.H{"user_stories": []interface{}{}})
-		return
-	}
-
-	resp, err := h.client.GetStoriesByAuthors(ctx, &pb.GetStoriesByAuthorsRequest{
-		AuthorIds: authorIDs,
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get stories"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"user_stories": resp.Stories})
-}
-
 func (h *StoriesHandler) DeleteStory(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
@@ -435,7 +398,7 @@ func (h *StoriesHandler) ShareStory(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (h *StoriesHandler) GetFollowedStories(c *gin.Context) {
+func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
     // 1. Get current User ID from context (set by your Auth Middleware)
     userID, exists := c.Get("user_id")
 	if !exists {
@@ -451,7 +414,7 @@ func (h *StoriesHandler) GetFollowedStories(c *gin.Context) {
     followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
 		UserId: userID.(string),
 	})
-	
+
     if err != nil {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch followed users"})
         return

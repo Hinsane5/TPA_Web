@@ -6,7 +6,7 @@ import (
 )
 
 func SetupStoriesRoutes(router *gin.Engine, storiesHandler *handlers.StoriesHandler, authHandler *handlers.AuthHandler) {
-    stories := router.Group("/stories") 
+    stories := router.Group("/api/stories") 
     
     stories.Use(authHandler.AuthMiddleware())
     {
