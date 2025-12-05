@@ -131,7 +131,7 @@ func AuthMiddleware() gin.HandlerFunc {
 
 func CORSMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") // In production, change * to your frontend domain
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*") 
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, Upgrade, Connection")
 		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")

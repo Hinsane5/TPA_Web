@@ -13,7 +13,7 @@ import (
 )
 
 type StoriesHandler struct {
-	client pb.StoriesServiceClient
+	client     pb.StoriesServiceClient
 	userClient usersPb.UserServiceClient
 }
 
@@ -58,7 +58,7 @@ func (h *StoriesHandler) CreateStory(c *gin.Context) {
 
 	resp, err := h.client.CreateStory(ctx, &pb.CreateStoryRequest{
 		UserId:    userID.(string),
-		MediaUrl:  req.MediaObjectName, 
+		MediaUrl:  req.MediaObjectName,
 		MediaType: mediaType,
 		Duration:  req.Duration,
 	})
@@ -399,8 +399,7 @@ func (h *StoriesHandler) ShareStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
-    // 1. Get current User ID from context (set by your Auth Middleware)
-    userID, exists := c.Get("user_id")
+	userID, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -409,28 +408,22 @@ func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-    // 2. Call Users Service to get the list of people I follow
-    // (Assuming you have a userClient setup in your handler)
-    followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
+	followedResp, err := h.userClient.GetFollowingList(ctx, &usersPb.GetFollowingListRequest{
 		UserId: userID.(string),
 	})
 
-    if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch followed users"})
-        return
-    }
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch followed users"})
+		return
+	}
 
-    // Extract IDs
-   authorIDs := followedResp.FollowingIds // [CORRECTED HERE] Use FollowingIds
+	authorIDs := followedResp.FollowingIds
 
-	// If following no one, return empty list immediately
 	if len(authorIDs) == 0 {
 		c.JSON(http.StatusOK, gin.H{"user_stories": []interface{}{}})
 		return
 	}
 
-	// 2. Call Stories Service to get stories for these authors
-	// Ensure you have added GetStoriesByAuthors to your stories.proto!
 	storiesResp, err := h.client.GetStoriesByAuthors(ctx, &pb.GetStoriesByAuthorsRequest{
 		AuthorIds: authorIDs,
 	})
@@ -439,6 +432,58 @@ func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
 		return
 	}
 
-	// 3. Return aggregated data
-	c.JSON(http.StatusOK, gin.H{"user_stories": storiesResp.Stories})
+	uniqueUserIDs := make(map[string]bool)
+	for _, s := range storiesResp.Stories {
+		uniqueUserIDs[s.UserId] = true
+	}
+
+	usersMap := make(map[string]*usersPb.GetUserProfileResponse)
+
+	for uid := range uniqueUserIDs {
+		uResp, err := h.userClient.GetUserProfile(ctx, &usersPb.GetUserProfileRequest{
+			UserId:   uid,
+			ViewerId: userID.(string),
+		})
+		if err == nil {
+			usersMap[uid] = uResp
+		}
+	}
+
+	var enrichedStories []gin.H
+
+	for _, story := range storiesResp.Stories {
+		user, found := usersMap[story.UserId]
+
+		username := "Unknown"
+		avatar := ""
+		uid := story.UserId
+
+		if found {
+			username = user.Username
+			avatar = user.ProfilePictureUrl
+			uid = user.Id
+		}
+
+		storyData := gin.H{
+			"id":          story.Id,
+			"user_id":     story.UserId,
+			"media_url":   story.MediaUrl,
+			"media_type":  story.MediaType.String(), 
+			"duration":    story.Duration,
+			"created_at":  story.CreatedAt.AsTime().Format(time.RFC3339),
+			"expires_at":  story.ExpiresAt.AsTime().Format(time.RFC3339),
+			"is_viewed":   false, 
+			"is_liked":    false, 
+			"likes_count": 0,
+			"user": gin.H{
+				"id":         uid,
+				"username":   username,
+				"userAvatar": avatar,
+			},
+		}
+
+		enrichedStories = append(enrichedStories, storyData)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"user_stories": enrichedStories})
 }

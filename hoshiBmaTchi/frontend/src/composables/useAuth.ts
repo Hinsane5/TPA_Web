@@ -16,6 +16,8 @@ export function useAuth(){
       }
     };
 
+    
+
     const logout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');

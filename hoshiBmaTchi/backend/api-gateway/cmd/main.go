@@ -5,10 +5,11 @@ import (
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/routes"
-	storiesProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
 	postsProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
+	storiesProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -32,7 +33,7 @@ func main(){
 	postsClient := postsProto.NewPostsServiceClient(postsConn)
 	log.Println("Connected to gRPC posts-service")
 
-	storiesConn, err := grpc.NewClient("stories-service:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	storiesConn, err := grpc.NewClient("stories-service:50054", grpc.WithTransportCredentials(insecure.NewCredentials()))
     if err != nil {
         log.Fatalf("Failed to connect to stories-service: %v", err)
     }
@@ -41,6 +42,14 @@ func main(){
     log.Println("Connected to gRPC stories-service")
 
 	router := gin.Default()
+
+	router.Use(cors.New(cors.Config{
+        AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"}, // Add your frontend URL
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+    }))
 
 	authHandler := handlers.NewAuthHandler(userClient)
 	postsHandler := handlers.NewPostsHandler(postsClient, userClient)

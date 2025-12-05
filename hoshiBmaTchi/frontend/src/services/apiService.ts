@@ -201,32 +201,74 @@ export const chatApi = {
 };
 
 export const storiesApi = {
+  generateUploadUrl: (fileName: string, fileType: string) => {
+    return apiClient.get("/v1/stories/upload-url", {
+      params: {
+        file_name: fileName,
+        file_type: fileType,
+      },
+    });
+  },
+
+  createStory: (data: {
+    media_object_name: string;
+    media_type: string;
+    duration: number;
+  }) => {
+    return apiClient.post("/stories", data);
+  },
+
   getFollowingStories: () => {
     return apiClient.get("/stories/following");
   },
 
   getUserStories: (userId: string) => {
-    return apiClient.get(`/stories/user/${userId}`);
+    return apiClient.get("/stories/user", {
+      params: { user_id: userId },
+    });
   },
 
   viewStory: (storyId: string) => {
-    return apiClient.post(`/stories/${storyId}/view`);
+    return apiClient.post("/stories/view", { story_id: storyId });
   },
 
   likeStory: (storyId: string) => {
-    return apiClient.post(`/stories/${storyId}/like`);
+    return apiClient.post("/stories/like", { story_id: storyId });
   },
 
   unlikeStory: (storyId: string) => {
-    return apiClient.delete(`/stories/${storyId}/like`);
+    return apiClient.post("/stories/unlike", { story_id: storyId });
   },
 
   deleteStory: (storyId: string) => {
-    return apiClient.delete(`/stories/${storyId}`);
-  },
-  
-  replyToStory: (storyId: string, content: string) => {
-    return apiClient.post(`/stories/${storyId}/reply`, { content });
+    return apiClient.delete("/stories", {
+      params: { id: storyId },
+    });
   },
 
+  replyToStory: (storyId: string, content: string) => {
+    return apiClient.post("/stories/reply", {
+      story_id: storyId,
+      content,
+    });
+  },
+
+  getStoryReplies: (storyId: string) => {
+    return apiClient.get("/stories/replies", {
+      params: { story_id: storyId },
+    });
+  },
+
+  shareStory: (storyId: string, recipientId: string) => {
+    return apiClient.post("/stories/share", {
+      story_id: storyId,
+      recipient_id: recipientId,
+    });
+  },
+
+  getStoryViewers: (storyId: string) => {
+    return apiClient.get("/stories/viewers", {
+      params: { story_id: storyId },
+    });
+  },
 };

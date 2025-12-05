@@ -24,10 +24,10 @@ export default defineConfig({
         changeOrigin: true,
       },
 
-      // "/api/stories": {
-      //   target: "http://localhost:8081",
-      //   changeOrigin: true,
-      // },
+      "/api/stories": {
+        target: "http://localhost:8081",
+        changeOrigin: true,
+      },
 
       "/api": {
         target: "http://localhost:8081",
