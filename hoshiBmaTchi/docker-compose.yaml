@@ -65,9 +65,9 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       MINIO_BROWSER_REDIRECT_URL: http://localhost:9000
-      # MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:5173"
-      # MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,DELETE"
-      # MINIO_API_CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,User-Agent"
+      MINIO_API_CORS_ALLOW_ORIGIN: "http://localhost:5173"
+      MINIO_API_CORS_ALLOW_METHODS: "GET,PUT,POST,DELETE"
+      MINIO_API_CORS_ALLOW_HEADERS: "Content-Type,Authorization,Accept,Origin,User-Agent"
     command: server /data --console-address ":9001"
     ports:
       - "9000:9000"

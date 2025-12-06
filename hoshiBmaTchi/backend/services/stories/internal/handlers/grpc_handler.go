@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"time"
 
@@ -79,8 +80,29 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
     // Generate Presigned URL
     presignedURL, err := h.minioClient.PresignedPutObject(ctx, h.bucketName, objectName, expiry)
     if err != nil {
+		fmt.Printf("Error generating MinIO URL: %v\n", err)
         return nil, status.Errorf(codes.Internal, "failed to generate upload url: %v", err)
     }
+	
+	finalURL := presignedURL.String()
+
+	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+    if publicEndpoint != "" {
+        u, err := url.Parse(finalURL)
+        if err == nil {
+            pubU, err := url.Parse(publicEndpoint)
+            if err == nil {
+                u.Scheme = pubU.Scheme
+                u.Host = pubU.Host
+                finalURL = u.String()
+				fmt.Printf("DEBUG: Replaced URL: %s\n", finalURL)
+            }
+        }
+    } else {
+        fmt.Println("DEBUG: MINIO_PUBLIC_ENDPOINT is empty!")
+    }
+
+	fmt.Printf("DEBUG: Final Sending URL: %s\n", finalURL)
 
     return &pb.GenerateUploadURLResponse{
         UploadUrl:  presignedURL.String(),

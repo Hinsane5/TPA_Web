@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -100,7 +101,7 @@ func (h *StoriesHandler) GenerateUploadURL(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -132,7 +133,7 @@ func (h *StoriesHandler) GetStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetUserStories(c *gin.Context) {
-	viewerID, exists := c.Get("user_id")
+	viewerID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -159,7 +160,7 @@ func (h *StoriesHandler) GetUserStories(c *gin.Context) {
 }
 
 func (h *StoriesHandler) DeleteStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -187,7 +188,7 @@ func (h *StoriesHandler) DeleteStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) ViewStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -217,7 +218,7 @@ func (h *StoriesHandler) ViewStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) LikeStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -247,7 +248,7 @@ func (h *StoriesHandler) LikeStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) UnlikeStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -275,7 +276,7 @@ func (h *StoriesHandler) UnlikeStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) ReplyToStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -307,7 +308,7 @@ func (h *StoriesHandler) ReplyToStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetStoryReplies(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -335,7 +336,7 @@ func (h *StoriesHandler) GetStoryReplies(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetStoryViewers(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -367,7 +368,7 @@ func (h *StoriesHandler) GetStoryViewers(c *gin.Context) {
 }
 
 func (h *StoriesHandler) ShareStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -399,7 +400,20 @@ func (h *StoriesHandler) ShareStory(c *gin.Context) {
 }
 
 func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+
+	fmt.Println("--- DEBUG: GetFollowingStories Hit ---")
+    keys := c.Keys
+    fmt.Printf("Available Keys in Context: %v\n", keys)
+
+    userID, exists := c.Get("userID") 
+    fmt.Printf("Trying to get 'userID': exists=%v, value=%v\n", exists, userID)
+
+    if !exists {
+        fmt.Println("--- DEBUG: Unauthorized (Key missing) ---")
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+	
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

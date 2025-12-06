@@ -84,6 +84,27 @@ func main() {
         log.Fatal(err)
     }
 
+	bucketName := os.Getenv("MINIO_BUCKET_NAME")
+    if bucketName == "" {
+        bucketName = "stories"
+    }
+
+	ctx := context.Background()
+    exists, err := minioClient.BucketExists(ctx, bucketName)
+
+	if err != nil {
+        log.Printf("Error checking if bucket exists: %v", err)
+    } else if !exists {
+        err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+        if err != nil {
+            log.Printf("Failed to create bucket %s: %v", bucketName, err)
+        } else {
+            log.Printf("Successfully created bucket: %s", bucketName)
+        }
+    } else {
+        log.Printf("Bucket %s already exists", bucketName)
+    }
+
 	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient, publisher, minioClient, os.Getenv("MINIO_BUCKET_NAME"),)
 
 	go startCleanupRoutine(repo)
