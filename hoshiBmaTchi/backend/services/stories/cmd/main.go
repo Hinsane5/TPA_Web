@@ -95,7 +95,6 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to parse public endpoint: %v", err)
 		} else {
-			// Initialize client with public host (e.g., localhost:9000)
 			presignClient, err = minio.New(u.Host, &minio.Options{
 				Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
 				Secure: u.Scheme == "https",

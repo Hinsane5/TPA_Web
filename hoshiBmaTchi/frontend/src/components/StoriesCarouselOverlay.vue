@@ -206,10 +206,8 @@ const formatTime = (date: Date | string | undefined) => {
   return `${Math.floor(diff / 86400000)}d`;
 };
 
-// FIX: Helper function to replace internal Docker URLs with localhost
 const getSafeImageUrl = (url: string) => {
   if (!url) return '';
-  // If the URL is from the internal docker network, replace it with localhost
   if (url.includes('minio:9000')) {
     return url.replace('minio:9000', 'localhost:9000');
   }

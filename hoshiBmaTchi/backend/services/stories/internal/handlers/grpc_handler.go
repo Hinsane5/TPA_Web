@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
@@ -80,7 +82,7 @@ func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryReques
     }
 
     return &pb.CreateStoryResponse{
-        Story: h.domainStoryToPb(story),
+        Story: h.domainStoryToPb(ctx, story),
     }, nil
 }
 
@@ -105,6 +107,36 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
     }, nil
 }
 
+func (h *GRPCHandler) getSignedURL(ctx context.Context, rawURL string) string {
+    parts := strings.Split(rawURL, h.bucketName+"/")
+    if len(parts) < 2 {
+        return rawURL 
+    }
+    objectName := parts[1]
+
+    publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+    if publicEndpoint == "" {
+        publicEndpoint = "http://localhost:9000"
+    }
+    u, _ := url.Parse(publicEndpoint)
+
+    expiry := 1 * time.Hour
+    reqParams := make(url.Values)
+    
+    presignedURL, err := h.minioClient.PresignedGetObject(ctx, h.bucketName, objectName, expiry, reqParams)
+    if err != nil {
+        log.Printf("Failed to sign URL: %v", err)
+        return rawURL
+    }
+
+    finalURL := presignedURL.String()
+    parsedPresigned, _ := url.Parse(finalURL)
+    parsedPresigned.Scheme = u.Scheme
+    parsedPresigned.Host = u.Host
+    
+    return parsedPresigned.String()
+}
+
 func (h *GRPCHandler) GetStory(ctx context.Context, req *pb.GetStoryRequest) (*pb.GetStoryResponse, error) {
 	story, err := h.repo.GetStoryByID(ctx, req.StoryId)
 	if err != nil {
@@ -115,7 +147,7 @@ func (h *GRPCHandler) GetStory(ctx context.Context, req *pb.GetStoryRequest) (*p
 	isViewed, _ := h.repo.IsStoryViewed(ctx, req.StoryId, req.UserId)
 
 	return &pb.GetStoryResponse{
-		Story:    h.domainStoryToPb(story),
+		Story:    h.domainStoryToPb(ctx, story),
 		IsLiked:  isLiked,
 		IsViewed: isViewed,
 	}, nil
@@ -135,7 +167,7 @@ func (h *GRPCHandler) GetUserStories(ctx context.Context, req *pb.GetUserStories
 
     pbStories := make([]*pb.Story, len(stories))
     for i, story := range stories {
-        pbStories[i] = h.domainStoryToPb(story)
+        pbStories[i] = h.domainStoryToPb(ctx, story)
     }
 
     return &pb.GetUserStoriesResponse{
@@ -186,7 +218,7 @@ func (h *GRPCHandler) groupStoriesToResponse(ctx context.Context, stories []*dom
 		hasUnseen := false
 
 		for _, story := range userStoryList {
-			pbStories = append(pbStories, h.domainStoryToPb(story))
+			pbStories = append(pbStories, h.domainStoryToPb(ctx, story))
 
 			// Check if viewed (This N+1 check might be slow; optimize by fetching all views for these stories in 1 query if needed)
 			viewed, _ := h.repo.IsStoryViewed(ctx, story.ID, viewerID)
@@ -396,16 +428,18 @@ func (h *GRPCHandler) ShareStory(ctx context.Context, req *pb.ShareStoryRequest)
 	}, nil
 }
 
-func (h *GRPCHandler) domainStoryToPb(story *domain.Story) *pb.Story {
+func (h *GRPCHandler) domainStoryToPb(ctx context.Context, story *domain.Story) *pb.Story {
 	mediaType := pb.MediaType_IMAGE
 	if story.MediaType == domain.MediaTypeVideo {
 		mediaType = pb.MediaType_VIDEO
 	}
 
+	secureURL := h.getSignedURL(ctx, story.MediaURL)
+
 	return &pb.Story{
 		Id:         story.ID,
 		UserId:     story.UserID,
-		MediaUrl:   story.MediaURL,
+		MediaUrl:   secureURL,
 		MediaType:  mediaType,
 		Duration:   int32(story.Duration),
 		CreatedAt:  timestamppb.New(story.CreatedAt),
