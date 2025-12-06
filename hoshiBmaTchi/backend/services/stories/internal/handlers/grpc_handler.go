@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"time"
 
@@ -28,6 +27,7 @@ type GRPCHandler struct {
 	chatServiceClient *clients.ChatServiceClient 
 	publisher         *events.EventPublisher
 	minioClient *minio.Client
+	presignClient     *minio.Client
     bucketName  string
 }
 
@@ -38,6 +38,7 @@ func NewGRPCHandler(
 	chatClient *clients.ChatServiceClient,
 	publisher *events.EventPublisher,
 	minioClient *minio.Client,
+	presignClient *minio.Client,
     bucketName string,
 ) *GRPCHandler {
 	return &GRPCHandler{
@@ -47,30 +48,40 @@ func NewGRPCHandler(
 		chatServiceClient: chatClient,
 		publisher:         publisher,
 		minioClient: minioClient,
+		presignClient:     presignClient,
         bucketName:  bucketName,
 	}
 }
 
 func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryRequest) (*pb.CreateStoryResponse, error) {
 
-	fullMediaURL := fmt.Sprintf("http://%s/%s/%s", os.Getenv("MINIO_ENDPOINT"), h.bucketName, req.MediaUrl)
-	
-	story := &domain.Story{
-		UserID:    req.UserId,
-		MediaURL:  fullMediaURL,
-		MediaType: domain.MediaType(req.MediaType.String()),
-		Duration:  int(req.Duration),
-		CreatedAt: time.Now(),
-		ExpiresAt: time.Now().Add(24 * time.Hour), 
-	}
+    // --- FIX START: Use Public Endpoint for the DB Record ---
+    baseURL := os.Getenv("MINIO_PUBLIC_ENDPOINT") // "http://localhost:9000"
+    if baseURL == "" {
+        // Fallback to internal if public is not set
+        baseURL = fmt.Sprintf("http://%s", os.Getenv("MINIO_ENDPOINT"))
+    }
 
-	if err := h.repo.CreateStory(ctx, story); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to create story: %v", err)
-	}
+    // Construct the URL using the public base (localhost)
+    fullMediaURL := fmt.Sprintf("%s/%s/%s", baseURL, h.bucketName, req.MediaUrl)
+    // --- FIX END ---
+    
+    story := &domain.Story{
+        UserID:    req.UserId,
+        MediaURL:  fullMediaURL, // Now saves as http://localhost:9000/...
+        MediaType: domain.MediaType(req.MediaType.String()),
+        Duration:  int(req.Duration),
+        CreatedAt: time.Now(),
+        ExpiresAt: time.Now().Add(24 * time.Hour), 
+    }
 
-	return &pb.CreateStoryResponse{
-		Story: h.domainStoryToPb(story),
-	}, nil
+    if err := h.repo.CreateStory(ctx, story); err != nil {
+        return nil, status.Errorf(codes.Internal, "failed to create story: %v", err)
+    }
+
+    return &pb.CreateStoryResponse{
+        Story: h.domainStoryToPb(story),
+    }, nil
 }
 
 func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadURLRequest) (*pb.GenerateUploadURLResponse, error) {
@@ -78,7 +89,7 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
     expiry := 15 * time.Minute
 
     // Generate Presigned URL
-    presignedURL, err := h.minioClient.PresignedPutObject(ctx, h.bucketName, objectName, expiry)
+    presignedURL, err := h.presignClient.PresignedPutObject(ctx, h.bucketName, objectName, expiry)
     if err != nil {
 		fmt.Printf("Error generating MinIO URL: %v\n", err)
         return nil, status.Errorf(codes.Internal, "failed to generate upload url: %v", err)
@@ -86,26 +97,10 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
 	
 	finalURL := presignedURL.String()
 
-	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
-    if publicEndpoint != "" {
-        u, err := url.Parse(finalURL)
-        if err == nil {
-            pubU, err := url.Parse(publicEndpoint)
-            if err == nil {
-                u.Scheme = pubU.Scheme
-                u.Host = pubU.Host
-                finalURL = u.String()
-				fmt.Printf("DEBUG: Replaced URL: %s\n", finalURL)
-            }
-        }
-    } else {
-        fmt.Println("DEBUG: MINIO_PUBLIC_ENDPOINT is empty!")
-    }
-
 	fmt.Printf("DEBUG: Final Sending URL: %s\n", finalURL)
 
     return &pb.GenerateUploadURLResponse{
-        UploadUrl:  presignedURL.String(),
+        UploadUrl:  finalURL,
         ObjectName: objectName,
     }, nil
 }

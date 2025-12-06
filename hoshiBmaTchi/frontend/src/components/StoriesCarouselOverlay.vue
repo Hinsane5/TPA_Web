@@ -1,20 +1,18 @@
+Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** and **Script**. I have applied the fixes to resolve the "Failed to resolve component" warning and the broken image URLs.
+
+```html
 <template>
   <div class="stories-overlay">
-    <!-- Background overlay -->
     <div class="overlay-backdrop" @click="closeOverlay"></div>
 
-    <!-- Main container -->
     <div class="stories-container">
-      <!-- Close button -->
       <button class="close-btn" @click="closeOverlay">✕</button>
 
-      <!-- ProgressBarsContainer component -->
       <ProgressBarsContainer 
         :stories="stories"
         :currentStoryIndex="currentStoryIndex"
       />
 
-      <!-- Header -->
       <div class="stories-header">
         <div class="user-info">
           <div class="avatar">{{ currentStory?.userAvatar }}</div>
@@ -33,12 +31,11 @@
         </div>
       </div>
 
-      <!-- Story content -->
       <div class="story-content" @click="togglePlayPause">
         <template v-if="currentStory">
           <img 
             v-if="currentStory.mediaType === 'image'"
-            :src="currentStory.mediaUrl" 
+            :src="getSafeImageUrl(currentStory.mediaUrl)" 
             :alt="`Story by ${currentStory.username}`"
             class="story-media"
           />
@@ -46,7 +43,7 @@
           <video 
             v-else-if="currentStory.mediaType === 'video'"
             ref="videoPlayer"
-            :src="currentStory.mediaUrl"
+            :src="getSafeImageUrl(currentStory.mediaUrl)"
             class="story-media"
             autoplay
             muted
@@ -56,7 +53,6 @@
         </template>
       </div>
 
-      <!-- Navigation arrows -->
       <button 
         v-if="currentStoryIndex > 0"
         class="nav-btn prev-btn" 
@@ -75,7 +71,6 @@
         ›
       </button>
 
-      <!-- Bottom actions bar -->
       <div class="bottom-actions">
         <div class="reply-section">
           <span class="reply-text">Reply to {{ currentStory?.username }}</span>
@@ -99,7 +94,6 @@
         </div>
       </div>
 
-      <!-- Reply input -->
       <div class="reply-input-container">
         <input 
           v-model="storyReplyText"
@@ -110,7 +104,6 @@
         />
       </div>
 
-      <!-- MiniCarouselContainer component -->
       <MiniCarouselContainer 
         :stories="stories"
         :currentStoryIndex="currentStoryIndex"
@@ -118,7 +111,6 @@
       />
     </div>
 
-    <!-- Share modal -->
     <ShareStoryModal 
       v-if="showShareModal"
       :story="currentStory"
@@ -133,6 +125,8 @@ import { ref, watch, nextTick } from 'vue';
 import { useStories } from '../composables/useStories';
 import ShareStoryModal from './ShareStoryModal.vue';
 import ProgressBarsContainer from './ProgressBarsContainer.vue';
+// FIX: Import the missing component to resolve the Vue Warning
+import MiniCarouselContainer from './MiniCarouselContainer.vue';
 
 const props = defineProps<{
   isOpen: boolean;
@@ -145,7 +139,6 @@ const emit = defineEmits<{
 const showShareModal = ref(false);
 const videoPlayer = ref<HTMLVideoElement | null>(null);
 
-// Destructure all required properties, including the ones that were missing
 const {
   stories,
   currentStoryIndex,
@@ -162,12 +155,10 @@ const {
   sendStory
 } = useStories();
 
-// Handle closing
 const closeOverlay = () => {
   emit('close');
 };
 
-// Video handling
 const handleVideoEnd = () => {
   nextStory();
 };
@@ -192,7 +183,6 @@ const resumeStory = () => {
   startProgress();
 };
 
-// Watch for story changes to reset video
 watch(currentStory, async (newStory) => {
   if (newStory?.mediaType === 'video') {
     await nextTick();
@@ -214,6 +204,16 @@ const formatTime = (date: Date | string | undefined) => {
   if (minutes < 60) return `${minutes}m`;
   if (hours < 24) return `${hours}h`;
   return `${Math.floor(diff / 86400000)}d`;
+};
+
+// FIX: Helper function to replace internal Docker URLs with localhost
+const getSafeImageUrl = (url: string) => {
+  if (!url) return '';
+  // If the URL is from the internal docker network, replace it with localhost
+  if (url.includes('minio:9000')) {
+    return url.replace('minio:9000', 'localhost:9000');
+  }
+  return url;
 };
 </script>
 

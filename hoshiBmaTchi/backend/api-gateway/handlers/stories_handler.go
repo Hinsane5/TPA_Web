@@ -26,7 +26,7 @@ func NewStoriesHandler(client pb.StoriesServiceClient, userClient usersPb.UserSe
 }
 
 func (h *StoriesHandler) CreateStory(c *gin.Context) {
-	userID, exists := c.Get("user_id")
+	userID, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -413,7 +413,7 @@ func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
         return
     }
-	
+
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return

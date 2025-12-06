@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net"
+	"net/url"
 	"os"
 	"time"
 
@@ -76,21 +77,51 @@ func main() {
 		log.Fatalf("Failed to create chat client: %v", err)
 	}
 
-	minioClient, err := minio.New(os.Getenv("MINIO_ENDPOINT"), &minio.Options{
-        Creds:  credentials.NewStaticV4(os.Getenv("MINIO_ACCESS_KEY_ID"), os.Getenv("MINIO_SECRET_ACCESS_KEY"), ""),
-        Secure: os.Getenv("MINIO_USE_SSL") == "true",
-    })
+	minioEndpoint := os.Getenv("MINIO_ENDPOINT")
+	accessKey := os.Getenv("MINIO_ACCESS_KEY_ID")
+	secretKey := os.Getenv("MINIO_SECRET_ACCESS_KEY")
+	useSSL := os.Getenv("MINIO_USE_SSL") == "true"
+
+	minioClient, err := minio.New(minioEndpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: useSSL,
+	})
+
+	presignClient := minioClient
+	publicEndpointStr := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+
+	if publicEndpointStr != "" {
+		u, err := url.Parse(publicEndpointStr)
+		if err != nil {
+			log.Printf("Failed to parse public endpoint: %v", err)
+		} else {
+			// Initialize client with public host (e.g., localhost:9000)
+			presignClient, err = minio.New(u.Host, &minio.Options{
+				Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+				Secure: u.Scheme == "https",
+				Region: "us-east-1",
+			})
+			if err != nil {
+				log.Printf("Failed to create presign client: %v", err)
+			}
+		}
+	}
+
     if err != nil {
         log.Fatal(err)
     }
 
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
-    if bucketName == "" {
-        bucketName = "stories"
-    }
-
+	if bucketName == "" {
+		bucketName = "stories"
+	}
 	ctx := context.Background()
-    exists, err := minioClient.BucketExists(ctx, bucketName)
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		log.Printf("Error checking bucket: %v", err)
+	} else if !exists {
+		minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+	}
 
 	if err != nil {
         log.Printf("Error checking if bucket exists: %v", err)
@@ -105,7 +136,7 @@ func main() {
         log.Printf("Bucket %s already exists", bucketName)
     }
 
-	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient, publisher, minioClient, os.Getenv("MINIO_BUCKET_NAME"),)
+	handler := handlers.NewGRPCHandler(repo, redisRepo, userClient, chatClient, publisher, minioClient, presignClient, bucketName)
 
 	go startCleanupRoutine(repo)
 
