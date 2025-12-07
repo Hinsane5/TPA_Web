@@ -1,5 +1,5 @@
-package repositories
 
+package repositories
 import (
 	"context"
 	"time"
@@ -198,4 +198,3 @@ func (r *GormStoryRepository) GetStoriesByAuthors(authorIDs []string) ([]domain.
 	}
 	return stories, nil
 }
-

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"mime/multipart"
+
 	"path/filepath"
 	"strings"
 	"time"
@@ -16,8 +17,10 @@ import (
 
 type MinioClient struct {
 	client     *minio.Client
+
 	bucketName string
 	endpoint   string
+
 }
 
 func NewMinioClient(endpoint, accessKey, secretKey, bucketName string, useSSL bool) (*MinioClient, error) {
@@ -57,6 +60,17 @@ func NewMinioClient(endpoint, accessKey, secretKey, bucketName string, useSSL bo
 		if err := client.SetBucketPolicy(ctx, bucketName, policy); err != nil {
 			log.Printf("Warning: failed to set bucket policy: %v", err)
 		}
+
+
+
+
+
+
+
+
+
+
+
 	}
 
 	log.Printf("Connected to MinIO at %s, bucket: %s", endpoint, bucketName)
@@ -65,12 +79,15 @@ func NewMinioClient(endpoint, accessKey, secretKey, bucketName string, useSSL bo
 		client:     client,
 		bucketName: bucketName,
 		endpoint:   endpoint,
+
+
 	}, nil
 }
 
 func (m *MinioClient) UploadStory(ctx context.Context, file multipart.File, header *multipart.FileHeader, userID string) (string, error) {
 	ext := filepath.Ext(header.Filename)
 	filename := fmt.Sprintf("stories/%s/%s%s", userID, uuid.New().String(), ext)
+
 
 	contentType := header.Header.Get("Content-Type")
 	if contentType == "" {
@@ -94,6 +111,7 @@ func (m *MinioClient) DeleteStory(ctx context.Context, mediaURL string) error {
 	objectName := extractObjectName(mediaURL, m.endpoint, m.bucketName)
 	if objectName == "" {
 		return fmt.Errorf("invalid media URL")
+
 	}
 
 	err := m.client.RemoveObject(ctx, m.bucketName, objectName, minio.RemoveObjectOptions{})
@@ -107,11 +125,20 @@ func (m *MinioClient) DeleteStory(ctx context.Context, mediaURL string) error {
 
 func (m *MinioClient) GetPresignedURL(ctx context.Context, mediaURL string, expires time.Duration) (string, error) {
 	objectName := extractObjectName(mediaURL, m.endpoint, m.bucketName)
+
+
+
 	if objectName == "" {
 		return "", fmt.Errorf("invalid media URL")
 	}
 
 	presignedURL, err := m.client.PresignedGetObject(ctx, m.bucketName, objectName, expires, nil)
+
+
+
+
+
+
 	if err != nil {
 		return "", fmt.Errorf("failed to generate presigned URL: %w", err)
 	}
@@ -128,6 +155,9 @@ func extractObjectName(url, endpoint, bucket string) string {
 	}
 	if strings.HasPrefix(url, prefix2) {
 		return strings.TrimPrefix(url, prefix2)
+
+
+
 	}
 
 	return ""

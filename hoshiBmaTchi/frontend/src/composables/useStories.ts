@@ -29,14 +29,11 @@ export function useStories() {
 
       const rawStories = response.data.user_stories || [];
 
-      // --- FIX: Correctly map backend data to Story interface ---
       stories.value = rawStories.map((s: any) => {
-        // Safe access to user object
         const userObj = s.user || {};
 
         return {
           id: s.id,
-          // Map snake_case from backend to camelCase for frontend
           mediaType: s.media_type ? s.media_type.toLowerCase() : "image",
           mediaUrl: s.media_url,
           isViewed: s.is_viewed || false,
@@ -45,13 +42,11 @@ export function useStories() {
           timestamp: s.created_at ? new Date(s.created_at) : new Date(),
           replies: [],
 
-          // Flatten user details to top-level as required by Story interface
           userId: s.user_id,
           username: userObj.username || "Unknown",
           userAvatar: userObj.userAvatar || "",
           isVerified: userObj.isVerified || false,
 
-          // Keep the nested user object if needed for other components
           user: {
             id: s.user_id,
             username: userObj.username || "Unknown",
@@ -60,7 +55,6 @@ export function useStories() {
           },
         };
       });
-      // ----------------------------------------------------------
     } catch (error) {
       console.error("Failed to fetch stories", error);
     }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -65,12 +64,12 @@ func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryReques
     }
 
     // Construct the URL using the public base (localhost)
-    fullMediaURL := fmt.Sprintf("%s/%s/%s", baseURL, h.bucketName, req.MediaUrl)
+    // fullMediaURL := fmt.Sprintf("%s/%s/%s", baseURL, h.bucketName, req.MediaUrl)
     // --- FIX END ---
     
     story := &domain.Story{
         UserID:    req.UserId,
-        MediaURL:  fullMediaURL, // Now saves as http://localhost:9000/...
+        MediaURL:  req.MediaUrl, // Now saves as http://localhost:9000/...
         MediaType: domain.MediaType(req.MediaType.String()),
         Duration:  int(req.Duration),
         CreatedAt: time.Now(),
@@ -107,34 +106,27 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
     }, nil
 }
 
-func (h *GRPCHandler) getSignedURL(ctx context.Context, rawURL string) string {
-    parts := strings.Split(rawURL, h.bucketName+"/")
-    if len(parts) < 2 {
-        return rawURL 
+func (h *GRPCHandler) getSignedURL(ctx context.Context, objectName string) string {
+    // Sanity check: If legacy data in DB still has full URLs (http://...), strip them.
+    if strings.HasPrefix(objectName, "http") {
+        parts := strings.Split(objectName, h.bucketName+"/")
+        if len(parts) > 1 {
+            objectName = parts[1]
+        }
     }
-    objectName := parts[1]
 
-    publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
-    if publicEndpoint == "" {
-        publicEndpoint = "http://localhost:9000"
-    }
-    u, _ := url.Parse(publicEndpoint)
-
-    expiry := 1 * time.Hour
-    reqParams := make(url.Values)
-    
-    presignedURL, err := h.minioClient.PresignedGetObject(ctx, h.bucketName, objectName, expiry, reqParams)
+    // Use the presignClient (which main.go configured with MINIO_PUBLIC_ENDPOINT)
+    // This ensures the link is generated for "localhost:9000" (browser accessible)
+    // not "minio:9000" (docker internal).
+    expiry := 1 * time.Hour 
+    presignedURL, err := h.presignClient.PresignedGetObject(ctx, h.bucketName, objectName, expiry, nil)
     if err != nil {
-        log.Printf("Failed to sign URL: %v", err)
-        return rawURL
+        log.Printf("Failed to sign URL for %s: %v", objectName, err)
+        // Fallback: return raw string if signing fails, though it likely won't load
+        return objectName 
     }
 
-    finalURL := presignedURL.String()
-    parsedPresigned, _ := url.Parse(finalURL)
-    parsedPresigned.Scheme = u.Scheme
-    parsedPresigned.Host = u.Host
-    
-    return parsedPresigned.String()
+    return presignedURL.String()
 }
 
 func (h *GRPCHandler) GetStory(ctx context.Context, req *pb.GetStoryRequest) (*pb.GetStoryResponse, error) {
@@ -489,16 +481,8 @@ func (h *GRPCHandler) GetStoriesByAuthors(ctx context.Context, req *pb.GetStorie
     }
 
     var protoStories []*pb.Story
-    for _, s := range stories {
-        protoStories = append(protoStories, &pb.Story{
-            Id:        s.ID,
-            UserId:    s.UserID,
-            MediaUrl:  s.MediaURL,
-            MediaType: pb.MediaType(pb.MediaType_value[string(s.MediaType)]),
-            Duration:  int32(s.Duration),
-            CreatedAt: timestamppb.New(s.CreatedAt),
-            ExpiresAt: timestamppb.New(s.ExpiresAt),
-        })
+    for i := range stories {
+        protoStories = append(protoStories, h.domainStoryToPb(ctx, &stories[i]))
     }
 
     return &pb.GetStoriesResponse{Stories: protoStories}, nil
