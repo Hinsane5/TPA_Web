@@ -6,6 +6,14 @@ const stories = ref<Story[]>([]);
 const currentStoryIndex = ref(0);
 const selectedUsers = ref<Set<string>>(new Set());
 
+export interface StoryGroup {
+  userId: string;
+  username: string;
+  userAvatar: string;
+  startIndex: number;
+  hasUnseen: boolean;
+}
+
 export function useStories() {
   const isPlaying = ref(true);
   const progress = ref(0);
@@ -19,6 +27,31 @@ export function useStories() {
     { id: "s2", username: "perry", fullName: "Perry", userAvatar: "" },
   ]);
 
+  const storyGroups = computed<StoryGroup[]>(() => {
+    const groups: StoryGroup[] = [];
+    const seenUsers = new Set<string>();
+
+    stories.value.forEach((story, index) => {
+      if (!seenUsers.has(story.userId)) {
+        seenUsers.add(story.userId);
+        
+        const userStories = stories.value.filter(s => s.userId === story.userId);
+        const hasUnseen = userStories.some(s => !s.isViewed);
+
+        groups.push({
+          userId: story.userId,
+          username: story.user?.username || story.username,
+          userAvatar: story.user?.userAvatar || story.userAvatar,
+          startIndex: index, 
+          hasUnseen
+        });
+      }
+    });
+    return groups;
+  });
+  
+  
+
   const currentStory = computed(
     () => stories.value[currentStoryIndex.value] || null
   );
@@ -26,12 +59,11 @@ export function useStories() {
   const fetchStories = async () => {
     try {
       const response = await storiesApi.getFollowingStories();
-
       const rawStories = response.data.user_stories || [];
 
-      stories.value = rawStories.map((s: any) => {
+      // 1. Map raw data to your Story interface
+      const mappedStories = rawStories.map((s: any) => {
         const userObj = s.user || {};
-
         return {
           id: s.id,
           mediaType: s.media_type ? s.media_type.toLowerCase() : "image",
@@ -41,12 +73,10 @@ export function useStories() {
           likes: s.likes_count || 0,
           timestamp: s.created_at ? new Date(s.created_at) : new Date(),
           replies: [],
-
           userId: s.user_id,
           username: userObj.username || "Unknown",
           userAvatar: userObj.userAvatar || "",
           isVerified: userObj.isVerified || false,
-
           user: {
             id: s.user_id,
             username: userObj.username || "Unknown",
@@ -55,6 +85,20 @@ export function useStories() {
           },
         };
       });
+
+      // 2. CRITICAL FIX: Sort by User ID first, then by Date
+      // This ensures [UserA_1, UserB_1, UserA_2] becomes [UserA_1, UserA_2, UserB_1]
+      mappedStories.sort((a: Story, b: Story) => {
+        // If users are different, group them together
+        if (a.userId !== b.userId) {
+          // Tip: If you have the current user's ID, check it here to put "Me" first
+          return a.userId.localeCompare(b.userId);
+        }
+        // If same user, sort by time (oldest first)
+        return a.timestamp.getTime() - b.timestamp.getTime();
+      });
+
+      stories.value = mappedStories;
     } catch (error) {
       console.error("Failed to fetch stories", error);
     }
@@ -159,6 +203,7 @@ export function useStories() {
 
   return {
     stories,
+    storyGroups,
     currentStoryIndex,
     currentStory,
     progress,

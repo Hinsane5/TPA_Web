@@ -1,17 +1,18 @@
 <template>
   <div class="mini-carousel">
     <MiniStoryItem 
-      v-for="(story, idx) in stories" 
-      :key="story.id"
-      :avatar="story.user?.userAvatar" 
-      :username="story.user?.username"
-      :isActive="idx === currentStoryIndex"
-      @click="emit('select-story', idx)"
+      v-for="group in storyGroups" 
+      :key="group.userId"
+      :avatar="group.userAvatar" 
+      :username="group.username"
+      :isActive="isGroupActive(group.userId)"
+      @click="emit('select-story', group.startIndex)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue';
 import MiniStoryItem from './MiniStoryItem.vue';
 import type { Story } from '../types/stories';
 
@@ -20,10 +21,36 @@ interface Props {
   currentStoryIndex: number;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 const emit = defineEmits<{
   'select-story': [index: number];
 }>();
+
+const storyGroups = computed(() => {
+  const groups: any[] = [];
+  const seenUsers = new Set<string>();
+
+  props.stories.forEach((story, index) => {
+    if (story.userId && !seenUsers.has(story.userId)) {
+      seenUsers.add(story.userId);
+      
+      groups.push({
+        userId: story.userId,
+        username: story.user?.username || story.username,
+        userAvatar: story.user?.userAvatar || story.userAvatar,
+        startIndex: index
+      });
+    }
+  });
+
+  return groups;
+});
+
+
+const isGroupActive = (userId: string): boolean => {
+  const activeStory = props.stories[props.currentStoryIndex];
+  return activeStory?.userId === userId;
+};
 </script>
 
 <style scoped>
