@@ -15,6 +15,15 @@ export interface Story {
   isViewed: boolean;
 }
 
+export interface StoryGroup {
+  userId: string;
+  username: string;
+  userAvatar: string;
+  isVerified: boolean;
+  stories: Story[];
+  hasUnseen: boolean;
+}
+
 export interface StoryReply {
   id: string;
   userId: string;

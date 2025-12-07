@@ -2,17 +2,15 @@
   <div class="home-container">
     <div class="stories-section">
       <MiniCarouselContainer 
-        v-if="!isLoadingStories && stories.length > 0"
-        :stories="stories"
-        :currentStoryIndex="currentStoryIndex"
-        @select-story="openStoriesCarousel"
+        v-if="!isLoadingStories && storyGroups.length > 0"
+        @open-viewer="isStoriesOverlayOpen = true"
       />
       
-      <div v-if="isLoadingStories && stories.length === 0" class="story-loading">
+      <div v-if="isLoadingStories && storyGroups.length === 0" class="story-loading">
         Loading...
       </div>
       
-      <div v-else-if="stories.length === 0" class="story-placeholder">
+      <div v-else-if="storyGroups.length === 0" class="story-placeholder">
         <p>No stories yet</p>
       </div>
     </div>
@@ -114,7 +112,7 @@ const isLoadingStories = ref(false);
 const selectedPost = ref<Post | null>(null);
 const isStoriesOverlayOpen = ref(false);
 
-const { stories, fetchStories, currentStoryIndex } = useStories();
+const { storyGroups, fetchStories } = useStories();
 
 const fetchFeed = async () => {
   if (isLoading.value) return;
@@ -141,10 +139,10 @@ const closeOverlay = () => {
   window.history.pushState({}, '', '/'); 
 }; 
 
-const openStoriesCarousel = (index: number) => {
-  currentStoryIndex.value = index; 
-  isStoriesOverlayOpen.value = true;
-};
+// const openStoriesCarousel = (index: number) => {
+//   selectGroup(index); 
+//   isStoriesOverlayOpen.value = true;
+// };
 
 const closeStoriesOverlay = () => {
   isStoriesOverlayOpen.value = false;

@@ -1,55 +1,32 @@
 <template>
   <div class="mini-carousel">
     <MiniStoryItem 
-      v-for="group in storyGroups" 
+      v-for="(group, index) in storyGroups" 
       :key="group.userId"
       :avatar="group.userAvatar" 
       :username="group.username"
-      :isActive="isGroupActive(group.userId)"
-      @click="emit('select-story', group.startIndex)"
+      :isActive="index === currentGroupIndex"
+      :has-unseen="group.hasUnseen"
+      @click="handleSelect(index)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import MiniStoryItem from './MiniStoryItem.vue';
-import type { Story } from '../types/stories';
+import { useStories } from '../composables/useStories';
 
-interface Props {
-  stories: Story[];
-  currentStoryIndex: number;
-}
+// FIX: Remove Props. Consume global state directly.
+// This prevents the "Maximum call stack size" error by removing the reactive loop.
+const { storyGroups, currentGroupIndex, selectGroup } = useStories();
 
-const props = defineProps<Props>();
 const emit = defineEmits<{
-  'select-story': [index: number];
+  'open-viewer': [];
 }>();
 
-const storyGroups = computed(() => {
-  const groups: any[] = [];
-  const seenUsers = new Set<string>();
-
-  props.stories.forEach((story, index) => {
-    if (story.userId && !seenUsers.has(story.userId)) {
-      seenUsers.add(story.userId);
-      
-      groups.push({
-        userId: story.userId,
-        username: story.user?.username || story.username,
-        userAvatar: story.user?.userAvatar || story.userAvatar,
-        startIndex: index
-      });
-    }
-  });
-
-  return groups;
-});
-
-
-const isGroupActive = (userId: string): boolean => {
-  const activeStory = props.stories[props.currentStoryIndex];
-  return activeStory?.userId === userId;
+const handleSelect = (index: number) => {
+  selectGroup(index); // Update global state
+  emit('open-viewer'); // Tell HomePage to open the overlay
 };
 </script>
 
@@ -58,11 +35,11 @@ const isGroupActive = (userId: string): boolean => {
   display: flex;
   gap: 8px;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.6);
+  background: none;
   overflow-x: auto;
   position: relative;
   z-index: 10001;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  /* border-top: 1px solid rgba(255, 255, 255, 0.1); */
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }

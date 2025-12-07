@@ -9,6 +9,7 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
       <button class="close-btn" @click="closeOverlay">✕</button>
 
       <ProgressBarsContainer 
+        v-if="stories"
         :stories="stories"
         :currentStoryIndex="currentStoryIndex"
       />
@@ -82,14 +83,22 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
             @click="toggleLike"
             title="Like"
           >
-            ❤️
+            <img 
+              src="../../public/icons/liked-icon.png" 
+              alt="Like" 
+              class="icon-img"
+            />
           </button>
-          <button 
+         <button 
             class="share-btn"
-            @click="showShareModal = true"
+            @click.stop="showShareModal = true"
             title="Share"
           >
-            ✈️
+            <img 
+              src="../../public/icons/share-icon.png" 
+              alt="Share" 
+              class="icon-img" 
+            />
           </button>
         </div>
       </div>
@@ -140,7 +149,7 @@ const showShareModal = ref(false);
 const videoPlayer = ref<HTMLVideoElement | null>(null);
 
 const {
-  stories,
+  currentGroupStories: stories,
   currentStoryIndex,
   currentStory,
   progress,
@@ -422,19 +431,25 @@ const getSafeImageUrl = (url: string) => {
   gap: 12px;
 }
 
-.like-btn,
-.share-btn {
+.like-btn, .share-btn {
   background: none;
   border: none;
-  font-size: 18px;
+  padding: 8px;
   cursor: pointer;
-  padding: 6px;
-  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.like-btn:hover,
-.share-btn:hover {
-  transform: scale(1.1);
+.icon-img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  display: block;
+}
+
+.like-btn:hover, .share-btn:hover {
+  opacity: 0.8;
 }
 
 .like-btn.liked {

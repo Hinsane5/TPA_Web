@@ -1,18 +1,12 @@
 import { ref, computed, watch, onUnmounted } from "vue";
 import { storiesApi } from "../services/apiService";
-import type { Story, User } from "../types/stories";
+import type { Story, StoryGroup, User } from "../types/stories";
 
-const stories = ref<Story[]>([]);
-const currentStoryIndex = ref(0);
+// Global state to persist across components
+const storyGroups = ref<StoryGroup[]>([]);
+const currentGroupIndex = ref(0);
+const currentStoryIndex = ref(0); // Index relative to the current group
 const selectedUsers = ref<Set<string>>(new Set());
-
-export interface StoryGroup {
-  userId: string;
-  username: string;
-  userAvatar: string;
-  startIndex: number;
-  hasUnseen: boolean;
-}
 
 export function useStories() {
   const isPlaying = ref(true);
@@ -27,42 +21,32 @@ export function useStories() {
     { id: "s2", username: "perry", fullName: "Perry", userAvatar: "" },
   ]);
 
-  const storyGroups = computed<StoryGroup[]>(() => {
-    const groups: StoryGroup[] = [];
-    const seenUsers = new Set<string>();
+  // --- Computed Properties ---
 
-    stories.value.forEach((story, index) => {
-      if (!seenUsers.has(story.userId)) {
-        seenUsers.add(story.userId);
-        
-        const userStories = stories.value.filter(s => s.userId === story.userId);
-        const hasUnseen = userStories.some(s => !s.isViewed);
-
-        groups.push({
-          userId: story.userId,
-          username: story.user?.username || story.username,
-          userAvatar: story.user?.userAvatar || story.userAvatar,
-          startIndex: index, 
-          hasUnseen
-        });
-      }
-    });
-    return groups;
+  // The specific group of stories the user is currently watching
+  const currentGroup = computed(() => {
+    // FIX: Optional chaining safety
+    return storyGroups.value[currentGroupIndex.value] || null;
   });
-  
-  
+
+  const stories = computed(() => currentGroup.value?.stories || []);
 
   const currentStory = computed(
     () => stories.value[currentStoryIndex.value] || null
   );
+
+  // Helper: Just the stories for the current user (for Progress Bars)
+  const currentGroupStories = computed(() => currentGroup.value?.stories || []);
+
+  // --- Fetch & Grouping Logic ---
 
   const fetchStories = async () => {
     try {
       const response = await storiesApi.getFollowingStories();
       const rawStories = response.data.user_stories || [];
 
-      // 1. Map raw data to your Story interface
-      const mappedStories = rawStories.map((s: any) => {
+      // 1. Map Data
+      const mappedStories: Story[] = rawStories.map((s: any) => {
         const userObj = s.user || {};
         return {
           id: s.id,
@@ -86,23 +70,89 @@ export function useStories() {
         };
       });
 
-      // 2. CRITICAL FIX: Sort by User ID first, then by Date
-      // This ensures [UserA_1, UserB_1, UserA_2] becomes [UserA_1, UserA_2, UserB_1]
-      mappedStories.sort((a: Story, b: Story) => {
-        // If users are different, group them together
-        if (a.userId !== b.userId) {
-          // Tip: If you have the current user's ID, check it here to put "Me" first
-          return a.userId.localeCompare(b.userId);
+      // 2. Group by User ID
+      const groupsMap = new Map<string, StoryGroup>();
+      mappedStories.forEach((story) => {
+        if (!groupsMap.has(story.userId)) {
+          groupsMap.set(story.userId, {
+            userId: story.userId,
+            username: story.username,
+            userAvatar: story.userAvatar,
+            isVerified: story.isVerified,
+            stories: [],
+            hasUnseen: false,
+          });
         }
-        // If same user, sort by time (oldest first)
-        return a.timestamp.getTime() - b.timestamp.getTime();
+        const group = groupsMap.get(story.userId)!;
+        group.stories.push(story);
+        if (!story.isViewed) group.hasUnseen = true;
       });
 
-      stories.value = mappedStories;
+      const newGroups = Array.from(groupsMap.values());
+
+      newGroups.forEach((g) =>
+        g.stories.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      );
+
+      newGroups.sort((a, b) => (b.hasUnseen ? 1 : 0) - (a.hasUnseen ? 1 : 0));
+
+      storyGroups.value = newGroups;
     } catch (error) {
       console.error("Failed to fetch stories", error);
     }
   };
+
+  const selectGroup = (index: number) => {
+    if (storyGroups.value[index]) {
+      currentGroupIndex.value = index;
+
+      // Find first unseen story in this user's list
+      const firstUnseen = storyGroups.value[index].stories.findIndex(
+        (s) => !s.isViewed
+      );
+      currentStoryIndex.value = firstUnseen !== -1 ? firstUnseen : 0;
+
+      isPlaying.value = true;
+    }
+  };
+
+  // --- Navigation Logic ---
+
+  const nextStory = () => {
+    stopProgress();
+
+    // Case 1: More stories in THIS group?
+    if (currentStoryIndex.value < stories.value.length - 1) {
+      currentStoryIndex.value++;
+    }
+    // Case 2: Jump to NEXT User Group?
+    else if (currentGroupIndex.value < storyGroups.value.length - 1) {
+      currentGroupIndex.value++;
+      currentStoryIndex.value = 0; // Start from their first story
+    }
+    // Case 3: End of everything
+    else {
+      isPlaying.value = false;
+    }
+  };
+
+  const previousStory = () => {
+    stopProgress();
+
+    // Case 1: Back in this group
+    if (currentStoryIndex.value > 0) {
+      currentStoryIndex.value--;
+    }
+    // Case 2: Back to PREVIOUS User Group
+    else if (currentGroupIndex.value > 0) {
+      currentGroupIndex.value--;
+      // Go to the LAST story of that user
+      currentStoryIndex.value =
+        (storyGroups.value[currentGroupIndex.value]?.stories.length || 1) - 1;
+    }
+  };
+
+  // --- Utility Functions ---
 
   const addReply = async () => {
     if (!storyReplyText.value.trim() || !currentStory.value) return;
@@ -158,22 +208,6 @@ export function useStories() {
     progress.value = 0;
   };
 
-  const nextStory = () => {
-    stopProgress();
-    if (currentStoryIndex.value < stories.value.length - 1) {
-      currentStoryIndex.value++;
-    } else {
-      isPlaying.value = false;
-    }
-  };
-
-  const previousStory = () => {
-    stopProgress();
-    if (currentStoryIndex.value > 0) {
-      currentStoryIndex.value--;
-    }
-  };
-
   const toggleLike = async () => {
     if (!currentStory.value) return;
     const story = currentStory.value;
@@ -189,12 +223,20 @@ export function useStories() {
     }
   };
 
+  // Watch for story changes to handle viewed status and progress reset
   watch(currentStory, (newStory) => {
     if (newStory) {
       startProgress();
       if (!newStory.isViewed) {
         storiesApi.viewStory(newStory.id).catch(console.error);
         newStory.isViewed = true;
+
+        // FIX: Ensure currentGroup.value exists before accessing
+        if (currentGroup.value) {
+          currentGroup.value.hasUnseen = currentGroup.value.stories.some(
+            (s) => !s.isViewed
+          );
+        }
       }
     }
   });
@@ -202,16 +244,18 @@ export function useStories() {
   onUnmounted(() => stopProgress());
 
   return {
-    stories,
     storyGroups,
+    currentGroupIndex,
     currentStoryIndex,
     currentStory,
+    currentGroupStories,
     progress,
     isPlaying,
     storyReplyText,
     suggestedUsers,
     selectedUsers,
     fetchStories,
+    selectGroup,
     addReply,
     toggleUserSelection,
     sendStory,
