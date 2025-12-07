@@ -38,8 +38,7 @@ const handleSelect = (index: number) => {
   background: none;
   overflow-x: auto;
   position: relative;
-  z-index: 10001;
-  /* border-top: 1px solid rgba(255, 255, 255, 0.1); */
+  z-index: 1;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }

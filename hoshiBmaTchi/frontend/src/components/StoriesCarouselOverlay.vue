@@ -161,7 +161,7 @@ const {
   toggleLike,
   startProgress,
   stopProgress,
-  sendStory
+  sendStory,
 } = useStories();
 
 const closeOverlay = () => {
