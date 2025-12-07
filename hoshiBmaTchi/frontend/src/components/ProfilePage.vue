@@ -187,6 +187,7 @@ import PostDetailOverlay from "./PostDetailOverlay.vue";
 
 const route = useRoute();
 const posts = ref<any[]>([]);
+const mentionsPosts = ref<any[]>([]);
 const activeTab = ref("posts");
 const showProfileImageModal = ref(false);
 const hasContent = ref(false);
@@ -355,6 +356,16 @@ const handleLikeUpdate = (post: any) => {
   }
 };
 
+const loadMentions = async () => {
+  try {
+    const res = await postsApi.getUserMentions(profileUser.value.id);
+    mentionsPosts.value = res.data.posts || [];
+    hasContent.value = mentionsPosts.value.length > 0;
+  } catch (error) {
+    console.error("Failed to load mentions", error);
+  }
+};
+
 onMounted(() => {
   loadProfileData();
 });
@@ -366,6 +377,12 @@ watch(
     loadProfileData();
   }
 );
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'mentions') {
+    loadMentions();
+  }
+});
 </script>
 
 <style scoped>

@@ -46,3 +46,13 @@ type Collection struct {
 	
 	SavedPosts []SavedPost `gorm:"foreignKey:CollectionID"`
 }
+
+type UserMention struct {
+	ID              uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	PostID          uuid.UUID `gorm:"type:uuid;not null;index"` 
+	MentionedUserID uuid.UUID `gorm:"type:uuid;not null;index"` 
+	CreatedByUserID uuid.UUID `gorm:"type:uuid;not null"`      
+	CreatedAt       time.Time `gorm:"autoCreateTime"`
+	
+	Post Post `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"`
+}

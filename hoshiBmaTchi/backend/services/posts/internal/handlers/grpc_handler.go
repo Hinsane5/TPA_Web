@@ -6,12 +6,14 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
@@ -21,7 +23,8 @@ import (
 
 type Server struct {
 	pb.UnimplementedPostsServiceServer 
-	repo           ports.PostRepository         
+	repo           ports.PostRepository   
+	service        *services.PostService      
 	minio          *minio.Client 
 	presignClient  *minio.Client  
 	bucketName     string  
@@ -29,9 +32,10 @@ type Server struct {
 	userClient     userPb.UserServiceClient     
 }
 
-func NewGRPCServer(repo ports.PostRepository, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string, userClient userPb.UserServiceClient) *Server {
+func NewGRPCServer(repo ports.PostRepository, service *services.PostService, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string, userClient userPb.UserServiceClient) *Server {
 	return &Server{
 		repo:           repo,
+		service: service,
 		minio:          minio,
 		presignClient:  presignClient,
 		bucketName:     bucketName,
@@ -66,6 +70,7 @@ func (s *Server) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadUR
 
 func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb.CreatePostResponse, error){
 	userID, err := uuid.Parse(req.GetUserId())
+
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "UserID tidak valid")
 	}
@@ -96,6 +101,7 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 
 	for _, m := range newPost.Media {
 		pbMedia = append(pbMedia, &pb.PostMediaResponse{
+
 			MediaType: m.MediaType,
 		})
 	}
@@ -111,6 +117,7 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		},
 	}, nil
 }
+
 
 func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDRequest) (*pb.GetPostsResponse, error){
 	if req.GetUserId() == ""{
@@ -379,4 +386,52 @@ func (h *Server) ToggleSavePost(ctx context.Context, req *pb.ToggleSavePostReque
 
 func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
 	return nil, nil
+}
+
+func (s *Server) GetUserMentions(ctx context.Context, req *pb.GetUserMentionsRequest) (*pb.GetPostsResponse, error) {
+    posts, err := s.service.GetUserMentions(ctx, req)
+    if err != nil {
+        log.Printf("Failed to fetch mentions: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch mentions")
+    }
+
+    var pbPosts []*pb.PostResponse
+    expiry := time.Hour * 1
+
+    for _, post := range posts {
+        var pbMedia []*pb.PostMediaResponse
+        
+        for _, m := range post.Media {
+            reqParams := make(url.Values)
+            reqParams.Set("response-content-type", m.MediaType)
+            
+            presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+            
+            finalURL := ""
+            if err == nil {
+                // --- THE MISSING PART ---
+                // Replace internal Docker name 'minio' with 'localhost' so the browser can see it
+                finalURL = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+                finalURL = strings.Replace(finalURL, "http://backend:9000", "http://localhost:9000", 1)
+            }
+            
+            pbMedia = append(pbMedia, &pb.PostMediaResponse{
+                MediaUrl:  finalURL,
+                MediaType: m.MediaType,
+            })
+        }
+
+        pbPosts = append(pbPosts, &pb.PostResponse{
+            Id:            post.ID.String(),
+            UserId:        post.UserID.String(),
+            Media:         pbMedia,
+            Caption:       post.Caption,
+            Location:      post.Location,
+            CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+        })
+    }
+
+    return &pb.GetPostsResponse{Posts: pbPosts}, nil
 }

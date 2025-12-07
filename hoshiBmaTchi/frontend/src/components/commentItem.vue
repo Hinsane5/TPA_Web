@@ -10,7 +10,11 @@
     <div class="comment-content">
       <div class="comment-text-wrapper">
         <span class="comment-username" @click="$emit('click-user')">{{ username }}</span>
-        <span class="comment-body" v-html="parseRichText(commentText)"></span>
+        <span 
+          class="comment-body" 
+          v-html="parseRichText(commentText)"
+          @click="handleCommentClick"
+        ></span>
       </div>
 
       <div class="comment-metadata">
@@ -43,6 +47,8 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { formatDistanceToNow } from "date-fns";
+import { useRouter } from 'vue-router';
+import { usersApi } from '../services/apiService';
 
 const props = withDefaults(
   defineProps<{
@@ -60,6 +66,8 @@ const props = withDefaults(
     repliesCount: 0,
   }
 );
+
+const router = useRouter();
 
 const emit = defineEmits(["like", "reply", "click-user"]);
 
@@ -90,8 +98,41 @@ const toggleReplies = () => {
 
 const parseRichText = (text: string) => {
   if (!text) return ''
-  return text.replace(/([#@][\w.]+)/g, '<span class="highlight" style="color: #00376b; cursor: pointer;">$1</span>')
+  return text.replace(
+    /(@[\w.]+)/g, 
+    '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer;">$1</span>'
+  );
 }
+
+const handleCommentClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  if (target.classList.contains("mention-link")) {
+    const rawUsername = target.dataset.username;
+    
+    if (rawUsername) {
+      const username = rawUsername.substring(1); // Remove '@'
+      
+      try {
+        const response = await usersApi.searchUsers(username);
+        // Handle different API response structures (data.users vs data.data)
+        const users = response.data.users || response.data.data || [];
+        
+        // Use case-insensitive search
+        const foundUser = users.find((u: any) => u.username.toLowerCase() === username.toLowerCase());
+        
+        if (foundUser && (foundUser.user_id || foundUser.id)) {
+          const userId = foundUser.user_id || foundUser.id;
+          router.push(`/dashboard/profile/${userId}`);
+        } else {
+          console.warn("User not found for mention:", username);
+        }
+      } catch (error) {
+        console.error("Failed to resolve mention in comment:", error);
+      }
+    }
+  }
+};
 
 </script>
 

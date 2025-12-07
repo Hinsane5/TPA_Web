@@ -22,4 +22,7 @@ type PostRepository interface {
     GetUserCollections(ctx context.Context, userID string) ([]*domain.Collection, error)
     
     ToggleSavePost(ctx context.Context, userID, postID, collectionID string) (bool, error)
+
+	CreatePostWithMentions(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error
+	GetPostsByMention(ctx context.Context, targetUserID string, limit, offset int) ([]domain.Post, error)
 }

@@ -12,6 +12,7 @@ import (
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/handlers"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/repositories"
 	"github.com/minio/minio-go/v7"
@@ -104,7 +105,8 @@ func main() {
 	userClient := userPb.NewUserServiceClient(userConn)
 
 	postRepo := repositories.NewGormPostRepository(db)
-	grpcServer := handlers.NewGRPCServer(postRepo, minioClient, presignClient, bucketName, publicEndpoint, userClient)
+	postService := services.NewPostService(postRepo)
+	grpcServer := handlers.NewGRPCServer(postRepo, postService, minioClient, presignClient, bucketName, publicEndpoint, userClient)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

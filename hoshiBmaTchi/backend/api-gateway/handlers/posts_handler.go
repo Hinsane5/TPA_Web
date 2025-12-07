@@ -337,3 +337,21 @@ func (h *PostsHandler) GetUserCollections(c *gin.Context) {
     }
     c.JSON(http.StatusOK, res.Collections)
 }
+
+func (h *PostsHandler) GetUserMentions(c *gin.Context) {
+    targetID := c.Param("target_id")
+    userID := c.GetString("user_id") 
+
+    res, err := h.postsClient.GetUserMentions(context.Background(), &postsProto.GetUserMentionsRequest{
+        UserId:       userID,
+        TargetUserId: targetID,
+        Limit:        15,
+        Offset:       0,
+    })
+    
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, res)
+}

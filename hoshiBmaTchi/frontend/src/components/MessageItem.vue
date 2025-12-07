@@ -10,9 +10,12 @@
 
     <div class="message-content-wrapper">
       <div class="message-bubble">
-        <p v-if="message.messageType === 'text'" class="message-text">
-          {{ message.content }}
-        </p>
+        <p 
+          v-if="message.messageType === 'text'" 
+          class="message-text"
+          @click="handleMessageClick"
+          v-html="parseMessage(message.content)"
+        ></p>
         <div v-else-if="message.messageType === 'image'" class="message-media">
           <img
             :src="message.content"
@@ -65,6 +68,9 @@
 
 <script setup lang="ts">
 import type { Message } from "../types/chat";
+import { useRouter } from 'vue-router';
+import { usersApi } from "../services/apiService";
+import router from "@/router";
 
 interface Props {
   message: Message;
@@ -77,13 +83,47 @@ defineEmits<{
 }>();
 
 const formatTime = (date: string | Date) => {
-
   return new Date(date).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
     hour12: true,
   });
 };
+
+const parseMessage = (text: string) => {
+  if (!text) return "";
+  return text.replace(
+    /(@[a-zA-Z0-9._]+)/g,
+    '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
+  );
+};
+
+const handleMessageClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  if (target.classList.contains("mention-link")) {
+    const rawUsername = target.dataset.username;
+    
+    if (rawUsername) {
+      const username = rawUsername.substring(1);
+      
+      try {
+        const response = await usersApi.searchUsers(username);
+        const users = response.data.users || [];
+        const foundUser = users.find((u: any) => u.username === username);
+        
+        if (foundUser && foundUser.user_id) {
+          router.push(`/dashboard/profile/${foundUser.user_id}`);
+        } else {
+          console.warn("User not found for mention:", username);
+        }
+      } catch (error) {
+        console.error("Failed to resolve mention in chat:", error);
+      }
+    }
+  }
+};
+
 </script>
 
 <style scoped>

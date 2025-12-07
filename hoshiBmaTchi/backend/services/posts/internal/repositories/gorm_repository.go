@@ -189,3 +189,37 @@ func (r *GormPostRepository) ToggleSavePost(ctx context.Context, userID, postID,
 
 	return true, nil 
 }
+
+func (r *GormPostRepository) CreatePostWithMentions(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Create(post).Error; err != nil {
+            return err
+        }
+
+        if len(mentions) > 0 {
+            for i := range mentions {
+                mentions[i].PostID = post.ID
+            }
+            if err := tx.Create(&mentions).Error; err != nil {
+                return err
+            }
+        }
+
+        return nil
+    })
+}
+
+func (r *GormPostRepository) GetPostsByMention(ctx context.Context, targetUserID string, limit, offset int) ([]domain.Post, error) {
+    var posts []domain.Post
+    
+    err := r.db.Table("posts").
+		Joins("JOIN user_mentions ON user_mentions.post_id = posts.id").
+		Where("user_mentions.mentioned_user_id = ?", targetUserID).
+		Order("posts.created_at DESC").
+		Limit(limit).
+		Offset(offset).
+		Preload("Media").
+		Find(&posts).Error
+
+    return posts, err
+}

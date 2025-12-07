@@ -123,8 +123,10 @@
       </p>
 
       <div class="caption-section">
-        <p class="caption-text">
-          <span class="caption-username">{{ post.username }}</span>
+        <p class="caption-text" @click="handleCaptionClick">
+          <span class="caption-username">
+            {{ post.username }}
+          </span>
           <span
             class="caption-content"
             v-html="parseCaption(post.caption)"
@@ -146,7 +148,9 @@
 <script setup lang="ts">
 import { ref, defineProps, computed } from "vue";
 import { formatDistanceToNow } from "date-fns";
-import { postsApi } from "../services/apiService";
+import { postsApi, usersApi } from "../services/apiService";
+import { useRouter } from 'vue-router';
+const router = useRouter();
 
 const props = defineProps({
   post: {
@@ -206,7 +210,8 @@ const getDisplayUrl = (url: string) => {
 
   return url
     .replace("http://minio:9000", "http://localhost:9000")
-    .replace("http://host.docker.internal:9000", "http://localhost:9000");
+    .replace("http://host.docker.internal:9000", "http://localhost:9000")
+    .replace("http://backend:9000", "http://localhost:9000");
 };
 
 const getInitials = (username: string) => {
@@ -222,11 +227,37 @@ const formatTime = (dateStr: string) => {
   }
 };
 
+const handleCaptionClick = async (event: MouseEvent) => {
+  const target = event.target as HTMLElement;
+
+  if (target.classList.contains("mention-link")) {
+    const rawUsername = target.dataset.username;
+    
+    if (rawUsername) {
+      const username = rawUsername.substring(1);
+      
+      try {
+        const response = await usersApi.searchUsers(username);
+        const users = response.data.users || [];
+        const foundUser = users.find((u: any) => u.username === username);
+        
+        if (foundUser && foundUser.user_id) {
+          router.push(`/dashboard/profile/${foundUser.user_id}`);
+        } else {
+          console.warn("User not found for mention:", username);
+        }
+      } catch (error) {
+        console.error("Failed to resolve mention in chat:", error);
+      }
+    }
+  }
+};
+
 const parseCaption = (text: string) => {
   if (!text) return "";
   return text.replace(
-    /([#@][\w.]+)/g,
-    '<span style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
+    /(@[a-zA-Z0-9._]+)/g,
+    '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
   );
 };
 </script>

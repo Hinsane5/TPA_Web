@@ -31,6 +31,7 @@ const (
 	PostsService_ToggleSavePost_FullMethodName     = "/posts.PostsService/ToggleSavePost"
 	PostsService_CreateCollection_FullMethodName   = "/posts.PostsService/CreateCollection"
 	PostsService_GetUserCollections_FullMethodName = "/posts.PostsService/GetUserCollections"
+	PostsService_GetUserMentions_FullMethodName    = "/posts.PostsService/GetUserMentions"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -49,6 +50,7 @@ type PostsServiceClient interface {
 	ToggleSavePost(ctx context.Context, in *ToggleSavePostRequest, opts ...grpc.CallOption) (*ToggleSavePostResponse, error)
 	CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error)
 	GetUserCollections(ctx context.Context, in *GetUserCollectionsRequest, opts ...grpc.CallOption) (*GetUserCollectionsResponse, error)
+	GetUserMentions(ctx context.Context, in *GetUserMentionsRequest, opts ...grpc.CallOption) (*GetPostsResponse, error)
 }
 
 type postsServiceClient struct {
@@ -179,6 +181,16 @@ func (c *postsServiceClient) GetUserCollections(ctx context.Context, in *GetUser
 	return out, nil
 }
 
+func (c *postsServiceClient) GetUserMentions(ctx context.Context, in *GetUserMentionsRequest, opts ...grpc.CallOption) (*GetPostsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPostsResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetUserMentions_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -195,6 +207,7 @@ type PostsServiceServer interface {
 	ToggleSavePost(context.Context, *ToggleSavePostRequest) (*ToggleSavePostResponse, error)
 	CreateCollection(context.Context, *CreateCollectionRequest) (*CollectionResponse, error)
 	GetUserCollections(context.Context, *GetUserCollectionsRequest) (*GetUserCollectionsResponse, error)
+	GetUserMentions(context.Context, *GetUserMentionsRequest) (*GetPostsResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -240,6 +253,9 @@ func (UnimplementedPostsServiceServer) CreateCollection(context.Context, *Create
 }
 func (UnimplementedPostsServiceServer) GetUserCollections(context.Context, *GetUserCollectionsRequest) (*GetUserCollectionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserCollections not implemented")
+}
+func (UnimplementedPostsServiceServer) GetUserMentions(context.Context, *GetUserMentionsRequest) (*GetPostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserMentions not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -478,6 +494,24 @@ func _PostsService_GetUserCollections_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetUserMentions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserMentionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetUserMentions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetUserMentions_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetUserMentions(ctx, req.(*GetUserMentionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -532,6 +566,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserCollections",
 			Handler:    _PostsService_GetUserCollections_Handler,
+		},
+		{
+			MethodName: "GetUserMentions",
+			Handler:    _PostsService_GetUserMentions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

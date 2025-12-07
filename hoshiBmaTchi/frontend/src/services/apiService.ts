@@ -129,7 +129,7 @@ export const postsApi = {
   getCommentForPost: (postId: string) => {
     return apiClient.get(`/v1/posts/${postId}/comments`);
   },
-  
+
   toggleSavePost: (postId: string, collectionId: string = "") => {
     return apiClient.post(`/v1/posts/${postId}/save`, {
       collection_id: collectionId,
@@ -142,6 +142,10 @@ export const postsApi = {
 
   createCollection: (name: string) => {
     return apiClient.post(`/v1/posts/collections`, { name });
+  },
+
+  getUserMentions: (targetUserId: string) => {
+    return apiClient.get(`/posts/mentions/${targetUserId}`)
   },
 };
 

@@ -17,6 +17,7 @@ service PostsService {
     rpc ToggleSavePost(ToggleSavePostRequest) returns (ToggleSavePostResponse);
     rpc CreateCollection(CreateCollectionRequest) returns (CollectionResponse);
     rpc GetUserCollections(GetUserCollectionsRequest) returns (GetUserCollectionsResponse);
+    rpc GetUserMentions(GetUserMentionsRequest) returns (GetPostsResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -157,3 +158,9 @@ message GetUserCollectionsResponse {
     repeated CollectionResponse collections = 1;
 }
 
+message GetUserMentionsRequest {
+    string user_id = 1; 
+    string target_user_id = 2; 
+    int32 limit = 3;
+    int32 offset = 4;
+}
