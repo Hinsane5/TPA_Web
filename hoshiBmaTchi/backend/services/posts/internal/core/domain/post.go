@@ -21,6 +21,7 @@ type Post struct {
 
 	Caption         string      `gorm:"type:text"`
 	Location        string      `gorm:"type:varchar(255)"`
+	IsReel          bool           `gorm:"default:false;index"`
 	CreatedAt       time.Time   `gorm:"autoCreateTime"`
 	UpdatedAt       time.Time   `gorm:"autoUpdateTime"`
 	LikesCount      int32       `gorm:"-"`

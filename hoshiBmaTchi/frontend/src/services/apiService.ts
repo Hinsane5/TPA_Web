@@ -100,6 +100,7 @@ export const postsApi = {
     media_type: string;
     caption: string;
     location: string;
+    is_reel?: boolean;
   }) => {
     return apiClient.post("/v1/posts", data);
   },
@@ -274,5 +275,33 @@ export const storiesApi = {
     return apiClient.get("/stories/viewers", {
       params: { story_id: storyId },
     });
+  },
+};
+
+export const reelsApi = {
+  getReelsFeed: (limit: number, offset: number) => {
+    return apiClient.get(`/v1/reels/feed`, {
+      params: { limit, offset },
+    });
+  },
+
+  likeReel: (reelId: string) => {
+    return apiClient.post(`/v1/reels/${reelId}/like`);
+  },
+
+  unlikeReel: (reelId: string) => {
+    return apiClient.delete(`/v1/reels/${reelId}/like`);
+  },
+
+  saveReel: (reelId: string) => {
+    return apiClient.post(`/v1/reels/${reelId}/save`);
+  },
+
+  unsaveReel: (reelId: string) => {
+    return apiClient.delete(`/v1/reels/${reelId}/save`);
+  },
+
+  getShareRecipients: () => {
+    return apiClient.get("/v1/users/following");
   },
 };

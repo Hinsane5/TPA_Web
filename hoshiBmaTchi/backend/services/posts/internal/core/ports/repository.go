@@ -25,4 +25,5 @@ type PostRepository interface {
 
 	CreatePostWithMentions(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error
 	GetPostsByMention(ctx context.Context, targetUserID string, limit, offset int) ([]domain.Post, error)
+	GetReels(ctx context.Context, limit, offset int) ([]*domain.Post, error)
 }

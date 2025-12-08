@@ -131,6 +131,7 @@ type CreatePostRequest struct {
 	Media         []*PostMediaItem       `protobuf:"bytes,2,rep,name=media,proto3" json:"media,omitempty"`
 	Caption       string                 `protobuf:"bytes,4,opt,name=caption,proto3" json:"caption,omitempty"`
 	Location      string                 `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
+	IsReel        bool                   `protobuf:"varint,6,opt,name=is_reel,json=isReel,proto3" json:"is_reel,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -191,6 +192,13 @@ func (x *CreatePostRequest) GetLocation() string {
 		return x.Location
 	}
 	return ""
+}
+
+func (x *CreatePostRequest) GetIsReel() bool {
+	if x != nil {
+		return x.IsReel
+	}
+	return false
 }
 
 type PostMediaItem struct {
@@ -432,6 +440,7 @@ type PostResponse struct {
 	LikesCount    int32                  `protobuf:"varint,8,opt,name=likes_count,json=likesCount,proto3" json:"likes_count,omitempty"`
 	IsLiked       bool                   `protobuf:"varint,9,opt,name=is_liked,json=isLiked,proto3" json:"is_liked,omitempty"`
 	CommentsCount int32                  `protobuf:"varint,10,opt,name=comments_count,json=commentsCount,proto3" json:"comments_count,omitempty"`
+	IsReel        bool                   `protobuf:"varint,11,opt,name=is_reel,json=isReel,proto3" json:"is_reel,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -527,6 +536,13 @@ func (x *PostResponse) GetCommentsCount() int32 {
 		return x.CommentsCount
 	}
 	return 0
+}
+
+func (x *PostResponse) GetIsReel() bool {
+	if x != nil {
+		return x.IsReel
+	}
+	return false
 }
 
 type PostMediaResponse struct {
@@ -1489,6 +1505,102 @@ func (x *GetUserMentionsRequest) GetOffset() int32 {
 	return 0
 }
 
+type GetReelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Limit         int32                  `protobuf:"varint,1,opt,name=limit,proto3" json:"limit,omitempty"`
+	Offset        int32                  `protobuf:"varint,2,opt,name=offset,proto3" json:"offset,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReelsRequest) Reset() {
+	*x = GetReelsRequest{}
+	mi := &file_posts_posts_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReelsRequest) ProtoMessage() {}
+
+func (x *GetReelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReelsRequest.ProtoReflect.Descriptor instead.
+func (*GetReelsRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetReelsRequest) GetLimit() int32 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+func (x *GetReelsRequest) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+type GetReelsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Posts         []*PostResponse        `protobuf:"bytes,1,rep,name=posts,proto3" json:"posts,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetReelsResponse) Reset() {
+	*x = GetReelsResponse{}
+	mi := &file_posts_posts_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetReelsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetReelsResponse) ProtoMessage() {}
+
+func (x *GetReelsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetReelsResponse.ProtoReflect.Descriptor instead.
+func (*GetReelsResponse) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *GetReelsResponse) GetPosts() []*PostResponse {
+	if x != nil {
+		return x.Posts
+	}
+	return nil
+}
+
 var File_posts_posts_proto protoreflect.FileDescriptor
 
 const file_posts_posts_proto_rawDesc = "" +
@@ -1501,12 +1613,13 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\n" +
 	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x1f\n" +
 	"\vobject_name\x18\x02 \x01(\tR\n" +
-	"objectName\"\x8e\x01\n" +
+	"objectName\"\xa7\x01\n" +
 	"\x11CreatePostRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12*\n" +
 	"\x05media\x18\x02 \x03(\v2\x14.posts.PostMediaItemR\x05media\x12\x18\n" +
 	"\acaption\x18\x04 \x01(\tR\acaption\x12\x1a\n" +
-	"\blocation\x18\x05 \x01(\tR\blocation\"Z\n" +
+	"\blocation\x18\x05 \x01(\tR\blocation\x12\x17\n" +
+	"\ais_reel\x18\x06 \x01(\bR\x06isReel\"Z\n" +
 	"\rPostMediaItem\x12*\n" +
 	"\x11media_object_name\x18\x01 \x01(\tR\x0fmediaObjectName\x12\x1d\n" +
 	"\n" +
@@ -1518,7 +1631,7 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x10GetPostsResponse\x12)\n" +
 	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\"-\n" +
 	"\x12GetPostByIDRequest\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\tR\x06postId\"\x9f\x02\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\"\xb8\x02\n" +
 	"\fPostResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12.\n" +
@@ -1531,7 +1644,8 @@ const file_posts_posts_proto_rawDesc = "" +
 	"likesCount\x12\x19\n" +
 	"\bis_liked\x18\t \x01(\bR\aisLiked\x12%\n" +
 	"\x0ecomments_count\x18\n" +
-	" \x01(\x05R\rcommentsCount\"O\n" +
+	" \x01(\x05R\rcommentsCount\x12\x17\n" +
+	"\ais_reel\x18\v \x01(\bR\x06isReel\"O\n" +
 	"\x11PostMediaResponse\x12\x1b\n" +
 	"\tmedia_url\x18\x01 \x01(\tR\bmediaUrl\x12\x1d\n" +
 	"\n" +
@@ -1590,7 +1704,12 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12$\n" +
 	"\x0etarget_user_id\x18\x02 \x01(\tR\ftargetUserId\x12\x14\n" +
 	"\x05limit\x18\x03 \x01(\x05R\x05limit\x12\x16\n" +
-	"\x06offset\x18\x04 \x01(\x05R\x06offset2\xe0\a\n" +
+	"\x06offset\x18\x04 \x01(\x05R\x06offset\"?\n" +
+	"\x0fGetReelsRequest\x12\x14\n" +
+	"\x05limit\x18\x01 \x01(\x05R\x05limit\x12\x16\n" +
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"=\n" +
+	"\x10GetReelsResponse\x12)\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts2\x9d\b\n" +
 	"\fPostsService\x12V\n" +
 	"\x11GenerateUploadURL\x12\x1f.posts.GenerateUploadURLRequest\x1a .posts.GenerateUploadURLResponse\x12A\n" +
 	"\n" +
@@ -1606,7 +1725,8 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x0eToggleSavePost\x12\x1c.posts.ToggleSavePostRequest\x1a\x1d.posts.ToggleSavePostResponse\x12M\n" +
 	"\x10CreateCollection\x12\x1e.posts.CreateCollectionRequest\x1a\x19.posts.CollectionResponse\x12Y\n" +
 	"\x12GetUserCollections\x12 .posts.GetUserCollectionsRequest\x1a!.posts.GetUserCollectionsResponse\x12I\n" +
-	"\x0fGetUserMentions\x12\x1d.posts.GetUserMentionsRequest\x1a\x17.posts.GetPostsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
+	"\x0fGetUserMentions\x12\x1d.posts.GetUserMentionsRequest\x1a\x17.posts.GetPostsResponse\x12;\n" +
+	"\bGetReels\x12\x16.posts.GetReelsRequest\x1a\x17.posts.GetReelsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
 
 var (
 	file_posts_posts_proto_rawDescOnce sync.Once
@@ -1620,7 +1740,7 @@ func file_posts_posts_proto_rawDescGZIP() []byte {
 	return file_posts_posts_proto_rawDescData
 }
 
-var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 29)
 var file_posts_posts_proto_goTypes = []any{
 	(*GenerateUploadURLRequest)(nil),   // 0: posts.GenerateUploadURLRequest
 	(*GenerateUploadURLResponse)(nil),  // 1: posts.GenerateUploadURLResponse
@@ -1649,6 +1769,8 @@ var file_posts_posts_proto_goTypes = []any{
 	(*GetUserCollectionsRequest)(nil),  // 24: posts.GetUserCollectionsRequest
 	(*GetUserCollectionsResponse)(nil), // 25: posts.GetUserCollectionsResponse
 	(*GetUserMentionsRequest)(nil),     // 26: posts.GetUserMentionsRequest
+	(*GetReelsRequest)(nil),            // 27: posts.GetReelsRequest
+	(*GetReelsResponse)(nil),           // 28: posts.GetReelsResponse
 }
 var file_posts_posts_proto_depIdxs = []int32{
 	3,  // 0: posts.CreatePostRequest.media:type_name -> posts.PostMediaItem
@@ -1658,37 +1780,40 @@ var file_posts_posts_proto_depIdxs = []int32{
 	17, // 4: posts.GetCommentsForPostResponse.comments:type_name -> posts.CommentResponse
 	8,  // 5: posts.GetHomeFeedResponse.posts:type_name -> posts.PostResponse
 	23, // 6: posts.GetUserCollectionsResponse.collections:type_name -> posts.CollectionResponse
-	0,  // 7: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
-	2,  // 8: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
-	5,  // 9: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
-	7,  // 10: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
-	10, // 11: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
-	12, // 12: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
-	14, // 13: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
-	15, // 14: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
-	18, // 15: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
-	20, // 16: posts.PostsService.ToggleSavePost:input_type -> posts.ToggleSavePostRequest
-	22, // 17: posts.PostsService.CreateCollection:input_type -> posts.CreateCollectionRequest
-	24, // 18: posts.PostsService.GetUserCollections:input_type -> posts.GetUserCollectionsRequest
-	26, // 19: posts.PostsService.GetUserMentions:input_type -> posts.GetUserMentionsRequest
-	1,  // 20: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
-	4,  // 21: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
-	6,  // 22: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
-	8,  // 23: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
-	11, // 24: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
-	13, // 25: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
-	17, // 26: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
-	16, // 27: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
-	19, // 28: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
-	21, // 29: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
-	23, // 30: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
-	25, // 31: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
-	6,  // 32: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
-	20, // [20:33] is the sub-list for method output_type
-	7,  // [7:20] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	8,  // 7: posts.GetReelsResponse.posts:type_name -> posts.PostResponse
+	0,  // 8: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
+	2,  // 9: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
+	5,  // 10: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
+	7,  // 11: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
+	10, // 12: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
+	12, // 13: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
+	14, // 14: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
+	15, // 15: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
+	18, // 16: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
+	20, // 17: posts.PostsService.ToggleSavePost:input_type -> posts.ToggleSavePostRequest
+	22, // 18: posts.PostsService.CreateCollection:input_type -> posts.CreateCollectionRequest
+	24, // 19: posts.PostsService.GetUserCollections:input_type -> posts.GetUserCollectionsRequest
+	26, // 20: posts.PostsService.GetUserMentions:input_type -> posts.GetUserMentionsRequest
+	27, // 21: posts.PostsService.GetReels:input_type -> posts.GetReelsRequest
+	1,  // 22: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
+	4,  // 23: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
+	6,  // 24: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
+	8,  // 25: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
+	11, // 26: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
+	13, // 27: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
+	17, // 28: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
+	16, // 29: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
+	19, // 30: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
+	21, // 31: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
+	23, // 32: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
+	25, // 33: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
+	6,  // 34: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
+	28, // 35: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
+	22, // [22:36] is the sub-list for method output_type
+	8,  // [8:22] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_posts_posts_proto_init() }
@@ -1702,7 +1827,7 @@ func file_posts_posts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_posts_posts_proto_rawDesc), len(file_posts_posts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   29,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

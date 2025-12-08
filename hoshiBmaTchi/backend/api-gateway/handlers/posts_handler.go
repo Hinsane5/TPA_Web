@@ -20,6 +20,7 @@ type createPostJSON struct {
     Media    []mediaItemJSON `json:"media" binding:"required"` 
 	Caption  string          `json:"caption"`
 	Location string          `json:"location"`
+    IsReel          bool   `json:"is_reel"`
 }
 
 type mediaItemJSON struct {
@@ -44,6 +45,24 @@ type toggleSaveJSON struct {
 
 type createCollectionJSON struct {
     Name string `json:"name" binding:"required"`
+}
+
+type UserSummary struct {
+    ID             string `json:"id"`
+    Username       string `json:"username"`
+    ProfilePicture string `json:"profile_picture"`
+}
+
+type ReelResponse struct {
+    ID            string      `json:"id"`
+    Caption       string      `json:"caption"`
+    MediaUrl      string      `json:"video_url"`
+    ThumbnailUrl  string      `json:"thumbnail_url"`
+    User          UserSummary `json:"user"`
+    LikesCount    int32       `json:"likes_count"`
+    CommentsCount int32       `json:"comments_count"`
+    IsLiked       bool        `json:"is_liked"`
+    IsSaved       bool        `json:"is_saved"`
 }
 
 func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
@@ -100,6 +119,7 @@ func (h *PostsHandler) CreatePost(c *gin.Context){
 		Media:    protoMedia, 
 		Caption:  jsonReq.Caption,
 		Location: jsonReq.Location,
+        IsReel:    jsonReq.IsReel,
 	})
 
     if err != nil {
@@ -354,4 +374,60 @@ func (h *PostsHandler) GetUserMentions(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, res)
+}
+
+func (h *PostsHandler) GetReelsFeed(c *gin.Context) {
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+    offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+    // 1. Call gRPC to get raw reels data
+    res, err := h.postsClient.GetReels(context.Background(), &postsProto.GetReelsRequest{
+        Limit:  int32(limit),
+        Offset: int32(offset),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch reels: " + err.Error()})
+        return
+    }
+
+    // 2. Fetch User Details for each reel to populate the UI
+    var reels []ReelResponse
+
+    for _, post := range res.Posts {
+        // Fetch User Profile
+        userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+            UserId: post.UserId,
+        })
+
+        // Default values if user fetch fails
+        userSummary := UserSummary{
+            ID:       post.UserId,
+            Username: "Unknown",
+        }
+
+        if err == nil {
+            userSummary.Username = userRes.Username
+        }
+
+        // Get the first media item as the main video
+        mainVideo := ""
+        if len(post.Media) > 0 {
+            mainVideo = post.Media[0].MediaUrl
+        }
+
+        reels = append(reels, ReelResponse{
+            ID:            post.Id,
+            Caption:       post.Caption,
+            MediaUrl:      mainVideo,
+            ThumbnailUrl:  mainVideo, // Use video URL as thumb, frontend <video> tag handles it
+            User:          userSummary,
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+            IsLiked:       post.IsLiked,
+            // IsSaved:    post.IsSaved, // Add this to proto if needed later
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": reels})
 }

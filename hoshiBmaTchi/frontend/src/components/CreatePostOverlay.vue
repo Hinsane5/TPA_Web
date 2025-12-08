@@ -98,6 +98,14 @@
               class="location-input"
             />
 
+            <div v-if="currentFile && currentFile.type.startsWith('video/')" class="reel-option-container" style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+              <label class="toggle-label" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                <span style="font-size: 14px; color: var(--text-primary); font-weight: 600;">Share as Reel</span>
+                <input type="checkbox" v-model="isReel" style="accent-color: var(--primary-color); transform: scale(1.2);" />
+              </label>
+              
+            </div>
+
             <div v-if="isUploading" class="upload-progress">
               <div class="progress-bar">
                 <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
@@ -131,7 +139,7 @@ import axios from 'axios'
 
 const props = defineProps<{
   isOpen: boolean;
-  isStoryMode?: boolean; // New prop to toggle modes
+  isStoryMode?: boolean;
 }>()
 
 const emit = defineEmits<{
@@ -158,6 +166,8 @@ const errorMessage = ref('')
 const currentFile = computed(() => selectedFiles.value[currentIndex.value])
 const currentPreviewUrl = computed(() => filePreviews.value[currentIndex.value])
 
+const isReel = ref(false);
+
 const closeCreate = () => {
   if (!isUploading.value) {
     resetForm()
@@ -183,6 +193,7 @@ const resetForm = () => {
   isUploading.value = false
   uploadProgress.value = 0
   errorMessage.value = ''
+  isReel.value = false
   if (fileInput.value) {
     fileInput.value.value = ''
   }
@@ -241,15 +252,10 @@ const handleSharePost = async () => {
       return
     }
 
-    // ==========================================
-    // STORY UPLOAD LOGIC
-    // ==========================================
     if (props.isStoryMode) {
-        // Upload the first selected file
         const file = selectedFiles.value[0];
-        if (!file) return; // TS Guard
+        if (!file) return; 
 
-        // 1. Get Upload URL
         const urlResponse = await axios.get('/api/stories/upload-url', {
             params: { file_name: file.name, file_type: file.type },
             headers: { 'Authorization': `Bearer ${accessToken}` }
@@ -257,7 +263,6 @@ const handleSharePost = async () => {
         
         const { upload_url, object_name } = urlResponse.data;
 
-        // 2. Upload to MinIO
         await axios.put(upload_url, file, {
             headers: { 'Content-Type': file.type },
             onUploadProgress: (progressEvent) => {
@@ -324,7 +329,8 @@ const handleSharePost = async () => {
     await axios.post('/api/v1/posts', {
       media: mediaObjects, 
       caption: postDescription.value.trim(),
-      location: location.value.trim()
+      location: location.value.trim(),
+      is_reel: isReel.value
     }, {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
@@ -560,6 +566,15 @@ const handleSharePost = async () => {
 .dot.active {
   background: #fff;
   transform: scale(1.2);
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: white;
 }
 
 .caption-area {

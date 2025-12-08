@@ -89,6 +89,7 @@ func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb
 		Caption:  req.GetCaption(),
 		Location: req.GetLocation(),
 		Media:    mediaItems, 
+		IsReel:    req.IsReel,
 	}
 
 	err = s.repo.CreatePost(ctx, newPost)
@@ -434,4 +435,55 @@ func (s *Server) GetUserMentions(ctx context.Context, req *pb.GetUserMentionsReq
     }
 
     return &pb.GetPostsResponse{Posts: pbPosts}, nil
+}
+
+// Add this new function to the file
+func (s *Server) GetReels(ctx context.Context, req *pb.GetReelsRequest) (*pb.GetReelsResponse, error) {
+    posts, err := s.service.GetReelsFeed(ctx, int(req.Limit), int(req.Offset))
+    if err != nil {
+        log.Printf("Failed to fetch reels from DB: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch reels")
+    }
+
+    var pbPosts []*pb.PostResponse
+    expiry := time.Hour * 1
+
+    for _, post := range posts {
+        var pbMedia []*pb.PostMediaResponse
+        
+        for _, m := range post.Media {
+            reqParams := make(url.Values)
+            reqParams.Set("response-content-type", m.MediaType)
+            
+            // Generate Presigned URL
+            presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+            
+            mediaURLString := ""
+            if err == nil {
+                // Fix Docker networking for browser access
+                mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+                mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
+            }
+
+            pbMedia = append(pbMedia, &pb.PostMediaResponse{
+                MediaUrl:  mediaURLString,
+                MediaType: m.MediaType,
+            })
+        }
+
+        pbPosts = append(pbPosts, &pb.PostResponse{
+            Id:            post.ID.String(),
+            UserId:        post.UserID.String(),
+            Media:         pbMedia,
+            Caption:       post.Caption,
+            Location:      post.Location,
+            CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+            IsLiked:       post.IsLiked,
+            IsReel:        post.IsReel,
+        })
+    }
+
+    return &pb.GetReelsResponse{Posts: pbPosts}, nil
 }

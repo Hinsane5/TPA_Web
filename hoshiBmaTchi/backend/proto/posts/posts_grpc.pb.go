@@ -32,6 +32,7 @@ const (
 	PostsService_CreateCollection_FullMethodName   = "/posts.PostsService/CreateCollection"
 	PostsService_GetUserCollections_FullMethodName = "/posts.PostsService/GetUserCollections"
 	PostsService_GetUserMentions_FullMethodName    = "/posts.PostsService/GetUserMentions"
+	PostsService_GetReels_FullMethodName           = "/posts.PostsService/GetReels"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -51,6 +52,7 @@ type PostsServiceClient interface {
 	CreateCollection(ctx context.Context, in *CreateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error)
 	GetUserCollections(ctx context.Context, in *GetUserCollectionsRequest, opts ...grpc.CallOption) (*GetUserCollectionsResponse, error)
 	GetUserMentions(ctx context.Context, in *GetUserMentionsRequest, opts ...grpc.CallOption) (*GetPostsResponse, error)
+	GetReels(ctx context.Context, in *GetReelsRequest, opts ...grpc.CallOption) (*GetReelsResponse, error)
 }
 
 type postsServiceClient struct {
@@ -191,6 +193,16 @@ func (c *postsServiceClient) GetUserMentions(ctx context.Context, in *GetUserMen
 	return out, nil
 }
 
+func (c *postsServiceClient) GetReels(ctx context.Context, in *GetReelsRequest, opts ...grpc.CallOption) (*GetReelsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetReelsResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetReels_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -208,6 +220,7 @@ type PostsServiceServer interface {
 	CreateCollection(context.Context, *CreateCollectionRequest) (*CollectionResponse, error)
 	GetUserCollections(context.Context, *GetUserCollectionsRequest) (*GetUserCollectionsResponse, error)
 	GetUserMentions(context.Context, *GetUserMentionsRequest) (*GetPostsResponse, error)
+	GetReels(context.Context, *GetReelsRequest) (*GetReelsResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -256,6 +269,9 @@ func (UnimplementedPostsServiceServer) GetUserCollections(context.Context, *GetU
 }
 func (UnimplementedPostsServiceServer) GetUserMentions(context.Context, *GetUserMentionsRequest) (*GetPostsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserMentions not implemented")
+}
+func (UnimplementedPostsServiceServer) GetReels(context.Context, *GetReelsRequest) (*GetReelsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetReels not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -512,6 +528,24 @@ func _PostsService_GetUserMentions_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetReels_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetReelsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetReels(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetReels_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetReels(ctx, req.(*GetReelsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -570,6 +604,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserMentions",
 			Handler:    _PostsService_GetUserMentions_Handler,
+		},
+		{
+			MethodName: "GetReels",
+			Handler:    _PostsService_GetReels_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

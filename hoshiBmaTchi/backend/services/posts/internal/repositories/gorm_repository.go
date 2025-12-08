@@ -223,3 +223,36 @@ func (r *GormPostRepository) GetPostsByMention(ctx context.Context, targetUserID
 
     return posts, err
 }
+
+// Add this function to the file
+func (r *GormPostRepository) GetReels(ctx context.Context, limit, offset int) ([]*domain.Post, error) {
+    var posts []*domain.Post
+    
+    err := r.db.WithContext(ctx).
+        Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Where("is_reel = ?", true).
+        Order("created_at desc").
+        Limit(limit).
+        Offset(offset).
+        Find(&posts).Error
+
+    if err != nil {
+        return nil, err
+    }
+
+    // Populate likes/comments counts (same as Feed)
+    for _, post := range posts {
+        var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
+        post.LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", post.ID).Count(&comments)
+        post.CommentsCount = int32(comments)
+        
+    }
+
+    return posts, nil
+}
