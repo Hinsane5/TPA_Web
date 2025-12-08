@@ -92,6 +92,13 @@
         <div class="skeleton-text short"></div>
       </div>
     </div>
+
+   <PostDetailOverlay 
+      v-if="showCommentOverlay" 
+      :is-open="showCommentOverlay"
+      :post="activeReelForComments" 
+      @close="closeCommentOverlay"
+    />
   </div>
 </template>
 
@@ -100,6 +107,10 @@ import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { reelsApi, usersApi } from '../services/apiService';
 import { formatDistanceToNow } from 'date-fns';
+import PostDetailOverlay from './PostDetailOverlay.vue';
+
+const showCommentOverlay = ref(false);
+const activeReelForComments = ref<any>(null);
 
 const router = useRouter();
 
@@ -266,7 +277,6 @@ const toggleLike = async (reel: any) => {
       await reelsApi.unlikeReel(reel.id);
     }
   } catch (e) {
-    // Revert on failure
     reel.is_liked = !reel.is_liked;
     reel.likes_count += reel.is_liked ? 1 : -1;
   }
@@ -286,8 +296,20 @@ const toggleSave = async (reel: any) => {
 };
 
 const openComments = (reel: any) => {
-  // Logic to open Comment Overlay (can emit event to parent Layout)
-  console.log("Open comments for", reel.id);
+  activeReelForComments.value = {
+    ...reel,
+    user_id: reel.user.id,              
+    username: reel.user.username,        
+    profile_picture: reel.user.profile_picture,
+    created_at: reel.created_at || new Date().toISOString()
+  };
+  
+  showCommentOverlay.value = true;
+};
+
+const closeCommentOverlay = () => {
+  showCommentOverlay.value = false;
+  activeReelForComments.value = null;
 };
 
 const openShareModal = (reel: any) => {

@@ -63,6 +63,7 @@ type ReelResponse struct {
     CommentsCount int32       `json:"comments_count"`
     IsLiked       bool        `json:"is_liked"`
     IsSaved       bool        `json:"is_saved"`
+    CreatedAt     string      `json:"created_at"`
 }
 
 func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
@@ -391,16 +392,13 @@ func (h *PostsHandler) GetReelsFeed(c *gin.Context) {
         return
     }
 
-    // 2. Fetch User Details for each reel to populate the UI
     var reels []ReelResponse
 
     for _, post := range res.Posts {
-        // Fetch User Profile
         userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
             UserId: post.UserId,
         })
 
-        // Default values if user fetch fails
         userSummary := UserSummary{
             ID:       post.UserId,
             Username: "Unknown",
@@ -420,11 +418,12 @@ func (h *PostsHandler) GetReelsFeed(c *gin.Context) {
             ID:            post.Id,
             Caption:       post.Caption,
             MediaUrl:      mainVideo,
-            ThumbnailUrl:  mainVideo, // Use video URL as thumb, frontend <video> tag handles it
+            ThumbnailUrl:  mainVideo,
             User:          userSummary,
             LikesCount:    post.LikesCount,
             CommentsCount: post.CommentsCount,
             IsLiked:       post.IsLiked,
+            CreatedAt:     post.CreatedAt,
             // IsSaved:    post.IsSaved, // Add this to proto if needed later
         })
     }

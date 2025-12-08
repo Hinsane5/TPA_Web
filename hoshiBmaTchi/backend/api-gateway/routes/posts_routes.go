@@ -36,5 +36,13 @@ func SetupPostsRoutes(r *gin.Engine, postsHandler *handlers.PostsHandler, authHa
     reelsRoutes.Use(authHandler.AuthMiddleware()) 
     {
         reelsRoutes.GET("/feed", postsHandler.GetReelsFeed)
+
+        reelsRoutes.POST("/:postID/like", postsHandler.LikePost)
+        reelsRoutes.DELETE("/:postID/like", postsHandler.UnlikePost)
+        
+        reelsRoutes.POST("/:postID/comments", postsHandler.CreateComment)
+        reelsRoutes.GET("/:postID/comments", postsHandler.GetCommentsForPost)
+        
+        reelsRoutes.POST("/:postID/save", postsHandler.ToggleSavePost)
     }
 }

@@ -16,12 +16,10 @@ type PostMedia struct {
 type Post struct {
 	ID              uuid.UUID   `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	UserID          uuid.UUID   `gorm:"type:uuid;not null"`
-	
 	Media           []PostMedia `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"` 
-
 	Caption         string      `gorm:"type:text"`
 	Location        string      `gorm:"type:varchar(255)"`
-	IsReel          bool           `gorm:"default:false;index"`
+	IsReel          bool        `gorm:"default:false;index"`
 	CreatedAt       time.Time   `gorm:"autoCreateTime"`
 	UpdatedAt       time.Time   `gorm:"autoUpdateTime"`
 	LikesCount      int32       `gorm:"-"`
