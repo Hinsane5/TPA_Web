@@ -487,3 +487,56 @@ func (s *Server) GetReels(ctx context.Context, req *pb.GetReelsRequest) (*pb.Get
 
     return &pb.GetReelsResponse{Posts: pbPosts}, nil
 }
+
+// ... inside Server struct methods ...
+
+func (s *Server) GetExplorePosts(ctx context.Context, req *pb.GetExplorePostsRequest) (*pb.GetExplorePostsResponse, error) {
+    // 1. Call Service
+    posts, err := s.service.GetExplorePosts(ctx, int(req.Limit), int(req.Offset), req.Hashtag)
+    if err != nil {
+        log.Printf("Failed to fetch explore posts: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch explore posts")
+    }
+
+    var pbPosts []*pb.PostResponse
+    expiry := time.Hour * 1
+
+    // 2. Map Domain to Proto & Generate Presigned URLs
+    for _, post := range posts {
+        var pbMedia []*pb.PostMediaResponse
+        
+        for _, m := range post.Media {
+            reqParams := make(url.Values)
+            reqParams.Set("response-content-type", m.MediaType)
+            
+            presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+            
+            mediaURLString := ""
+            if err == nil {
+                // Fix Docker networking for browser access (replace minio host with localhost)
+                mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+                mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
+            }
+
+            pbMedia = append(pbMedia, &pb.PostMediaResponse{
+                MediaUrl:  mediaURLString,
+                MediaType: m.MediaType,
+            })
+        }
+
+        pbPosts = append(pbPosts, &pb.PostResponse{
+            Id:            post.ID.String(),
+            UserId:        post.UserID.String(),
+            Media:         pbMedia,
+            Caption:       post.Caption,
+            Location:      post.Location,
+            CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+            IsLiked:       post.IsLiked,
+            IsReel:        post.IsReel,
+        })
+    }
+
+    return &pb.GetExplorePostsResponse{Posts: pbPosts}, nil
+}

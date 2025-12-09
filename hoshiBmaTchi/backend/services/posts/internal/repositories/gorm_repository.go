@@ -256,3 +256,36 @@ func (r *GormPostRepository) GetReels(ctx context.Context, limit, offset int) ([
 
     return posts, nil
 }
+
+func (r *GormPostRepository) GetExplorePosts(ctx context.Context, limit, offset int, hashtag string) ([]*domain.Post, error) {
+    var posts []*domain.Post
+    
+    query := r.db.WithContext(ctx).
+        Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Order("created_at desc").
+        Limit(limit).
+        Offset(offset)
+
+    if hashtag != "" {
+        query = query.Where("caption ILIKE ?", "%#"+hashtag+"%") 
+    }
+
+    if err := query.Find(&posts).Error; err != nil {
+        return nil, err
+    }
+
+    for _, post := range posts {
+        var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
+        post.LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", post.ID).Count(&comments)
+        post.CommentsCount = int32(comments)
+        
+    }
+
+    return posts, nil
+}

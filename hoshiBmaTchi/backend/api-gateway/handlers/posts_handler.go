@@ -430,3 +430,59 @@ func (h *PostsHandler) GetReelsFeed(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"data": reels})
 }
+
+func (h *PostsHandler) GetExplorePosts(c *gin.Context) {
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "15"))
+    offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+    hashtag := c.Query("hashtag") 
+
+    res, err := h.postsClient.GetExplorePosts(context.Background(), &postsProto.GetExplorePostsRequest{
+        Limit:   int32(limit),
+        Offset:  int32(offset),
+        Hashtag: hashtag,
+        UserId:  "",
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    enrichedPosts := []gin.H{}
+    for _, post := range res.Posts {
+        userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+            UserId: post.UserId,
+        })
+        
+        username := "Unknown"
+        profilePic := ""
+        if err == nil {
+            username = userRes.Username
+            profilePic = userRes.ProfilePictureUrl
+        }
+
+        var mediaList []gin.H
+        for _, m := range post.Media {
+            mediaList = append(mediaList, gin.H{
+                "media_url":  m.MediaUrl,
+                "media_type": m.MediaType,
+            })
+        }
+
+        enrichedPosts = append(enrichedPosts, gin.H{
+            "id":              post.Id,
+            "user_id":         post.UserId,
+            "username":        username,
+            "profile_picture": profilePic,
+            "media":           mediaList,
+            "caption":         post.Caption,
+            "likes_count":     post.LikesCount,
+            "comments_count":  post.CommentsCount,
+            "is_reel":         post.IsReel,
+            "created_at":      post.CreatedAt,
+            "is_liked":        post.IsLiked,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
+}

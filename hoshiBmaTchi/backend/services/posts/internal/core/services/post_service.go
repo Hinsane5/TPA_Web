@@ -58,3 +58,7 @@ func (s *PostService) GetUserMentions(ctx context.Context, req *pb.GetUserMentio
 func (s *PostService) GetReelsFeed(ctx context.Context, limit, offset int) ([]*domain.Post, error) {
     return s.repo.GetReels(ctx, limit, offset)
 }
+
+func (s *PostService) GetExplorePosts(ctx context.Context, limit, offset int, hashtag string) ([]*domain.Post, error) {
+    return s.repo.GetExplorePosts(ctx, limit, offset, hashtag)
+}
