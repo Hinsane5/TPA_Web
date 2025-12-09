@@ -3,31 +3,41 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"net/http"
 	"os"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"gopkg.in/gomail.v2"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/notifications/internal/models"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/notifications/internal/repository"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/notifications/internal/ws"
 )
 
-type EmailTask struct{
-	Email string `json:"email"`
+type EmailTask struct {
+	Email   string `json:"email"`
 	Subject string `json:"subject"`
-	Body string `json:"body"`
+	Body    string `json:"body"`
 }
 
-func failOnError(err error, msg string){
-	if err != nil{
+func failOnError(err error, msg string) {
+	if err != nil {
 		log.Fatalf("%s: %v", msg, err)
 	}
 }
 
-func main(){
-
+func main() {
+	// 1. Load Environment Variables
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPortStr := os.Getenv("SMTP_PORT")
 	emailUser := os.Getenv("EMAIL_USER")
 	emailPass := os.Getenv("EMAIL_APP_PASSWORD")
+	dbDSN := os.Getenv("DATABASE_URL")
+	rabbitMQURL := "amqp://admin:rabbitmq_password_123@rabbitmq:5672/"
 
 	if smtpHost == "" || smtpPortStr == "" || emailUser == "" || emailPass == "" {
 		log.Fatal("FATAL: SMTP environment variables are not set")
@@ -36,15 +46,30 @@ func main(){
 	smtpPort, err := strconv.Atoi(smtpPortStr)
 	failOnError(err, "Invalid SMTP_PORT")
 
-	dialer := gomail.NewDialer(smtpHost, smtpPort, emailUser, emailPass)
+	// 2. Initialize Database (PostgreSQL)
+	db, err := gorm.Open(postgres.Open(dbDSN), &gorm.Config{})
+	failOnError(err, "Failed to connect to Database")
+	
+	err = db.AutoMigrate(&models.Notification{})
+	failOnError(err, "Failed to migrate database")
+	
+	repo := repository.NewNotificationRepository(db)
+	log.Println("Database connected and migrated.")
 
+	// 3. Initialize WebSocket Hub
+	hub := ws.NewHub()
+
+	// 4. Initialize SMTP Dialer
+	dialer := gomail.NewDialer(smtpHost, smtpPort, emailUser, emailPass)
+	
+	// Test SMTP connection
 	dialerConn, err := dialer.Dial()
 	failOnError(err, "Failed to connect to SMTP server")
 	dialerConn.Close()
 	log.Println("SMTP connection successful.")
 
-	conn, err := amqp.Dial("amqp://admin:rabbitmq_password_123@rabbitmq:5672/")
-
+	// 5. Connect to RabbitMQ
+	conn, err := amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -52,88 +77,43 @@ func main(){
 	failOnError(err, "Failed to open a channel")
 	defer ch.Close()
 
-	err = ch.ExchangeDeclare(
-		"email_exchange",
-		"direct",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	err = ch.ExchangeDeclare("email_exchange", "direct", true, false, false, false, nil)
+	failOnError(err, "Failed to declare email_exchange")
 
-	failOnError(err, "Failed to declare an exchange")
+	// OTP Queue
+	qOTP, err := ch.QueueDeclare("email_queue", true, false, false, false, nil)
+	failOnError(err, "Failed to declare email_queue")
+	err = ch.QueueBind(qOTP.Name, "send_email", "email_exchange", false, nil)
+	failOnError(err, "Failed to bind email_queue")
 
-	q, err := ch.QueueDeclare(
-		"email_queue",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	// Welcome Queue
+	qWelcome, err := ch.QueueDeclare("welcome_email_queue", true, false, false, false, nil)
+	failOnError(err, "Failed to declare welcome_email_queue")
+	err = ch.QueueBind(qWelcome.Name, "email.welcome", "email_exchange", false, nil)
+	failOnError(err, "Failed to bind welcome_email_queue")
 
-	failOnError(err, "Failed to declare a queue")
+	err = ch.ExchangeDeclare("notification_exchange", "topic", true, false, false, false, nil)
+	failOnError(err, "Failed to declare notification_exchange")
 
-	err = ch.QueueBind(
-		q.Name,
-		"send_email",
-		"email_exchange",
-		false,
-		nil,
-	)
+	qNotif, err := ch.QueueDeclare("notification_service_queue", true, false, false, false, nil)
+	failOnError(err, "Failed to declare notification_service_queue")
 
-	failOnError(err, "Failed to bind a queue")
+	err = ch.QueueBind(qNotif.Name, "notification.*", "notification_exchange", false, nil)
+	failOnError(err, "Failed to bind notification_service_queue")
 
-	welcomeQueue, err := ch.QueueDeclare(
-		"welcome_email_queue",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
+	otpMsgs, err := ch.Consume(qOTP.Name, "otp_consumer", false, false, false, false, nil)
+	failOnError(err, "Failed to register OTP consumer")
 
-	failOnError(err, "Failed to declare Welcome queue")
-
-	err = ch.QueueBind(
-		welcomeQueue.Name,
-		"email.welcome",  
-		"email_exchange",  
-		false,
-		nil,
-	)
-	failOnError(err, "Failed to bind Welcome queue")
-
-	otpMsgs, err := ch.Consume(
-		q.Name, 
-		"otp_customer",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-
+	welcomeMsgs, err := ch.Consume(qWelcome.Name, "welcome_consumer", false, false, false, false, nil)
 	failOnError(err, "Failed to register Welcome consumer")
 
-	welcomeMsgs, err := ch.Consume(
-		welcomeQueue.Name,    
-		"welcome_consumer", 
-		false,              
-		false,              
-		false,              
-		false,              
-		nil,                
-	)
-	failOnError(err, "Failed to register Welcome consumer")
+	notifMsgs, err := ch.Consume(qNotif.Name, "app_notif_consumer", true, false, false, false, nil)
+	failOnError(err, "Failed to register Notification consumer")
 
-	log.Println("Notification service started. Waiting for email tasks...")
-
-	var forever chan struct{}
-
+	// --- OTP EMAIL CONSUMER (With Original Logs) ---
 	go func() {
 		for d := range otpMsgs {
+			// RESTORED: Logging the body so you can see the OTP content
 			log.Printf(" [OTP] Received email task for: %s", d.Body)
 			
 			var task EmailTask
@@ -159,6 +139,7 @@ func main(){
 		}
 	}()
 
+	// --- WELCOME EMAIL CONSUMER (With Original Logs) ---
 	go func() {
 		for d := range welcomeMsgs {
 			log.Printf(" [WELCOME] Received email task: %s", d.Body)
@@ -185,6 +166,97 @@ func main(){
 			}
 		}
 	}()
+	
+	// --- REAL-TIME NOTIFICATION CONSUMER ---
+	go func() {
+		for d := range notifMsgs {
+			log.Printf(" [NOTIF] Received event: %s", d.Body)
 
-	<-forever
+			var event models.NotificationEvent
+			if err := json.Unmarshal(d.Body, &event); err != nil {
+				log.Printf("Error: Failed to parse notification event: %v", err)
+				continue
+			}
+
+			// 1. Save to Database
+			notif := models.Notification{
+				RecipientID: event.RecipientID,
+				SenderID:    event.SenderID,
+				SenderName:  event.SenderName,
+				SenderImage: event.SenderImage,
+				Type:        event.Type,
+				EntityID:    event.EntityID,
+				Message:     event.Message,
+				IsRead:      false,
+			}
+			
+			if err := repo.Create(&notif); err != nil {
+				log.Printf("Error saving notification to DB: %v", err)
+			}
+
+			// 2. Send to WebSocket
+			hub.SendNotification(event.RecipientID, notif)
+		}
+	}()
+
+	log.Println("Notification Service Started. Listening for Emails and Events...")
+
+	// ---------------------------------------------------------
+	// D. Start HTTP Server
+	// ---------------------------------------------------------
+	
+	r := gin.Default()
+
+	r.Use(func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
+
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	})
+
+	r.GET("/notifications/:userID", func(c *gin.Context) {
+		userIDStr := c.Param("userID")
+		userID, err := strconv.Atoi(userIDStr)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
+			return
+		}
+
+		notifs, err := repo.GetByUserID(uint(userID))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notifications"})
+			return
+		}
+
+		c.JSON(http.StatusOK, notifs)
+	})
+
+	r.GET("/ws", func(c *gin.Context) {
+		token := c.Query("token")
+		// In production: validate token. 
+		// For development/demo, we allow passing user_id directly if needed, or parse token.
+		userIDStr := c.Query("user_id") 
+		if userIDStr == "" {
+			// Logic to extract from token would go here
+			log.Printf("Warning: connecting WS with token: %s", token)
+		}
+		
+		// Fallback for simple testing
+		if userIDStr == "" {
+			userIDStr = "1" 
+		}
+
+		userID, _ := strconv.Atoi(userIDStr)
+		ws.ServeWs(hub, c.Writer, c.Request, uint(userID))
+	})
+
+	if err := r.Run(":8084"); err != nil {
+		log.Fatal("Failed to run server: ", err)
+	}
 }

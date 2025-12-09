@@ -5,10 +5,28 @@
         <h2>Notifications</h2>
         <button class="close-btn" @click="closePanel">✕</button>
       </div>
+
       <div class="notification-list">
-        <!-- Notifications will be populated from backend -->
-        <div class="empty-state">
+        <div v-if="notifications.length === 0" class="empty-state">
           <p>No notifications yet</p>
+        </div>
+
+        <div 
+          v-for="notif in notifications" 
+          :key="notif.ID" 
+          class="notif-item"
+          @click="handleNotifClick(notif)"
+        >
+          <img :src="notif.sender_image" alt="User Avatar" class="avatar" />
+          <div class="notif-content">
+            <span class="username">{{ notif.sender_name }}</span>
+            <span class="message">{{ notif.message }}</span>
+            <span class="time">{{ formatTime(notif.created_at) }}</span>
+          </div>
+          <div v-if="['like', 'comment'].includes(notif.type)" class="interaction-icon">
+            <span v-if="notif.type === 'like'">❤️</span>
+             <span v-if="notif.type === 'comment'">💬</span>
+          </div>
         </div>
       </div>
     </div>
@@ -16,17 +34,36 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
-  isOpen: boolean
-}>()
+import { onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useNotifications } from '@/composables/useNotifications';
+import { formatDistanceToNow } from 'date-fns'; 
 
-const emit = defineEmits<{
-  close: []
-}>()
+defineProps<{ isOpen: boolean }>();
+const emit = defineEmits<{ close: [] }>();
+const router = useRouter();
 
-const closePanel = () => {
-  emit('close')
-}
+const { notifications, fetchHistory, connect } = useNotifications();
+
+onMounted(() => {
+  connect();     
+  fetchHistory();
+});
+
+const closePanel = () => emit('close');
+
+const formatTime = (dateStr: string) => {
+  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+};
+
+const handleNotifClick = (notif: any) => {
+  closePanel();
+  if (notif.type === 'follow') {
+    router.push(`/profile/${notif.sender_name}`);
+  } else if (['like', 'comment', 'mention'].includes(notif.type)) {
+    console.log("Open post:", notif.entity_id);
+  }
+};
 </script>
 
 <style scoped>
@@ -92,6 +129,36 @@ const closePanel = () => {
   padding: 40px 20px;
   text-align: center;
   color: var(--text-secondary);
+}
+
+.notif-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.notif-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin-right: 12px;
+}
+.notif-content {
+  flex: 1;
+  font-size: 14px;
+}
+.username {
+  font-weight: 600;
+  margin-right: 4px;
+}
+.time {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-left: 4px;
 }
 
 @media (max-width: 768px) {

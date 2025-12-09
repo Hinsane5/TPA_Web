@@ -21,6 +21,7 @@ service UserService {
   rpc UnfollowUser(UnfollowUserRequest) returns (UnfollowUserResponse);
   rpc GetFollowingList(GetFollowingListRequest) returns (GetFollowingListResponse);
   rpc SearchUsers(SearchUsersRequest) returns (SearchUsersResponse);
+  rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserProfileResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -157,4 +158,8 @@ message SearchUsersRequest {
 
 message SearchUsersResponse {
   repeated UserProfile users = 1;
+}
+
+message GetUserByUsernameRequest {
+  string username = 1;
 }

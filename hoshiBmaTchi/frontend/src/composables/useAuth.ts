@@ -2,7 +2,8 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { setAuthHeader } from "../services/apiService"; 
 
-
+const token = ref<string | null>(localStorage.getItem("token"));
+const user = ref<any>(null);
 const isLoggedIn = ref(false);
 
 export function useAuth(){
@@ -16,8 +17,6 @@ export function useAuth(){
       }
     };
 
-    
-
     const logout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
@@ -27,8 +26,10 @@ export function useAuth(){
     };
 
     return {
-        isLoggedIn,
-        logout,
-        checkLoginState,
-    }
+      token, 
+      user,
+      isLoggedIn,
+      logout,
+      checkLoginState,
+    };
 }
