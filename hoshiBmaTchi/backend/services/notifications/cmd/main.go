@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"gopkg.in/gomail.v2"
 	"gorm.io/driver/postgres"
@@ -238,22 +239,37 @@ func main() {
 	})
 
 	r.GET("/ws", func(c *gin.Context) {
-		token := c.Query("token")
-		// In production: validate token. 
-		// For development/demo, we allow passing user_id directly if needed, or parse token.
-		userIDStr := c.Query("user_id") 
-		if userIDStr == "" {
-			// Logic to extract from token would go here
-			log.Printf("Warning: connecting WS with token: %s", token)
-		}
-		
-		// Fallback for simple testing
-		if userIDStr == "" {
-			userIDStr = "1" 
+		userID := c.Query("userId")
+		if userID == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "userId required"})
+			return
 		}
 
-		userID, _ := strconv.Atoi(userIDStr)
-		ws.ServeWs(hub, c.Writer, c.Request, uint(userID))
+		upgrader := websocket.Upgrader{
+			CheckOrigin: func(r *http.Request) bool { return true },
+		}
+
+		conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+		if err != nil {
+			log.Printf("Failed to upgrade WS: %v", err)
+			return
+		}
+
+		hub.Register(userID, conn)
+		
+		// Clean up on disconnect
+		defer func() {
+			hub.Unregister(userID, conn)
+			conn.Close()
+		}()
+
+		// Keep connection alive/listen for close
+		for {
+			_, _, err := conn.ReadMessage()
+			if err != nil {
+				break
+			}
+		}
 	})
 
 	if err := r.Run(":8084"); err != nil {

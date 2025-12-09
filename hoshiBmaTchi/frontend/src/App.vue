@@ -8,6 +8,21 @@
 
 <script setup lang="ts">
 
+  import { onMounted } from 'vue';
+import { useNotificationStore } from '@/stores/notificationStore';
+import NotificationToast from '@/components/NotificationToast.vue';
+import { useAuth } from '@/composables/useAuth'; 
+
+const notificationStore = useNotificationStore();
+const { user } = useAuth();
+
+onMounted(() => {
+  if (user.value) {
+    notificationStore.connectWebSocket(user.value.id);
+    notificationStore.fetchNotifications(user.value.id);
+  }
+});
+
 </script>
 
 <style>

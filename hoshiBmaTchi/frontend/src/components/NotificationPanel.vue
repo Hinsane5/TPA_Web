@@ -7,26 +7,26 @@
       </div>
 
       <div class="notification-list">
-        <div v-if="notifications.length === 0" class="empty-state">
-          <p>No notifications yet</p>
-        </div>
-
         <div 
-          v-for="notif in notifications" 
+          v-for="notif in store.notifications" 
           :key="notif.ID" 
-          class="notif-item"
-          @click="handleNotifClick(notif)"
+          class="notification-item"
+          @click="handleNotificationClick(notif)"
         >
-          <img :src="notif.sender_image" alt="User Avatar" class="avatar" />
-          <div class="notif-content">
+          <img :src="notif.sender_image" alt="User" class="avatar" />
+          
+          <div class="content">
             <span class="username">{{ notif.sender_name }}</span>
-            <span class="message">{{ notif.message }}</span>
-            <span class="time">{{ formatTime(notif.created_at) }}</span>
+            <span class="message">
+              {{ formatMessage(notif.type) }}
+              <span class="time">{{ formatTime(notif.CreatedAt) }}</span>
+            </span>
           </div>
-          <div v-if="['like', 'comment'].includes(notif.type)" class="interaction-icon">
-            <span v-if="notif.type === 'like'">❤️</span>
-             <span v-if="notif.type === 'comment'">💬</span>
+
           </div>
+
+        <div v-if="store.notifications.length === 0" class="empty-state">
+          <p>No notifications yet</p>
         </div>
       </div>
     </div>
@@ -34,21 +34,15 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
-import { useNotifications } from '@/composables/useNotifications';
-import { formatDistanceToNow } from 'date-fns'; 
+import { formatDistanceToNow } from 'date-fns';
 
 defineProps<{ isOpen: boolean }>();
 const emit = defineEmits<{ close: [] }>();
+
+const store = useNotificationStore();
 const router = useRouter();
-
-const { notifications, fetchHistory, connect } = useNotifications();
-
-onMounted(() => {
-  connect();     
-  fetchHistory();
-});
 
 const closePanel = () => emit('close');
 
@@ -56,12 +50,23 @@ const formatTime = (dateStr: string) => {
   return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
 };
 
-const handleNotifClick = (notif: any) => {
+const formatMessage = (type: string) => {
+  switch (type) {
+    case 'like': return 'liked your post.';
+    case 'comment': return 'commented on your post.';
+    case 'follow': return 'started following you.';
+    case 'mention': return 'mentioned you in a post.';
+    default: return 'interacted with you.';
+  }
+};
+
+const handleNotificationClick = (notif: any) => {
   closePanel();
-  if (notif.type === 'follow') {
-    router.push(`/profile/${notif.sender_name}`);
-  } else if (['like', 'comment', 'mention'].includes(notif.type)) {
-    console.log("Open post:", notif.entity_id);
+  
+  if (notif.type === 'like' || notif.type === 'comment') {
+    router.push({ name: 'PostDetail', params: { id: notif.entity_id } });
+  } else if (notif.type === 'follow' || notif.type === 'mention') {
+    router.push({ name: 'Profile', params: { username: notif.sender_name } });
   }
 };
 </script>

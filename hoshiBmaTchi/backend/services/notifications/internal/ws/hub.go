@@ -9,24 +9,24 @@ import (
 )
 
 type Hub struct {
-	clients map[uint][]*websocket.Conn
+	clients map[string][]*websocket.Conn
 	lock    sync.RWMutex
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		clients: make(map[uint][]*websocket.Conn),
+		clients: make(map[string][]*websocket.Conn),
 	}
 }
 
-func (h *Hub) Register(userID uint, conn *websocket.Conn) {
+func (h *Hub) Register(userID string, conn *websocket.Conn) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	h.clients[userID] = append(h.clients[userID], conn)
-	log.Printf("User %d connected. Total clients: %d", userID, len(h.clients))
+	log.Printf("User %s connected. Total clients: %d", userID, len(h.clients))
 }
 
-func (h *Hub) Unregister(userID uint, conn *websocket.Conn) {
+func (h *Hub) Unregister(userID string, conn *websocket.Conn) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	
@@ -42,7 +42,7 @@ func (h *Hub) Unregister(userID uint, conn *websocket.Conn) {
 	}
 }
 
-func (h *Hub) SendNotification(userID uint, payload interface{}) {
+func (h *Hub) SendNotification(userID string, payload interface{}) {
 	h.lock.RLock()
 	defer h.lock.RUnlock()
 

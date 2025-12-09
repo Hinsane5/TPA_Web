@@ -289,3 +289,30 @@ func (r *GormPostRepository) GetExplorePosts(ctx context.Context, limit, offset 
 
     return posts, nil
 }
+
+func (r *GormPostRepository) ToggleLike(ctx context.Context, postID string, userID string) (bool, error) {
+	var like domain.PostLike
+	result := r.db.WithContext(ctx).Where("post_id = ? AND user_id = ?", postID, userID).First(&like)
+
+	if result.Error == nil {
+		if err := r.db.WithContext(ctx).Delete(&like).Error; err != nil {
+			return false, err
+		}
+		return false, nil 
+	} else if result.Error == gorm.ErrRecordNotFound {
+		pID, _ := uuid.Parse(postID)
+		uID, _ := uuid.Parse(userID)
+		
+		newLike := domain.PostLike{
+			PostID: pID,
+			UserID: uID,
+		}
+		
+		if err := r.db.WithContext(ctx).Create(&newLike).Error; err != nil {
+			return false, err
+		}
+		return true, nil 
+	} else {
+		return false, result.Error
+	}
+}

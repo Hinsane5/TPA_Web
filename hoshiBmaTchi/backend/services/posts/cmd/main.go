@@ -10,6 +10,7 @@ import (
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/clients"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
@@ -95,6 +96,25 @@ func main() {
 		log.Fatalf("Failed to create presign MinIO client: %v", err)
 	}
 
+	rabbitConn, err := amqp.Dial("amqp://admin:rabbitmq_password_123@rabbitmq:5672/")
+	if err != nil {
+		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
+	}
+	defer rabbitConn.Close()
+
+	amqpChan, err := rabbitConn.Channel()
+	if err != nil {
+		log.Fatalf("Failed to open RabbitMQ channel: %v", err)
+	}
+	defer amqpChan.Close()
+
+	err = amqpChan.ExchangeDeclare(
+		"notification_exchange", "direct", true, false, false, false, nil,
+	)
+	if err != nil {
+		log.Fatalf("Failed to declare exchange: %v", err)
+	}
+
 	userServiceAddr := "users-service:50051" 
 	userConn, err := grpc.Dial(userServiceAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -105,7 +125,7 @@ func main() {
 	userClient := userPb.NewUserServiceClient(userConn)
 
 	postRepo := repositories.NewGormPostRepository(db)
-	postService := services.NewPostService(postRepo)
+	postService := services.NewPostService(postRepo, amqpChan, userClient)
 	grpcServer := handlers.NewGRPCServer(postRepo, postService, minioClient, presignClient, bucketName, publicEndpoint, userClient)
 
 	grpcPort := os.Getenv("GRPC_PORT")

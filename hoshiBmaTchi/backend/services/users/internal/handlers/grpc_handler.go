@@ -49,6 +49,16 @@ type EmailTask struct {
 	Body    string `json:"body"`
 }
 
+type NotificationEvent struct {
+	RecipientID string `json:"recipient_id"`
+	SenderID    string `json:"sender_id"`
+	SenderName  string `json:"sender_name"`
+	SenderImage string `json:"sender_image"`
+	Type        string `json:"type"`
+	EntityID    string `json:"entity_id"`
+	Message     string `json:"message"`
+}
+
 func NewUserHandler(repo ports.UserRepository, redis *redis.Client, amqpChan *amqp.Channel) *UserHandler{
 	return &UserHandler{
 		repo: repo,
@@ -306,7 +316,16 @@ func (h *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 }
 
 func (h *UserHandler) VerifyLogin2FA(ctx context.Context, req *pb.VerifyLogin2FARequest) (*pb.TokenResponse, error){
-	otpKey := "2fa:" + req.Email
+	user, err := h.repo.FindByEmailOrUsername(req.Email)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, status.Error(codes.InvalidArgument, "Invalid or expired 2FA code")
+		}
+		return nil, status.Error(codes.Internal, "failed to find user")
+	}
+
+	otpKey := "2fa:" + user.Email
+	
 	storedOtp, err := h.redis.Get(ctx, otpKey).Result()
 	if err == redis.Nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid or expired 2FA code")
@@ -316,11 +335,6 @@ func (h *UserHandler) VerifyLogin2FA(ctx context.Context, req *pb.VerifyLogin2FA
 
 	if storedOtp != req.OtpCode {
 		return nil, status.Error(codes.InvalidArgument, "Invalid or expired 2FA code")
-	}
-
-	user, err := h.repo.FindByEmail(req.Email)
-	if err != nil {
-		return nil, status.Error(codes.Internal, "failed to find user post-2FA")
 	}
 
 	h.redis.Del(ctx, otpKey)
@@ -591,6 +605,32 @@ func (h *UserHandler) FollowUser(ctx context.Context, req *pb.FollowUserRequest)
     if err != nil {
         return nil, status.Error(codes.Internal, "Failed to follow user")
     }
+
+	go func() {
+        follower, _, _, err := h.repo.GetUserProfileWithStats(req.FollowerId)
+        if err != nil { return }
+
+        event := NotificationEvent{
+            RecipientID: req.FollowingId,       
+            SenderID:    req.FollowerId,        
+            SenderName:  follower.Username,
+            SenderImage: follower.ProfilePictureURL,
+            Type:        "follow",
+            EntityID:    req.FollowerId,        
+            Message:     "started following you",
+        }
+
+        body, _ := json.Marshal(event)
+        h.amqpChan.PublishWithContext(context.Background(),
+            "notification_exchange", 
+            "notification.event",    
+            false, false,
+            amqp.Publishing{
+                ContentType: "application/json",
+                Body:        body,
+            },
+        )
+    }()
 
     return &pb.FollowUserResponse{Message: "Successfully followed user"}, nil
 }
