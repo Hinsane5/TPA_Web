@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"context"
-	"errors"
+	// "errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,7 +15,7 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgconn"
+	// "github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -232,32 +232,14 @@ func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*
 }
 
 func (s *Server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error){
-	userID, err := uuid.Parse(req.GetUserId())
+	// FIX: Call the Service (which handles Notifications + Toggle logic), NOT the Repo directly.
+	err := s.service.LikePost(ctx, req)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "Invalid UserID")
-	}
-	postID, err := uuid.Parse(req.GetPostId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "Invalid PostID")
+		log.Printf("LikePost service failed: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to toggle like")
 	}
 
-	newLike := &domain.PostLike{
-		UserID: userID,
-		PostID: postID,
-	}
-
-	err = s.repo.LikePost(ctx, newLike)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505"{
-			return &pb.LikePostResponse{Message: "Already liked this post"}, nil
-		}
-
-		log.Printf("Likedpost failed: %v", err)
-		return nil, status.Error(codes.Internal, "Failed to like post")
-	}
-
-	return &pb.LikePostResponse{Message: "Successfully like post"}, nil
+	return &pb.LikePostResponse{Message: "Success"}, nil
 }
 
 func (s *Server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb.UnlikePostResponse, error) {
@@ -271,36 +253,19 @@ func (s *Server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb
 }
 
 func (s *Server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest) (*pb.CommentResponse, error){
-	userID, err := uuid.Parse(req.GetUserId())
+	// FIX: Call the Service (which handles Notifications), NOT the Repo directly.
+	comment, err := s.service.CreateComment(ctx, req)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "UserID tidak valid")
-	}
-	postID, err := uuid.Parse(req.GetPostId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "PostID tidak valid")
-	}
-	if req.GetContent() == "" {
-		return nil, status.Error(codes.InvalidArgument, "Komentar tidak boleh kosong")
-	}
-
-	newComment := &domain.PostComment{
-		UserID:  userID,
-		PostID:  postID,
-		Content: req.GetContent(),
-	}
-
-	err = s.repo.CreateComment(ctx, newComment)
-	if err != nil {
-		log.Printf("Gagal CreateComment: %v", err)
-		return nil, status.Error(codes.Internal, "Gagal menyimpan komentar")
+		log.Printf("CreateComment service failed: %v", err)
+		return nil, status.Error(codes.Internal, "Failed to create comment")
 	}
 
 	return &pb.CommentResponse{
-		Id:        newComment.ID.String(),
-		PostId:    newComment.PostID.String(),
-		UserId:    newComment.UserID.String(),
-		Content:   newComment.Content,
-		CreatedAt: newComment.CreatedAt.Format(time.RFC3339),
+		Id:        comment.ID.String(),
+		PostId:    comment.PostID.String(),
+		UserId:    comment.UserID.String(),
+		Content:   comment.Content,
+		CreatedAt: comment.CreatedAt.Format(time.RFC3339),
 	}, nil
 }
 
@@ -310,7 +275,7 @@ func (s *Server) GetCommentsForPost(ctx context.Context, req *pb.GetCommentsForP
 		log.Printf("Failed to GetCommentsForPost: %v", err)
 		return nil, status.Error(codes.Internal, "Failed to get comments")
 	}
-
+ 
 	var pbComments []*pb.CommentResponse
 	for _, comment := range comments {
 		pbComments = append(pbComments, &pb.CommentResponse{

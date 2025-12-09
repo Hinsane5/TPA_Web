@@ -10,7 +10,7 @@
 
   import { onMounted } from 'vue';
 import { useNotificationStore } from '@/stores/notificationStore';
-import NotificationToast from '@/components/NotificationToast.vue';
+import NotificationToast from './components/NotificationToast.vue';
 import { useAuth } from '@/composables/useAuth'; 
 
 const notificationStore = useNotificationStore();

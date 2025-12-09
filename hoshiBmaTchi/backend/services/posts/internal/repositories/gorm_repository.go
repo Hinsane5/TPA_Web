@@ -22,7 +22,12 @@ func (r *GormPostRepository) CreatePost(ctx context.Context, post *domain.Post) 
 }
 
 func (r *GormPostRepository) GetPostByID(ctx context.Context, postID string) (*domain.Post, error) {
-	return nil, nil 
+	var post domain.Post
+	err := r.db.WithContext(ctx).Where("id = ?", postID).First(&post).Error
+	if err != nil {
+		return nil, err
+	}
+	return &post, nil
 }
 
 func (r *GormPostRepository) GetPostsByUserID(ctx context.Context, userID string) ([]*domain.Post, error) {
