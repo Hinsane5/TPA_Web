@@ -229,3 +229,7 @@ func (s *PostService) CreateComment(ctx context.Context, req *pb.CreateCommentRe
 
     return comment, nil
 }
+
+func (s *PostService) GetUserReels(ctx context.Context, userID string) ([]*domain.Post, error) {
+    return s.repo.GetReelsByUserID(ctx, userID)
+}

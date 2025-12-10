@@ -28,4 +28,6 @@ type PostRepository interface {
 	GetReels(ctx context.Context, limit, offset int) ([]*domain.Post, error)
     GetExplorePosts(ctx context.Context, limit, offset int, hashtag string) ([]*domain.Post, error)
 	ToggleLike(ctx context.Context, postID string, userID string) (bool, error)
+
+	GetReelsByUserID(ctx context.Context, userID string) ([]*domain.Post, error)
 }

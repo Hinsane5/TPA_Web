@@ -32,6 +32,7 @@ func SetupPostsRoutes(r *gin.Engine, postsHandler *handlers.PostsHandler, authHa
         postsRoutes.GET("/mentions/:target_id", postsHandler.GetUserMentions)
 
         postsRoutes.GET("/explore", postsHandler.GetExplorePosts)
+        postsRoutes.GET("/user/:userID/reels", postsHandler.GetUserReels)
     }
 
     reelsRoutes := r.Group("/api/v1/reels")

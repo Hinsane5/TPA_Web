@@ -1713,6 +1713,50 @@ func (x *GetExplorePostsResponse) GetPosts() []*PostResponse {
 	return nil
 }
 
+type GetUserReelsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserReelsRequest) Reset() {
+	*x = GetUserReelsRequest{}
+	mi := &file_posts_posts_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserReelsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserReelsRequest) ProtoMessage() {}
+
+func (x *GetUserReelsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserReelsRequest.ProtoReflect.Descriptor instead.
+func (*GetUserReelsRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *GetUserReelsRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
 var File_posts_posts_proto protoreflect.FileDescriptor
 
 const file_posts_posts_proto_rawDesc = "" +
@@ -1828,7 +1872,9 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offset\x12\x18\n" +
 	"\ahashtag\x18\x04 \x01(\tR\ahashtag\"D\n" +
 	"\x17GetExplorePostsResponse\x12)\n" +
-	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts2\xef\b\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\".\n" +
+	"\x13GetUserReelsRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId2\xb4\t\n" +
 	"\fPostsService\x12V\n" +
 	"\x11GenerateUploadURL\x12\x1f.posts.GenerateUploadURLRequest\x1a .posts.GenerateUploadURLResponse\x12A\n" +
 	"\n" +
@@ -1846,7 +1892,8 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x12GetUserCollections\x12 .posts.GetUserCollectionsRequest\x1a!.posts.GetUserCollectionsResponse\x12I\n" +
 	"\x0fGetUserMentions\x12\x1d.posts.GetUserMentionsRequest\x1a\x17.posts.GetPostsResponse\x12;\n" +
 	"\bGetReels\x12\x16.posts.GetReelsRequest\x1a\x17.posts.GetReelsResponse\x12P\n" +
-	"\x0fGetExplorePosts\x12\x1d.posts.GetExplorePostsRequest\x1a\x1e.posts.GetExplorePostsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
+	"\x0fGetExplorePosts\x12\x1d.posts.GetExplorePostsRequest\x1a\x1e.posts.GetExplorePostsResponse\x12C\n" +
+	"\fGetUserReels\x12\x1a.posts.GetUserReelsRequest\x1a\x17.posts.GetPostsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
 
 var (
 	file_posts_posts_proto_rawDescOnce sync.Once
@@ -1860,7 +1907,7 @@ func file_posts_posts_proto_rawDescGZIP() []byte {
 	return file_posts_posts_proto_rawDescData
 }
 
-var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
+var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 32)
 var file_posts_posts_proto_goTypes = []any{
 	(*GenerateUploadURLRequest)(nil),   // 0: posts.GenerateUploadURLRequest
 	(*GenerateUploadURLResponse)(nil),  // 1: posts.GenerateUploadURLResponse
@@ -1893,6 +1940,7 @@ var file_posts_posts_proto_goTypes = []any{
 	(*GetReelsResponse)(nil),           // 28: posts.GetReelsResponse
 	(*GetExplorePostsRequest)(nil),     // 29: posts.GetExplorePostsRequest
 	(*GetExplorePostsResponse)(nil),    // 30: posts.GetExplorePostsResponse
+	(*GetUserReelsRequest)(nil),        // 31: posts.GetUserReelsRequest
 }
 var file_posts_posts_proto_depIdxs = []int32{
 	3,  // 0: posts.CreatePostRequest.media:type_name -> posts.PostMediaItem
@@ -1919,23 +1967,25 @@ var file_posts_posts_proto_depIdxs = []int32{
 	26, // 21: posts.PostsService.GetUserMentions:input_type -> posts.GetUserMentionsRequest
 	27, // 22: posts.PostsService.GetReels:input_type -> posts.GetReelsRequest
 	29, // 23: posts.PostsService.GetExplorePosts:input_type -> posts.GetExplorePostsRequest
-	1,  // 24: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
-	4,  // 25: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
-	6,  // 26: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
-	8,  // 27: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
-	11, // 28: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
-	13, // 29: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
-	17, // 30: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
-	16, // 31: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
-	19, // 32: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
-	21, // 33: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
-	23, // 34: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
-	25, // 35: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
-	6,  // 36: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
-	28, // 37: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
-	30, // 38: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
-	24, // [24:39] is the sub-list for method output_type
-	9,  // [9:24] is the sub-list for method input_type
+	31, // 24: posts.PostsService.GetUserReels:input_type -> posts.GetUserReelsRequest
+	1,  // 25: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
+	4,  // 26: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
+	6,  // 27: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
+	8,  // 28: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
+	11, // 29: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
+	13, // 30: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
+	17, // 31: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
+	16, // 32: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
+	19, // 33: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
+	21, // 34: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
+	23, // 35: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
+	25, // 36: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
+	6,  // 37: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
+	28, // 38: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
+	30, // 39: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
+	6,  // 40: posts.PostsService.GetUserReels:output_type -> posts.GetPostsResponse
+	25, // [25:41] is the sub-list for method output_type
+	9,  // [9:25] is the sub-list for method input_type
 	9,  // [9:9] is the sub-list for extension type_name
 	9,  // [9:9] is the sub-list for extension extendee
 	0,  // [0:9] is the sub-list for field type_name
@@ -1952,7 +2002,7 @@ func file_posts_posts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_posts_posts_proto_rawDesc), len(file_posts_posts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   31,
+			NumMessages:   32,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -486,3 +486,27 @@ func (h *PostsHandler) GetExplorePosts(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
 }
+
+func (h *PostsHandler) GetUserReels(c *gin.Context) {
+    targetUserID := c.Param("userID")
+    if targetUserID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
+        return
+    }
+
+    res, err := h.postsClient.GetUserReels(context.Background(), &postsProto.GetUserReelsRequest{
+        UserId: targetUserID,
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call gRPC: " + err.Error()})
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, res.Posts)
+}
+

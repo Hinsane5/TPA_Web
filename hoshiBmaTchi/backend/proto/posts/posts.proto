@@ -19,7 +19,8 @@ service PostsService {
     rpc GetUserCollections(GetUserCollectionsRequest) returns (GetUserCollectionsResponse);
     rpc GetUserMentions(GetUserMentionsRequest) returns (GetPostsResponse);
     rpc GetReels (GetReelsRequest) returns (GetReelsResponse);
-    rpc GetExplorePosts(GetExplorePostsRequest) returns (GetExplorePostsResponse); 
+    rpc GetExplorePosts(GetExplorePostsRequest) returns (GetExplorePostsResponse);
+    rpc GetUserReels(GetUserReelsRequest) returns (GetPostsResponse); 
 }
 
 message GenerateUploadURLRequest {
@@ -187,4 +188,8 @@ message GetExplorePostsRequest {
 
 message GetExplorePostsResponse {
     repeated PostResponse posts = 1;
+}
+
+message GetUserReelsRequest {
+    string user_id = 1;
 }

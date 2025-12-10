@@ -127,10 +127,11 @@
         </div>
       </div>
 
-      <div v-if="activeTab === 'reels'" class="reels-grid">
-        <div v-if="!hasContent" class="empty-state">
-          <p>No reels yet.</p>
-        </div>
+      <div v-if="activeTab === 'reels'">
+        <ProfileReelsTab 
+          :userId="profileUser.id" 
+          @open-post="openPostDetail" 
+        />
       </div>
 
       <div v-if="activeTab === 'saved'" class="saved-grid">
@@ -184,6 +185,7 @@ import { useRoute } from "vue-router";
 import { usersApi, postsApi, chatApi } from "../services/apiService";
 import router from "@/router";
 import PostDetailOverlay from "./PostDetailOverlay.vue"; 
+import ProfileReelsTab from "./ProfileReelsTab.vue";
 
 const route = useRoute();
 const posts = ref<any[]>([]);

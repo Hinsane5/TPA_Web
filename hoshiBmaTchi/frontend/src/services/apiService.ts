@@ -154,6 +154,10 @@ export const postsApi = {
       params: { limit, offset, hashtag },
     });
   },
+
+  getUserReels: (userId: string) => {
+    return apiClient.get(`/v1/posts/user/${userId}/reels`);
+  },
 };
 
 export const usersApi = {

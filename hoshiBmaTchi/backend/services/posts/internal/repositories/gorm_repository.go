@@ -321,3 +321,32 @@ func (r *GormPostRepository) ToggleLike(ctx context.Context, postID string, user
 		return false, result.Error
 	}
 }
+
+func (r *GormPostRepository) GetReelsByUserID(ctx context.Context, userID string) ([]*domain.Post, error) {
+    var posts []*domain.Post
+
+    err := r.db.WithContext(ctx).
+        Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Where("user_id = ? AND is_reel = ?", userID, true).
+        Order("created_at desc").
+        Find(&posts).Error
+
+    if err != nil {
+        return nil, err
+    }
+
+    for _, post := range posts {
+        var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
+        post.LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", post.ID).Count(&comments)
+        post.CommentsCount = int32(comments)
+
+    }
+
+    return posts, nil
+}

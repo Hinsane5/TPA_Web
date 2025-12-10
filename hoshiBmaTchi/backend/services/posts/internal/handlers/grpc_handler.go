@@ -232,7 +232,6 @@ func (s *Server) GetHomeFeed(ctx context.Context, req *pb.GetHomeFeedRequest) (*
 }
 
 func (s *Server) LikePost(ctx context.Context, req *pb.LikePostRequest) (*pb.LikePostResponse, error){
-	// FIX: Call the Service (which handles Notifications + Toggle logic), NOT the Repo directly.
 	err := s.service.LikePost(ctx, req)
 	if err != nil {
 		log.Printf("LikePost service failed: %v", err)
@@ -253,7 +252,6 @@ func (s *Server) UnlikePost(ctx context.Context, req *pb.UnlikePostRequest) (*pb
 }
 
 func (s *Server) CreateComment(ctx context.Context, req *pb.CreateCommentRequest) (*pb.CommentResponse, error){
-	// FIX: Call the Service (which handles Notifications), NOT the Repo directly.
 	comment, err := s.service.CreateComment(ctx, req)
 	if err != nil {
 		log.Printf("CreateComment service failed: %v", err)
@@ -375,8 +373,6 @@ func (s *Server) GetUserMentions(ctx context.Context, req *pb.GetUserMentionsReq
             
             finalURL := ""
             if err == nil {
-                // --- THE MISSING PART ---
-                // Replace internal Docker name 'minio' with 'localhost' so the browser can see it
                 finalURL = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
                 finalURL = strings.Replace(finalURL, "http://backend:9000", "http://localhost:9000", 1)
             }
@@ -402,7 +398,6 @@ func (s *Server) GetUserMentions(ctx context.Context, req *pb.GetUserMentionsReq
     return &pb.GetPostsResponse{Posts: pbPosts}, nil
 }
 
-// Add this new function to the file
 func (s *Server) GetReels(ctx context.Context, req *pb.GetReelsRequest) (*pb.GetReelsResponse, error) {
     posts, err := s.service.GetReelsFeed(ctx, int(req.Limit), int(req.Offset))
     if err != nil {
@@ -420,12 +415,10 @@ func (s *Server) GetReels(ctx context.Context, req *pb.GetReelsRequest) (*pb.Get
             reqParams := make(url.Values)
             reqParams.Set("response-content-type", m.MediaType)
             
-            // Generate Presigned URL
             presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
             
             mediaURLString := ""
             if err == nil {
-                // Fix Docker networking for browser access
                 mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
                 mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
             }
@@ -453,10 +446,7 @@ func (s *Server) GetReels(ctx context.Context, req *pb.GetReelsRequest) (*pb.Get
     return &pb.GetReelsResponse{Posts: pbPosts}, nil
 }
 
-// ... inside Server struct methods ...
-
 func (s *Server) GetExplorePosts(ctx context.Context, req *pb.GetExplorePostsRequest) (*pb.GetExplorePostsResponse, error) {
-    // 1. Call Service
     posts, err := s.service.GetExplorePosts(ctx, int(req.Limit), int(req.Offset), req.Hashtag)
     if err != nil {
         log.Printf("Failed to fetch explore posts: %v", err)
@@ -466,7 +456,6 @@ func (s *Server) GetExplorePosts(ctx context.Context, req *pb.GetExplorePostsReq
     var pbPosts []*pb.PostResponse
     expiry := time.Hour * 1
 
-    // 2. Map Domain to Proto & Generate Presigned URLs
     for _, post := range posts {
         var pbMedia []*pb.PostMediaResponse
         
@@ -478,7 +467,6 @@ func (s *Server) GetExplorePosts(ctx context.Context, req *pb.GetExplorePostsReq
             
             mediaURLString := ""
             if err == nil {
-                // Fix Docker networking for browser access (replace minio host with localhost)
                 mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
                 mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
             }
@@ -504,4 +492,60 @@ func (s *Server) GetExplorePosts(ctx context.Context, req *pb.GetExplorePostsReq
     }
 
     return &pb.GetExplorePostsResponse{Posts: pbPosts}, nil
+}
+
+func (s *Server) GetUserReels(ctx context.Context, req *pb.GetUserReelsRequest) (*pb.GetPostsResponse, error) {
+    if req.GetUserId() == "" {
+        return nil, status.Error(codes.InvalidArgument, "User ID is required")
+    }
+
+    // Call the service we created in Step 2
+    posts, err := s.service.GetUserReels(ctx, req.GetUserId())
+    if err != nil {
+        log.Printf("Failed to fetch user reels: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch user reels")
+    }
+
+    // Map Domain Posts to Proto Response (with Presigned URLs)
+    var pbPosts []*pb.PostResponse
+    expiry := time.Hour * 1
+
+    for _, post := range posts {
+        var pbMedia []*pb.PostMediaResponse
+        
+        for _, m := range post.Media {
+            reqParams := make(url.Values)
+            reqParams.Set("response-content-type", m.MediaType)
+            
+            // Generate MinIO Presigned URL
+            presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+            
+            mediaURLString := ""
+            if err == nil {
+                // Docker networking fix for browser (localhost)
+                mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+                mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
+            }
+
+            pbMedia = append(pbMedia, &pb.PostMediaResponse{
+                MediaUrl:  mediaURLString,
+                MediaType: m.MediaType,
+            })
+        }
+
+        pbPosts = append(pbPosts, &pb.PostResponse{
+            Id:            post.ID.String(),
+            UserId:        post.UserID.String(),
+            Media:         pbMedia,
+            Caption:       post.Caption,
+            Location:      post.Location,
+            CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+            IsLiked:       post.IsLiked,
+            IsReel:        post.IsReel,
+        })
+    }
+
+    return &pb.GetPostsResponse{Posts: pbPosts}, nil
 }
