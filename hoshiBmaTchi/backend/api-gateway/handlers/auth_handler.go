@@ -337,8 +337,14 @@ func NewAuthHandler(userClient pb.UserServiceClient) *AuthHandler {
 func (h *AuthHandler) GetUserProfile(c *gin.Context) {
     userID := c.Param("id")
 
+	var viewerID string
+    if val, exists := c.Get("userID"); exists {
+        viewerID = val.(string)
+    }
+
     res, err := h.UserClient.GetUserProfile(context.Background(), &pb.GetUserProfileRequest{
-        UserId: userID,
+        UserId:   userID,
+        ViewerId: viewerID,
     })
 
     if err != nil {

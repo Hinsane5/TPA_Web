@@ -579,6 +579,15 @@ func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfile
 		return nil, status.Error(codes.Internal, "Failed to fetch user profile")
 	}
 
+	isFollowing := false
+    if req.ViewerId != "" && req.ViewerId != req.UserId {
+        // Use the existing IsFollowing method in your repository
+        status, err := h.repo.IsFollowing(req.ViewerId, req.UserId)
+        if err == nil {
+            isFollowing = status
+        }
+    }
+
 	return &pb.GetUserProfileResponse{
         Id:                user.ID.String(),
         Username:          user.Username,
@@ -587,7 +596,7 @@ func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfile
         ProfilePictureUrl: user.ProfilePictureURL,
         FollowersCount:    followers,
         FollowingCount:    following,
-        IsFollowing:       false, 
+		IsFollowing:       isFollowing,
     }, nil
 }
 
