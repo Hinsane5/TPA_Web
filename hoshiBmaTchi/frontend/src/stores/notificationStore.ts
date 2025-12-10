@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { Notification } from "@/types";
 
+
 export const useNotificationStore = defineStore("notification", () => {
   const notifications = ref<Notification[]>([]);
   const socket = ref<WebSocket | null>(null);
@@ -14,7 +15,7 @@ export const useNotificationStore = defineStore("notification", () => {
   const connectWebSocket = (userId: string) => {
     if (socket.value) return;
 
-    const wsUrl = `ws://localhost:8083/ws?userId=${userId}`;
+    const wsUrl = `ws://localhost:8084/ws?userId=${userId}`;
     console.log("Connecting to WS:", wsUrl);
 
     socket.value = new WebSocket(wsUrl);
@@ -48,8 +49,7 @@ export const useNotificationStore = defineStore("notification", () => {
 
   const fetchNotifications = async (userId: string) => {
     try {
-      // Adjust URL to match your API Gateway or Service
-      const res = await fetch(`http://localhost:8083/notifications/${userId}`);
+      const res = await fetch(`http://localhost:8084/notifications/${userId}`);
       if (!res.ok) throw new Error("Failed to fetch");
       const data = await res.json();
       notifications.value = data;

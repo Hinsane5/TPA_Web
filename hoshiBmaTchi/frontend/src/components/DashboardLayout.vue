@@ -150,6 +150,8 @@ onMounted(() => {
   if (user.value?.id) {
     console.log("Initializing WebSocket for user:", user.value.id);
     notificationStore.connectWebSocket(user.value.id);
+    
+    notificationStore.fetchNotifications(user.value.id);
   } else {
     console.error("No User ID found, cannot connect to WebSocket");
   }
