@@ -311,3 +311,23 @@ export const reelsApi = {
     return apiClient.get("/v1/users/following");
   },
 };
+
+export const markNotificationsRead = async (userId: string) => {
+  // Use port 8084 for Notification Service
+  const response = await fetch(
+    `http://localhost:8084/notifications/${userId}/read`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        // If your backend requires a token, fetch it from localStorage:
+        // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to mark notifications as read");
+  }
+  return response.json();
+};

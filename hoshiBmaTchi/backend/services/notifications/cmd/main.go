@@ -239,6 +239,19 @@ func main() {
 		c.JSON(http.StatusOK, notifs)
 	})
 
+	r.PUT("/notifications/:userId/read", func(c *gin.Context) {
+		userId := c.Param("userId")
+		
+		err := repo.MarkAllAsRead(userId)
+		if err != nil {
+			log.Printf("Error marking notifications read: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update notifications"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "Notifications marked as read"})
+	})
+
 	r.GET("/ws", func(c *gin.Context) {
 		userID := c.Query("userId")
 		if userID == "" {

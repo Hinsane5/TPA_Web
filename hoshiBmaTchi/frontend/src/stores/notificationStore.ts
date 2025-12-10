@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { Notification } from "@/types";
-
+import { markNotificationsRead } from "@/services/apiService";
 
 export const useNotificationStore = defineStore("notification", () => {
   const notifications = ref<Notification[]>([]);
@@ -58,6 +58,19 @@ export const useNotificationStore = defineStore("notification", () => {
     }
   };
 
+  const markNotificationsAsRead = async (userId: string) => {
+    notifications.value.forEach((n) => {
+      n.is_read = true;
+    });
+
+    try {
+      await markNotificationsRead(userId);
+      console.log("Backend updated: Notifications marked as read");
+    } catch (error) {
+      console.error("Failed to update backend:", error);
+    }
+  };
+
   const markAsRead = (notificationId: number) => {
     const notif = notifications.value.find((n) => n.ID === notificationId);
     if (notif) notif.is_read = true;
@@ -69,6 +82,7 @@ export const useNotificationStore = defineStore("notification", () => {
     toastMessage,
     connectWebSocket,
     fetchNotifications,
+    markNotificationsAsRead,
     markAsRead,
   };
 });

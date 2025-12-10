@@ -1,6 +1,5 @@
 <template>
   <div class="dashboard-layout">
-    <!-- Sidebar Navigation -->
     <Sidebar 
       :current-page="currentPage" 
       :notification-count="notificationCount"
@@ -9,18 +8,41 @@
       @navigate="handleNavigation" 
       @logout="handleLogout"
       @open-search="isSearchOpen = true"
-      @open-notifications="isNotificationOpen = true"
+      @open-notifications="toggleNotifications" 
       @open-create="openCreateModal"
     />
     
-    <!-- Main Content Area -->
     <main class="main-content">
       <RouterView />
     </main>
 
-    <!-- Panels & Modals -->
     <SearchPanel :is-open="isSearchOpen" @close="isSearchOpen = false" @search="handleSearch" />
-    <NotificationPanel :is-open="isNotificationOpen" @close="isNotificationOpen = false" />
+
+    <div v-if="isNotificationOpen" class="notification-drawer">
+      <div class="notif-header">
+        <h3>Notifications</h3>
+        <button class="close-btn" @click="isNotificationOpen = false">×</button>
+      </div>
+      <div class="notif-content-area">
+        <ul class="notification-list">
+          <li v-for="notification in notificationStore.notifications" :key="notification.ID" class="notification-item" :class="{ 'unread': !notification.is_read }">
+            <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="user" class="notif-avatar">
+            
+            <div class="notif-text-content">
+              <p class="notif-message">
+                <span class="username">{{ notification.sender_name || 'Unknown User' }}</span>
+                {{ notification.message }}
+              </p>
+              <span class="notif-time">{{ formatTimeAgo(notification.CreatedAt) }}</span>
+            </div>
+          </li>
+          <li v-if="notificationStore.notifications.length === 0" class="empty-state">
+            No notifications yet
+          </li>
+        </ul>
+      </div>
+    </div>
+
     <div v-if="showCreateChoice" class="choice-modal-overlay" @click.self="showCreateChoice = false">
       <div class="choice-modal-content">
         <h3>Create</h3>
@@ -40,6 +62,7 @@
         </div>
       </div>
     </div>
+    
     <input 
       type="file" 
       ref="fileInput" 
@@ -54,21 +77,20 @@
        @close="closeCreateOverlay"
        @post-created="handlePostCreated"
        @story-created="handleStoryCreated"
-
     />
     
-    <!-- Mini Messages Component (appears on all pages) -->
     <MiniMessagesComponent />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { formatDistanceToNow } from 'date-fns' // Import Date Fns
 import type { DashboardPage } from '../types'
 import Sidebar from './Sidebar.vue'
 import SearchPanel from './SearchPanel.vue'
-import NotificationPanel from './NotificationPanel.vue'
+// Removed NotificationPanel import since we inlined the UI
 import CreatePostOverlay from './CreatePostOverlay.vue'
 import MiniMessagesComponent from './MiniMessagesComponent.vue'
 import { useAuth } from '../composables/useAuth'
@@ -115,6 +137,30 @@ const handleSearchToggle = () => {
   isSearchOpen.value = !isSearchOpen.value;
 };
 
+// --- NEW: Handle Notification Toggle & Read Status ---
+const toggleNotifications = () => {
+  isNotificationOpen.value = !isNotificationOpen.value;
+}
+
+// Watch for panel opening to mark as read
+watch(isNotificationOpen, (newValue) => {
+  // Check if panel is open, we have unread items, AND we have a user ID
+  if (newValue && notificationStore.unreadCount > 0 && user.value?.id) {
+    // FIX: Pass the user ID argument here
+    notificationStore.markNotificationsAsRead(user.value.id);
+  }
+});
+
+const formatTimeAgo = (timestamp: string | undefined) => {
+  if (!timestamp) return 'just now';
+  try {
+    return formatDistanceToNow(new Date(timestamp), { addSuffix: true });
+  } catch (e) {
+    return 'just now';
+  }
+};
+// -----------------------------------------------------
+
 const openCreateModal = () => {
   showCreateChoice.value = true
 }
@@ -122,13 +168,7 @@ const openCreateModal = () => {
 const initiateUpload = (type: 'post' | 'story') => {
   uploadType.value = type
   showCreateChoice.value = false
-  
   showCreateOverlay.value = true;
-}
-
-const handlePostUpload = (file: File, description: string) => {
-  console.log('Upload post:', file.name, 'Description:', description)
-  isCreateOpen.value = false
 }
 
 const closeCreateOverlay = () => {
@@ -150,7 +190,6 @@ onMounted(() => {
   if (user.value?.id) {
     console.log("Initializing WebSocket for user:", user.value.id);
     notificationStore.connectWebSocket(user.value.id);
-    
     notificationStore.fetchNotifications(user.value.id);
   } else {
     console.error("No User ID found, cannot connect to WebSocket");
@@ -173,6 +212,103 @@ onMounted(() => {
   overflow-y: auto;
   background-color: var(--background-dark);
 }
+
+/* --- NEW NOTIFICATION STYLES --- */
+.notification-drawer {
+  position: fixed;
+  left: 240px; /* Aligns next to sidebar */
+  top: 0;
+  bottom: 0;
+  width: 350px;
+  background-color: black;
+  border-right: 1px solid #363636;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideIn 0.3s ease-out;
+  color: white;
+}
+
+.notif-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid #363636;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notif-header h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.notif-content-area {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.notification-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid #1a1a1a;
+  transition: background 0.2s;
+}
+
+.notification-item:hover {
+  background-color: #121212;
+}
+
+.notif-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  margin-right: 14px;
+  object-fit: cover;
+}
+
+.notif-text-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-message {
+  font-size: 14px;
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.notif-time {
+  font-size: 12px;
+  color: #a8a8a8;
+}
+
+.empty-state {
+  padding: 20px;
+  text-align: center;
+  color: #737373;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+/* ------------------------------- */
 
 .choice-modal-overlay {
   position: fixed;
@@ -245,6 +381,9 @@ onMounted(() => {
   .main-content {
     margin-left: 64px;
   }
+  .notification-drawer {
+    left: 64px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -255,6 +394,11 @@ onMounted(() => {
 
   .dashboard-layout {
     flex-direction: column-reverse;
+  }
+  
+  .notification-drawer {
+    left: 0;
+    width: 100%;
   }
 }
 </style>
