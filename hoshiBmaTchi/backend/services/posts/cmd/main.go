@@ -109,7 +109,7 @@ func main() {
 	defer amqpChan.Close()
 
 	err = amqpChan.ExchangeDeclare(
-		"notification_exchange", "direct", true, false, false, false, nil,
+		"notification_exchange", "topic", true, false, false, false, nil,
 	)
 	if err != nil {
 		log.Fatalf("Failed to declare exchange: %v", err)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"regexp"
+	"strings"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -74,25 +75,38 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 		}
 		
 		for username := range uniqueUsernames {
-			searchRes, err := s.userClient.SearchUsers(context.Background(), &userPb.SearchUsersRequest{Query: username})
-			if err == nil && len(searchRes.Users) > 0 {
-				targetUser := searchRes.Users[0] 
-				if targetUser.Username == username {
-					
-					event := NotificationEvent{
-						RecipientID: targetUser.UserId, 
-						SenderID:    req.UserId,
-						SenderName:  senderProfile.Username,
-						SenderImage: senderProfile.ProfilePictureUrl,
-						Type:        "mention",
-						EntityID:    post.ID.String(), 
-						Message:     "mentioned you in a post",
-					}
+            // 2. Search for the user
+            searchRes, err := s.userClient.SearchUsers(context.Background(), &userPb.SearchUsersRequest{Query: username})
+            
+            if err == nil && len(searchRes.Users) > 0 {
+                // --- FIX START: Iterate through ALL results to find the exact match ---
+                var targetUser *userPb.UserProfile // Assuming your proto defines UserProfile
+                
+                for _, u := range searchRes.Users {
+                    // Check if this specific result matches the mentioned username exactly
+                    if strings.EqualFold(u.Username, username) {
+                        targetUser = u
+                        break // Found the exact user, stop looking
+                    }
+                }
 
-					s.publishNotification(event)
-				}
-			}
-		}
+                // Only proceed if we found an EXACT match
+                if targetUser != nil {
+                    event := NotificationEvent{
+                        RecipientID: targetUser.UserId, 
+                        SenderID:    req.UserId,
+                        SenderName:  senderProfile.Username,
+                        SenderImage: senderProfile.ProfilePictureUrl,
+                        Type:        "mention",
+                        EntityID:    post.ID.String(), 
+                        Message:     "mentioned you in a post",
+                    }
+
+                    s.publishNotification(event)
+                }
+                // --- FIX END ---
+            }
+        }
 	}()
 
 	return post, nil
