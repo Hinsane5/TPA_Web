@@ -783,3 +783,20 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
     return &pb.SearchUsersResponse{Users: responseUsers}, nil
 }
 
+func (h *UserHandler) GetUserByUsername(ctx context.Context, req *pb.GetUserByUsernameRequest) (*pb.GetUserProfileResponse, error) {
+    if req.Username == "" {
+        return nil, status.Error(codes.InvalidArgument, "Username is required")
+    }
+
+    user, err := h.repo.FindByEmailOrUsername(req.Username)
+    if err != nil {
+        if err == gorm.ErrRecordNotFound {
+            return nil, status.Error(codes.NotFound, "User not found")
+        }
+        return nil, status.Error(codes.Internal, "Failed to find user")
+    }
+
+    return h.GetUserProfile(ctx, &pb.GetUserProfileRequest{
+        UserId: user.ID.String(),
+    })
+}

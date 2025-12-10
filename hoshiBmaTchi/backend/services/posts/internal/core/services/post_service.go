@@ -3,9 +3,10 @@ package services
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
-	"strings"
+	// "strings"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -75,38 +76,26 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 		}
 		
 		for username := range uniqueUsernames {
-            // 2. Search for the user
-            searchRes, err := s.userClient.SearchUsers(context.Background(), &userPb.SearchUsersRequest{Query: username})
-            
-            if err == nil && len(searchRes.Users) > 0 {
-                // --- FIX START: Iterate through ALL results to find the exact match ---
-                var targetUser *userPb.UserProfile // Assuming your proto defines UserProfile
-                
-                for _, u := range searchRes.Users {
-                    // Check if this specific result matches the mentioned username exactly
-                    if strings.EqualFold(u.Username, username) {
-                        targetUser = u
-                        break // Found the exact user, stop looking
-                    }
-                }
-
-                // Only proceed if we found an EXACT match
-                if targetUser != nil {
-                    event := NotificationEvent{
-                        RecipientID: targetUser.UserId, 
-                        SenderID:    req.UserId,
-                        SenderName:  senderProfile.Username,
-                        SenderImage: senderProfile.ProfilePictureUrl,
-                        Type:        "mention",
-                        EntityID:    post.ID.String(), 
-                        Message:     "mentioned you in a post",
-                    }
-
-                    s.publishNotification(event)
-                }
-                // --- FIX END ---
+        // [FIX] Use GetUserByUsername instead of SearchUsers
+        // This is much faster and guarantees finding the exact match
+        targetUser, err := s.userClient.GetUserByUsername(context.Background(), &userPb.GetUserByUsernameRequest{Username: username})
+        
+        if err == nil && targetUser != nil {
+            event := NotificationEvent{
+                RecipientID: targetUser.Id, // Note: GetUserProfileResponse uses 'Id', not 'UserId'
+                SenderID:    req.UserId,
+                SenderName:  senderProfile.Username,
+                SenderImage: senderProfile.ProfilePictureUrl,
+                Type:        "mention",
+                EntityID:    post.ID.String(), 
+                Message:     "mentioned you in a post",
             }
+
+            s.publishNotification(event)
+        } else {
+            log.Printf("[WARN] Mentioned user '%s' not found", username)
         }
+    }
 	}()
 
 	return post, nil
@@ -128,22 +117,26 @@ func (s *PostService) GetExplorePosts(ctx context.Context, limit, offset int, ha
 func (s *PostService) publishNotification(event NotificationEvent) {
 	body, _ := json.Marshal(event)
 
-	log.Printf("[DEBUG] Attempting to publish notification to RabbitMQ. Recipient: %s, Type: %s", event.RecipientID, event.Type)
+	// [FIX] Use dynamic routing key based on event type (e.g., "notification.mention")
+	routingKey := fmt.Sprintf("notification.%s", event.Type)
+
+	log.Printf("[DEBUG] Publishing to RabbitMQ. Key: %s, Recipient: %s", routingKey, event.RecipientID)
 
 	err := s.amqpChan.PublishWithContext(context.Background(),
 		"notification_exchange",
-		"notification.event",
+		routingKey, // [FIX] Replaced hardcoded "notification.event"
 		false, false,
 		amqp.Publishing{
 			ContentType: "application/json",
 			Body:        body,
 		},
 	)
+	
 	if err != nil {
 		log.Printf("Failed to publish notification: %v", err)
-	}else {
-        log.Printf("[DEBUG] Successfully published to 'notification_exchange'")
-    }
+	} else {
+		log.Printf("[DEBUG] Successfully published to 'notification_exchange'")
+	}
 }
 
 func (s *PostService) LikePost(ctx context.Context, req *pb.LikePostRequest) error {

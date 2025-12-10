@@ -7,7 +7,7 @@ export interface Notification {
   sender_image: string;
   type: "like" | "comment" | "follow" | "mention";
   message: string;
-  entity_id: number;
+  entity_id: string;
   created_at: string;
   is_read: boolean;
 }
@@ -26,7 +26,7 @@ export function useNotifications() {
     // Connect to Backend WS
     const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8084/ws";
     socket = new WebSocket(
-      `${wsUrl}?token=${token.value}&user_id=${user.value.id}`
+      `${wsUrl}?token=${token.value}&userId=${user.value.id}`
     );
 
     socket.onopen = () => {
