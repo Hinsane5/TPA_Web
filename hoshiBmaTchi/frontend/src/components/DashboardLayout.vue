@@ -73,14 +73,16 @@ import CreatePostOverlay from './CreatePostOverlay.vue'
 import MiniMessagesComponent from './MiniMessagesComponent.vue'
 import { useAuth } from '../composables/useAuth'
 import { useStories } from '../composables/useStories'
+import { useNotificationStore } from '@/stores/notificationStore'
 
 const router = useRouter()
 const route = useRoute()
 
+const notificationStore = useNotificationStore()
 const isSearchOpen = ref(false)
 const isNotificationOpen = ref(false)
 const isCreateOpen = ref(false)
-const notificationCount = ref(0)
+const notificationCount = computed(() => notificationStore.unreadCount)
 
 const { checkLoginState } = useAuth()
 const { fetchStories } = useStories()
@@ -90,6 +92,7 @@ const showCreateOverlay = ref(false)
 const uploadType = ref<'post' | 'story'>('post')
 const selectedFile = ref<File | null>(null)
 const fileInput = ref<HTMLInputElement | null>(null)
+const { user } = useAuth();
 
 const currentPage = computed(() => {
   const pageName = route.path.split('/').pop()
@@ -144,6 +147,12 @@ const handleStoryCreated = () => {
 }
 
 onMounted(() => {
+  if (user.value?.id) {
+    console.log("Initializing WebSocket for user:", user.value.id);
+    notificationStore.connectWebSocket(user.value.id);
+  } else {
+    console.error("No User ID found, cannot connect to WebSocket");
+  }
   checkLoginState()
 })
 </script>

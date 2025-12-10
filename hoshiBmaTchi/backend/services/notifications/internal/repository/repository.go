@@ -17,9 +17,8 @@ func (r *NotificationRepository) Create(notification *models.Notification) error
 	return r.db.Create(notification).Error
 }
 
-func (r *NotificationRepository) GetByUserID(userID uint) ([]models.Notification, error) {
+func (r *NotificationRepository) GetByUserID(userID string) ([]models.Notification, error) {
 	var notifications []models.Notification
-	// Fetch latest 50, ordered by time
 	err := r.db.Where("recipient_id = ?", userID).Order("created_at desc").Limit(50).Find(&notifications).Error
 	return notifications, err
 }

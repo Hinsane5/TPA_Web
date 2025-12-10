@@ -5,7 +5,7 @@
         <h2>Notifications</h2>
         <button class="close-btn" @click="closePanel">✕</button>
       </div>
-
+      
       <div class="notification-list">
         <div 
           v-for="notif in store.notifications" 
@@ -13,17 +13,13 @@
           class="notification-item"
           @click="handleNotificationClick(notif)"
         >
-          <img :src="notif.sender_image" alt="User" class="avatar" />
+          <img :src="notif.sender_image || '/icons/profile-icon.png'" class="avatar" />
           
           <div class="content">
             <span class="username">{{ notif.sender_name }}</span>
-            <span class="message">
-              {{ formatMessage(notif.type) }}
-              <span class="time">{{ formatTime(notif.CreatedAt) }}</span>
-            </span>
+            <span class="message">{{ notif.message }}</span>
           </div>
-
-          </div>
+        </div>
 
         <div v-if="store.notifications.length === 0" class="empty-state">
           <p>No notifications yet</p>
@@ -36,7 +32,6 @@
 <script setup lang="ts">
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
-import { formatDistanceToNow } from 'date-fns';
 
 defineProps<{ isOpen: boolean }>();
 const emit = defineEmits<{ close: [] }>();
@@ -46,27 +41,15 @@ const router = useRouter();
 
 const closePanel = () => emit('close');
 
-const formatTime = (dateStr: string) => {
-  return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-};
-
-const formatMessage = (type: string) => {
-  switch (type) {
-    case 'like': return 'liked your post.';
-    case 'comment': return 'commented on your post.';
-    case 'follow': return 'started following you.';
-    case 'mention': return 'mentioned you in a post.';
-    default: return 'interacted with you.';
-  }
-};
-
 const handleNotificationClick = (notif: any) => {
   closePanel();
   
   if (notif.type === 'like' || notif.type === 'comment') {
-    router.push({ name: 'PostDetail', params: { id: notif.entity_id } });
-  } else if (notif.type === 'follow' || notif.type === 'mention') {
-    router.push({ name: 'Profile', params: { username: notif.sender_name } });
+    // Navigate to post (Assuming you have a route named 'PostDetail')
+    // router.push({ name: 'PostDetail', params: { id: notif.entity_id } });
+    console.log("Navigating to post:", notif.entity_id);
+  } else {
+    router.push({ name: 'profile', params: { username: notif.sender_name } });
   }
 };
 </script>

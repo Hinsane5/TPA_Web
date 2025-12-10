@@ -113,6 +113,9 @@ func (s *PostService) GetExplorePosts(ctx context.Context, limit, offset int, ha
 
 func (s *PostService) publishNotification(event NotificationEvent) {
 	body, _ := json.Marshal(event)
+
+	log.Printf("[DEBUG] Attempting to publish notification to RabbitMQ. Recipient: %s, Type: %s", event.RecipientID, event.Type)
+
 	err := s.amqpChan.PublishWithContext(context.Background(),
 		"notification_exchange",
 		"notification.event",
@@ -124,7 +127,9 @@ func (s *PostService) publishNotification(event NotificationEvent) {
 	)
 	if err != nil {
 		log.Printf("Failed to publish notification: %v", err)
-	}
+	}else {
+        log.Printf("[DEBUG] Successfully published to 'notification_exchange'")
+    }
 }
 
 func (s *PostService) LikePost(ctx context.Context, req *pb.LikePostRequest) error {
@@ -155,6 +160,8 @@ func (s *PostService) LikePost(ctx context.Context, req *pb.LikePostRequest) err
             log.Printf("Failed to fetch liker profile: %v", err)
             return
         }
+
+		log.Printf("[DEBUG] Liker Profile Fetched. Preparing event...")
 
         event := NotificationEvent{
             RecipientID: post.UserID.String(),

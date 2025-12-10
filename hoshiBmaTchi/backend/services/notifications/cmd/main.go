@@ -202,10 +202,6 @@ func main() {
 
 	log.Println("Notification Service Started. Listening for Emails and Events...")
 
-	// ---------------------------------------------------------
-	// D. Start HTTP Server
-	// ---------------------------------------------------------
-	
 	r := gin.Default()
 
 	r.Use(func(c *gin.Context) {
@@ -222,14 +218,19 @@ func main() {
 	})
 
 	r.GET("/notifications/:userID", func(c *gin.Context) {
-		userIDStr := c.Param("userID")
-		userID, err := strconv.Atoi(userIDStr)
+		userID := c.Param("userID")
+
+		if userID == "" {
+            c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
+            return
+        }
+
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid User ID"})
 			return
 		}
 
-		notifs, err := repo.GetByUserID(uint(userID))
+		notifs, err := repo.GetByUserID(userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch notifications"})
 			return

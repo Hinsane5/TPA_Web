@@ -47,7 +47,10 @@ func (h *Hub) SendNotification(userID string, payload interface{}) {
 	defer h.lock.RUnlock()
 
 	conns, ok := h.clients[userID]
+
+	log.Printf("[DEBUG] Hub trying to send to User: %s. Found connections? %v (Count: %d)", userID, ok, len(conns))
 	if !ok {
+		log.Printf("[DEBUG] User %s is NOT connected. Skipping WS push.", userID)
 		return 
 	}
 
