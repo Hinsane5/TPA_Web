@@ -312,11 +312,25 @@ func (h *Server) GetUserCollections(ctx context.Context, req *pb.GetUserCollecti
 	}
 
 	var protoCollections []*pb.CollectionResponse
+	expiry := time.Hour * 1
 	for _, c := range collections {
 		var covers []string
 		for _, sp := range c.SavedPosts {
 			if len(sp.Post.Media) > 0 {
-				covers = append(covers, sp.Post.Media[0].MediaObjectName)
+				objectName := sp.Post.Media[0].MediaObjectName
+				mediaType := sp.Post.Media[0].MediaType
+
+				reqParams := make(url.Values)
+				reqParams.Set("response-content-type", mediaType)
+
+				presignedURL, err := h.presignClient.PresignedGetObject(ctx, h.bucketName, objectName, expiry, reqParams)
+				
+				if err == nil {
+					finalURL := strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+					finalURL = strings.Replace(finalURL, "http://backend:9000", "http://localhost:9000", 1)
+					
+					covers = append(covers, finalURL)
+				}
 			}
 		}
 

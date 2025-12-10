@@ -135,14 +135,92 @@
                 <img src="/icons/share-icon.png" class="icon" />
               </button>
             </div>
-            <button class="icon-button" @click="toggleSave">
-              <img
-                :src="
-                  isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'
-                "
-                class="icon"
-              />
-            </button>
+
+            <div
+              class="save-wrapper"
+              @mouseenter="handleMouseEnter"
+              @mouseleave="handleMouseLeave"
+            >
+              <button
+                class="icon-button"
+                @click="toggleDefaultSave"
+                :title="isSaved ? 'Unsave' : 'Save'"
+              >
+                <img
+                  :src="
+                    isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'
+                  "
+                  class="icon"
+                  :class="{ saved: isSaved }"
+                />
+              </button>
+
+              <transition name="fade">
+                <div v-if="showPopover" class="save-popover">
+                  <div class="popover-header">Save to...</div>
+
+                  <div class="collections-list">
+                    <div class="popover-item" @click="saveToCollection('')">
+                      <div class="popover-thumb">
+                        <img src="/icons/save-icon.png" class="thumb-icon" />
+                      </div>
+                      <span class="popover-name">All Posts</span>
+                      <span
+                        v-if="savedCollectionId === '' && isSaved"
+                        class="check-mark"
+                        >✓</span
+                      >
+                    </div>
+
+                    <div
+                      v-for="col in collections"
+                      :key="col.id"
+                      class="popover-item"
+                      @click="saveToCollection(col.id)"
+                    >
+                      <div class="popover-thumb">
+                        <img
+                          v-if="getCollectionCover(col)"
+                          :src="getDisplayUrl(getCollectionCover(col))"
+                          class="cover-img"
+                        />
+                        <div v-else class="empty-cover"></div>
+                      </div>
+                      <span class="popover-name">{{ col.name }}</span>
+                      <span
+                        v-if="savedCollectionId === col.id && isSaved"
+                        class="check-mark"
+                        >✓</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="popover-footer">
+                    <div v-if="showCreateInput" class="create-input-wrapper">
+                      <input
+                        v-model="newCollectionName"
+                        placeholder="Collection Name"
+                        class="mini-input"
+                        ref="createInputRef"
+                        @keyup.enter="createNewCollection"
+                      />
+                      <button class="mini-btn" @click="createNewCollection">
+                        Add
+                      </button>
+                    </div>
+
+                    <div
+                      v-else
+                      class="popover-item add-item"
+                      @click="enableCreateMode"
+                    >
+                      <div class="plus-icon-wrapper">+</div>
+                      <span class="popover-name">New Collection</span>
+                    </div>
+                  </div>
+                </div>
+              </transition>
+            </div>
           </div>
           <p class="likes-text">{{ post.likes_count }} likes</p>
           <p class="date-text">{{ formatFullDate(post.created_at) }}</p>
@@ -173,7 +251,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { format } from "date-fns";
 import { postsApi, usersApi } from "@/services/apiService";
 import CommentItem from "./commentItem.vue";
@@ -192,17 +270,27 @@ const isFollowing = ref(false);
 
 const currentIndex = ref(0);
 
-watch(
-  () => props.post.id,
-  () => {
-    currentIndex.value = 0;
-  }
-);
+const savedCollectionId = ref<string | null>(null);
+const showPopover = ref(false);
+const showCreateInput = ref(false);
+const collections = ref<any[]>([]);
+const newCollectionName = ref("");
+const createInputRef = ref<HTMLInputElement | null>(null);
 
 const currentUserId = localStorage.getItem("userID");
 const currentUsername = localStorage.getItem("username") || "me";
 const currentUserPic = localStorage.getItem("profilePicture") || "";
 const isOwnPost = props.post.user_id === currentUserId;
+
+watch(
+  () => props.post.id,
+  () => {
+    currentIndex.value = 0;
+    if (props.post.is_saved !== undefined) {
+      isSaved.value = props.post.is_saved;
+    }
+  }
+);
 
 const mediaList = computed(() => {
   if (
@@ -343,16 +431,95 @@ const handleUnfollow = async () => {
   }
 };
 
-const toggleSave = async () => {
+const handleMouseEnter = () => {
+  showPopover.value = true;
+  fetchCollections();
+};
+
+const handleMouseLeave = () => {
+  showPopover.value = false;
+  showCreateInput.value = false;
+  newCollectionName.value = "";
+};
+
+const fetchCollections = async () => {
   try {
-    isSaved.value = !isSaved.value;
-    
-    await postsApi.toggleSavePost(props.post.id);
+    const res = await postsApi.getUserCollections();
+    collections.value = res.data.collections || res.data || [];
   } catch (error) {
-    isSaved.value = !isSaved.value;
+    console.error("Failed to fetch collections", error);
+  }
+};
+
+const toggleDefaultSave = async () => {
+  if (isSaved.value) {
+    await toggleSaveApi("");
+    isSaved.value = false;
+    savedCollectionId.value = null;
+  } else {
+    await toggleSaveApi("");
+    isSaved.value = true;
+    savedCollectionId.value = "";
+  }
+};
+
+const saveToCollection = async (collectionId: string) => {
+  if (isSaved.value && savedCollectionId.value === collectionId) {
+    await toggleSaveApi(collectionId);
+    isSaved.value = false;
+    savedCollectionId.value = null;
+  } else {
+    await toggleSaveApi(collectionId);
+    isSaved.value = true;
+    savedCollectionId.value = collectionId;
+  }
+  showPopover.value = false;
+};
+
+const toggleSaveApi = async (collectionId: string) => {
+  try {
+    await postsApi.toggleSavePost(props.post.id, collectionId);
+  } catch (error) {
     console.error("Failed to toggle save:", error);
   }
 };
+
+const enableCreateMode = () => {
+  showCreateInput.value = true;
+  nextTick(() => {
+    createInputRef.value?.focus();
+  });
+};
+
+const createNewCollection = async () => {
+  if (!newCollectionName.value.trim()) return;
+  try {
+    const res = await postsApi.createCollection(newCollectionName.value);
+    await fetchCollections();
+    
+    // Auto save to new collection
+    const newId = res.data.id || res.data.collection_id;
+    if (newId) {
+      await saveToCollection(newId);
+    }
+    
+    newCollectionName.value = "";
+    showCreateInput.value = false;
+  } catch (error) {
+    console.error("Failed to create collection", error);
+  }
+};
+const getCollectionCover = (col: any) => {
+  // Use array from backend if available
+  if (col.cover_images && col.cover_images.length > 0) return col.cover_images[0];
+  // Fallback
+  if (col.saved_posts && col.saved_posts.length > 0) {
+     const p = col.saved_posts[0].post || col.saved_posts[0];
+     if (p.media && p.media.length > 0) return p.media[0].media_url;
+  }
+  return null;
+};
+
 
 const formatFullDate = (d: string | number | Date) => {
   try {
@@ -625,6 +792,159 @@ const formatFullDate = (d: string | number | Date) => {
   border-top: 2px solid #fff;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.save-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.save-popover {
+  position: absolute;
+  bottom: 40px; /* Above the icon */
+  right: 0;
+  width: 240px;
+  background-color: #262626;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 2000; /* Higher index for overlay context */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #363636;
+}
+
+.popover-header {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #363636;
+  color: #e0e0e0;
+}
+
+.collections-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #fff;
+}
+
+.popover-item:hover {
+  background-color: #3a3a3a;
+}
+
+.popover-thumb {
+  width: 32px;
+  height: 32px;
+  background: #121212;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #363636;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(1);
+}
+
+.popover-name {
+  font-size: 13px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.check-mark {
+  color: #0095f6;
+  font-weight: bold;
+}
+
+.popover-footer {
+  border-top: 1px solid #363636;
+  padding: 4px 0;
+}
+
+.add-item {
+  color: #0095f6;
+}
+
+.plus-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 300;
+  border: 1px solid #363636;
+  border-radius: 4px;
+}
+
+.create-input-wrapper {
+  padding: 8px 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.mini-input {
+  flex: 1;
+  background: #121212;
+  border: 1px solid #363636;
+  border-radius: 4px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.mini-input:focus {
+  border-color: #0095f6;
+}
+
+.mini-btn {
+  background: #0095f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mini-btn:hover {
+  background: #007bb5;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(5px);
 }
 @keyframes spin {
   0% {

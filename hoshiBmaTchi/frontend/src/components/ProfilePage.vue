@@ -136,7 +136,7 @@
 
       <div v-if="activeTab === 'saved'" class="saved-grid">
         <div v-if="isOwnProfile">
-          <div class="empty-state"><p>Your saved collections.</p></div>
+          <ProfileSavedTab />
         </div>
         <div v-else class="empty-state">
           <p>Saved posts are private.</p>
@@ -186,6 +186,7 @@ import { usersApi, postsApi, chatApi } from "../services/apiService";
 import router from "@/router";
 import PostDetailOverlay from "./PostDetailOverlay.vue"; 
 import ProfileReelsTab from "./ProfileReelsTab.vue";
+import ProfileSavedTab from "./ProfileSavedTab.vue";
 
 const route = useRoute();
 const posts = ref<any[]>([]);

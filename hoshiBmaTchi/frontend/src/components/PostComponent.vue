@@ -50,7 +50,6 @@
       >
         ❮
       </button>
-
       <button
         v-if="hasMultiple && currentIndex < mediaList.length - 1"
         class="nav-btn right"
@@ -103,18 +102,80 @@
         </button>
       </div>
 
-      <button
-        @click="toggleSave"
-        class="action-button"
-        :title="isSaved ? 'Unsave' : 'Save'"
+      <div 
+        class="save-wrapper" 
+        @mouseenter="handleMouseEnter" 
+        @mouseleave="handleMouseLeave"
       >
-        <img
-          :src="isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
-          alt="Save"
-          class="action-icon"
-          :class="{ saved: isSaved }"
-        />
-      </button>
+        <button
+          @click="toggleDefaultSave"
+          class="action-button"
+          :title="isSaved ? 'Unsave' : 'Save'"
+        >
+          <img
+            :src="isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
+            alt="Save"
+            class="action-icon"
+            :class="{ saved: isSaved }"
+          />
+        </button>
+
+        <transition name="fade">
+          <div v-if="showPopover" class="save-popover">
+            <div class="popover-header">Save to...</div>
+            
+            <div class="collections-list">
+              <div class="popover-item" @click="saveToCollection('')">
+                <div class="popover-thumb">
+                  <img src="/icons/save-icon.png" class="thumb-icon" />
+                </div>
+                <span class="popover-name">All Posts</span>
+                <span v-if="savedCollectionId === '' && isSaved" class="check-mark">✓</span>
+              </div>
+
+              <div 
+                v-for="col in collections" 
+                :key="col.id" 
+                class="popover-item"
+                @click="saveToCollection(col.id)"
+              >
+                <div class="popover-thumb">
+                  <img 
+                    v-if="getCollectionCover(col)" 
+                    :src="getDisplayUrl(getCollectionCover(col))" 
+                    class="cover-img"
+                  />
+                  <div v-else class="empty-cover"></div>
+                </div>
+                <span class="popover-name">{{ col.name }}</span>
+                <span v-if="savedCollectionId === col.id && isSaved" class="check-mark">✓</span>
+              </div>
+            </div>
+
+            <div class="popover-footer">
+              <div v-if="showCreateInput" class="create-input-wrapper">
+                <input 
+                  v-model="newCollectionName"
+                  placeholder="Collection Name"
+                  class="mini-input"
+                  ref="createInputRef"
+                  @keyup.enter="createNewCollection"
+                />
+                <button class="mini-btn" @click="createNewCollection">Add</button>
+              </div>
+
+              <div 
+                v-else 
+                class="popover-item add-item" 
+                @click="enableCreateMode"
+              >
+                <div class="plus-icon-wrapper">+</div>
+                <span class="popover-name">New Collection</span>
+              </div>
+            </div>
+          </div>
+        </transition>
+      </div>
     </div>
 
     <div class="post-footer">
@@ -146,109 +207,179 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, computed } from "vue";
+import { ref, computed, onMounted, nextTick } from "vue";
 import { formatDistanceToNow } from "date-fns";
 import { postsApi, usersApi } from "../services/apiService";
 import { useRouter } from 'vue-router';
+
 const router = useRouter();
 
+// Props & Emits
 const props = defineProps({
-  post: {
-    type: Object,
-    required: true,
-  },
+  post: { type: Object, required: true },
 });
-
 const emit = defineEmits(["open-detail", "toggle-like"]);
 
-
+// State
 const isSaved = ref(false);
+const savedCollectionId = ref<string | null>(null); // Track which collection it's saved to
+const showPopover = ref(false);
+const showCreateInput = ref(false);
+const collections = ref<any[]>([]);
+const newCollectionName = ref("");
+const createInputRef = ref<HTMLInputElement | null>(null);
 const currentIndex = ref(0);
 
-
-const mediaList = computed(() => {
-
-  if (
-    props.post.media &&
-    Array.isArray(props.post.media) &&
-    props.post.media.length > 0
-  ) {
-    return props.post.media;
+// Initialize
+onMounted(() => {
+  if (props.post.is_saved !== undefined) {
+    isSaved.value = props.post.is_saved;
+    // Note: Backend might not return *which* collection it is saved to in the feed feed response
+    // For now, we assume generic save unless we fetch details.
   }
+});
 
+// --- HOVER LOGIC ---
+const handleMouseEnter = () => {
+  showPopover.value = true;
+  // Fetch collections when hovering to ensure fresh list
+  fetchCollections();
+};
+
+const handleMouseLeave = () => {
+  // Delay slightly so moving mouse to popover doesn't kill it immediately
+  // But since popover is inside the wrapper, simple leave works if wrapper wraps both.
+  showPopover.value = false;
+  showCreateInput.value = false; // Reset input view
+  newCollectionName.value = "";
+};
+
+// --- DATA FETCHING ---
+const fetchCollections = async () => {
+  try {
+    const res = await postsApi.getUserCollections();
+    collections.value = res.data.collections || res.data || [];
+  } catch (error) {
+    console.error("Failed to fetch collections", error);
+  }
+};
+
+// --- ACTIONS ---
+const toggleDefaultSave = async () => {
+  // Clicking the icon directly toggles generic save (or unsaves)
+  if (isSaved.value) {
+    await toggleSaveApi("");
+    isSaved.value = false;
+    savedCollectionId.value = null;
+  } else {
+    await toggleSaveApi(""); // Save to 'All Posts'
+    isSaved.value = true;
+    savedCollectionId.value = "";
+  }
+};
+
+const saveToCollection = async (collectionId: string) => {
+  // If clicking the one currently saved, unsave it
+  if (isSaved.value && savedCollectionId.value === collectionId) {
+    await toggleSaveApi(collectionId); // backend handles toggle logic
+    isSaved.value = false;
+    savedCollectionId.value = null;
+  } else {
+    // Save to specific collection
+    await toggleSaveApi(collectionId);
+    isSaved.value = true;
+    savedCollectionId.value = collectionId;
+  }
+  // Close menu after selection for better UX
+  showPopover.value = false;
+};
+
+const toggleSaveApi = async (collectionId: string) => {
+  try {
+    await postsApi.toggleSavePost(props.post.id, collectionId);
+  } catch (error) {
+    console.error("Failed to toggle save", error);
+  }
+};
+
+const enableCreateMode = () => {
+  showCreateInput.value = true;
+  nextTick(() => {
+    createInputRef.value?.focus();
+  });
+};
+
+const createNewCollection = async () => {
+  if (!newCollectionName.value.trim()) return;
+  try {
+    const res = await postsApi.createCollection(newCollectionName.value);
+    
+    // Refresh list
+    await fetchCollections();
+    
+    // Automatically save to the new collection
+    const newId = res.data.id || res.data.collection_id; // adjusting based on likely response
+    if (newId) {
+      await saveToCollection(newId);
+    }
+    
+    // Reset UI
+    newCollectionName.value = "";
+    showCreateInput.value = false;
+  } catch (error) {
+    console.error("Failed to create collection", error);
+  }
+};
+
+// --- MEDIA HELPERS ---
+const mediaList = computed(() => {
+  if (props.post.media?.length > 0) return props.post.media;
   if (props.post.media_url) {
-    return [
-      {
-        media_url: props.post.media_url,
-        media_type: props.post.media_type || "image/jpeg",
-      },
-    ];
+    return [{ media_url: props.post.media_url, media_type: props.post.media_type || "image/jpeg" }];
   }
   return [];
 });
 
-const currentMedia = computed(() => {
-  if (mediaList.value.length === 0) return null;
-  return mediaList.value[currentIndex.value];
-});
-
+const currentMedia = computed(() => mediaList.value[currentIndex.value] || null);
 const hasMultiple = computed(() => mediaList.value.length > 1);
-
-const toggleSave = async () => {
-  try {
-    isSaved.value = !isSaved.value;
-    await postsApi.toggleSavePost(props.post.id);
-  } catch (error) {
-    isSaved.value = !isSaved.value;
-    console.error("Failed to save post", error);
-  }
-};
 
 const getDisplayUrl = (url: string) => {
   if (!url) return "/placeholder.png";
-
-
   return url
     .replace("http://minio:9000", "http://localhost:9000")
     .replace("http://host.docker.internal:9000", "http://localhost:9000")
     .replace("http://backend:9000", "http://localhost:9000");
 };
 
-const getInitials = (username: string) => {
-  return username ? username.substring(0, 2).toUpperCase() : "UN";
+const getCollectionCover = (col: any) => {
+  // Use the array from backend if available
+  if (col.cover_images && col.cover_images.length > 0) return col.cover_images[0];
+  // Fallback if parsing saved_posts structure
+  if (col.saved_posts && col.saved_posts.length > 0) {
+    const p = col.saved_posts[0].post || col.saved_posts[0];
+    if (p.media?.length > 0) return p.media[0].media_url;
+  }
+  return null;
 };
 
+// --- MISC ---
+const getInitials = (username: string) => username ? username.substring(0, 2).toUpperCase() : "UN";
 const formatTime = (dateStr: string) => {
-  if (!dateStr) return "";
-  try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
-  } catch (e) {
-    return "";
-  }
+  try { return dateStr ? formatDistanceToNow(new Date(dateStr), { addSuffix: true }) : ""; } 
+  catch { return ""; }
 };
 
 const handleCaptionClick = async (event: MouseEvent) => {
   const target = event.target as HTMLElement;
-
   if (target.classList.contains("mention-link")) {
     const rawUsername = target.dataset.username;
-    
     if (rawUsername) {
       const username = rawUsername.substring(1);
-      
       try {
         const response = await usersApi.searchUsers(username);
-        const users = response.data.users || [];
-        const foundUser = users.find((u: any) => u.username === username);
-        
-        if (foundUser && foundUser.user_id) {
-          router.push(`/dashboard/profile/${foundUser.user_id}`);
-        } else {
-          console.warn("User not found for mention:", username);
-        }
-      } catch (error) {
-        console.error("Failed to resolve mention in chat:", error);
-      }
+        const user = response.data.users?.find((u: any) => u.username === username);
+        if (user?.user_id) router.push(`/dashboard/profile/${user.user_id}`);
+      } catch (e) { console.error(e); }
     }
   }
 };
@@ -257,7 +388,7 @@ const parseCaption = (text: string) => {
   if (!text) return "";
   return text.replace(
     /(@[a-zA-Z0-9._]+)/g,
-    '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
+    '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer; font-weight: 600;">$1</span>'
   );
 };
 </script>
@@ -517,5 +648,160 @@ const parseCaption = (text: string) => {
 
 .view-comments:hover {
   color: #fff;
+}
+
+.save-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.save-popover {
+  position: absolute;
+  bottom: 40px; /* Positions it above the icon */
+  right: 0;
+  width: 240px;
+  background-color: #262626;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #363636;
+}
+
+.popover-header {
+  padding: 10px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-bottom: 1px solid #363636;
+  color: #e0e0e0;
+}
+
+.collections-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.popover-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  color: #fff;
+}
+
+.popover-item:hover {
+  background-color: #3a3a3a;
+}
+
+.popover-thumb {
+  width: 32px;
+  height: 32px;
+  background: #121212;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #363636;
+}
+
+.cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumb-icon {
+  width: 16px;
+  height: 16px;
+  filter: invert(1);
+}
+
+.popover-name {
+  font-size: 13px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.check-mark {
+  color: #0095f6;
+  font-weight: bold;
+}
+
+/* Footer & Create Section */
+.popover-footer {
+  border-top: 1px solid #363636;
+  padding: 4px 0;
+}
+
+.add-item {
+  color: #0095f6;
+}
+
+.plus-icon-wrapper {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 300;
+  border: 1px solid #363636;
+  border-radius: 4px;
+}
+
+.create-input-wrapper {
+  padding: 8px 12px;
+  display: flex;
+  gap: 6px;
+}
+
+.mini-input {
+  flex: 1;
+  background: #121212;
+  border: 1px solid #363636;
+  border-radius: 4px;
+  color: #fff;
+  padding: 4px 8px;
+  font-size: 13px;
+  outline: none;
+}
+
+.mini-input:focus {
+  border-color: #0095f6;
+}
+
+.mini-btn {
+  background: #0095f6;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mini-btn:hover {
+  background: #007bb5;
+}
+
+/* Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: translateY(5px);
 }
 </style>
