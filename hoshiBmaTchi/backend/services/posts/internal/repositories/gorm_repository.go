@@ -350,3 +350,73 @@ func (r *GormPostRepository) GetReelsByUserID(ctx context.Context, userID string
 
     return posts, nil
 }
+
+func (r *GormPostRepository) GetCollectionPosts(ctx context.Context, collectionID string, limit, offset int) ([]*domain.Post, error) {
+    var savedPosts []domain.SavedPost
+    
+    err := r.db.WithContext(ctx).
+        Preload("Post.Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
+        Where("collection_id = ?", collectionID).
+        Order("created_at desc").
+        Limit(limit).
+        Offset(offset).
+        Find(&savedPosts).Error
+
+    if err != nil {
+        return nil, err
+    }
+
+    var posts []*domain.Post
+    for _, sp := range savedPosts {
+        post := sp.Post
+        posts = append(posts, &post)
+    }
+    
+    for _, post := range posts {
+         var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
+        post.LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", post.ID).Count(&comments)
+        post.CommentsCount = int32(comments)
+        
+        post.IsLiked = false 
+    }
+
+    return posts, nil
+}
+
+func (r *GormPostRepository) UpdateCollection(ctx context.Context, collectionID, name, userID string) (*domain.Collection, error) {
+    var collection domain.Collection
+    
+    if err := r.db.WithContext(ctx).Where("id = ? AND user_id = ?", collectionID, userID).First(&collection).Error; err != nil {
+        return nil, err
+    }
+
+    collection.Name = name
+    if err := r.db.WithContext(ctx).Save(&collection).Error; err != nil {
+        return nil, err
+    }
+
+    return &collection, nil
+}
+
+func (r *GormPostRepository) DeleteCollection(ctx context.Context, collectionID, userID string) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        if err := tx.Where("collection_id = ?", collectionID).Delete(&domain.SavedPost{}).Error; err != nil {
+            return err
+        }
+
+        result := tx.Where("id = ? AND user_id = ?", collectionID, userID).Delete(&domain.Collection{})
+        if result.Error != nil {
+            return result.Error
+        }
+        if result.RowsAffected == 0 {
+            return gorm.ErrRecordNotFound
+        }
+        return nil
+    })
+}

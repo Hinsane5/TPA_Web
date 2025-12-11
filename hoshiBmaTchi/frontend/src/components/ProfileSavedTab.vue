@@ -1,3 +1,4 @@
+@ -1,210 +1,207 @@
 <template>
   <div class="saved-container">
     <div v-if="loading" class="loading-state">
@@ -50,10 +51,12 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { postsApi } from '../services/apiService';
 
 const collections = ref<any[]>([]);
 const loading = ref(true);
+const router = useRouter();
 
 const fetchCollections = async () => {
   try {
@@ -77,8 +80,14 @@ const getImageStyle = (images: string[], index: number) => {
 };
 
 const handleCollectionClick = (id: string) => {
-  console.log(`Open Collection [${id}]`);
-  // Future: router.push(`/dashboard/profile/saved/${id}`);
+  const collection = collections.value.find(c => c.id === id);
+  const name = collection ? collection.name : 'Collection';
+  
+  router.push({ 
+    name: 'collection-detail', 
+    params: { collectionID: id },
+    query: { name: name } 
+  });
 };
 
 onMounted(() => {
@@ -94,8 +103,8 @@ onMounted(() => {
 
 .collections-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Strictly 3 columns */
-  gap: 15px; /* Smaller gap = Wider cards (MAX SIZE) */
+  grid-template-columns: repeat(3, 1fr); 
+  gap: 15px; 
   width: 100%;
 }
 
@@ -113,7 +122,6 @@ onMounted(() => {
   aspect-ratio: 1 / 1;
   border-radius: 6px; 
   overflow: hidden;
-  /* Subtle border to define edges against dark background */
   border: 1px solid #363636; 
   position: relative;
   transition: opacity 0.2s;
@@ -200,7 +208,7 @@ onMounted(() => {
   to { transform: rotate(360deg); }
 }
 
-/* Responsive: Keep 3 cols on tablet, switch to 2 on mobile */
+
 @media (max-width: 600px) {
   .collections-grid {
     grid-template-columns: repeat(2, 1fr);

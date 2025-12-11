@@ -47,6 +47,7 @@ const handleNotificationClick = (notif: any) => {
   if (notif.type === 'like' || notif.type === 'comment') {
     // Navigate to post (Assuming you have a route named 'PostDetail')
     // router.push({ name: 'PostDetail', params: { id: notif.entity_id } });
+    router.push({ name: 'profile', params: { id: notif.sender_id } });
     console.log("Navigating to post:", notif.entity_id);
   } else {
     router.push({ name: 'profile', params: { username: notif.sender_name } });

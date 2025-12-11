@@ -510,3 +510,90 @@ func (h *PostsHandler) GetUserReels(c *gin.Context) {
     c.JSON(http.StatusOK, res.Posts)
 }
 
+func (h *PostsHandler) GetCollectionPosts(c *gin.Context) {
+    collectionID := c.Param("collectionID")
+    userID, _ := c.Get("userID")
+    
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "15"))
+    offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
+
+    res, err := h.postsClient.GetCollectionPosts(context.Background(), &postsProto.GetCollectionPostsRequest{
+        CollectionId: collectionID,
+        UserId:       userID.(string),
+        Limit:        int32(limit),
+        Offset:       int32(offset),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    // Reuse logic to enrich with user profiles if necessary, or return raw
+    // For brevity, returning enriched structure similar to Explore
+    enrichedPosts := []gin.H{}
+    for _, post := range res.Posts {
+         // (Optional: fetch user profile for each post author if needed)
+         var mediaList []gin.H
+        for _, m := range post.Media {
+            mediaList = append(mediaList, gin.H{
+                "media_url":  m.MediaUrl,
+                "media_type": m.MediaType,
+            })
+        }
+        
+        enrichedPosts = append(enrichedPosts, gin.H{
+            "id":              post.Id,
+            "user_id":         post.UserId,
+            "media":           mediaList,
+            "caption":         post.Caption,
+            "likes_count":     post.LikesCount,
+            "comments_count":  post.CommentsCount,
+            "created_at":      post.CreatedAt,
+            "is_liked":        post.IsLiked,
+             // Add username/profile_picture here if fetched from UsersService
+        })
+    }
+    
+    c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
+}
+
+func (h *PostsHandler) UpdateCollection(c *gin.Context) {
+    collectionID := c.Param("collectionID")
+    userID, _ := c.Get("userID")
+    var req struct {
+        Name string `json:"name" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    res, err := h.postsClient.UpdateCollection(context.Background(), &postsProto.UpdateCollectionRequest{
+        CollectionId: collectionID,
+        UserId:       userID.(string),
+        Name:         req.Name,
+    })
+    
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, res)
+}
+
+func (h *PostsHandler) DeleteCollection(c *gin.Context) {
+    collectionID := c.Param("collectionID")
+    userID, _ := c.Get("userID")
+
+    _, err := h.postsClient.DeleteCollection(context.Background(), &postsProto.DeleteCollectionRequest{
+        CollectionId: collectionID,
+        UserId:       userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Collection deleted"})
+}

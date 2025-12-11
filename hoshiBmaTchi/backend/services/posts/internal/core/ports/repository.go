@@ -30,4 +30,7 @@ type PostRepository interface {
 	ToggleLike(ctx context.Context, postID string, userID string) (bool, error)
 
 	GetReelsByUserID(ctx context.Context, userID string) ([]*domain.Post, error)
+	GetCollectionPosts(ctx context.Context, collectionID string, limit, offset int) ([]*domain.Post, error)
+    UpdateCollection(ctx context.Context, collectionID, name, userID string) (*domain.Collection, error)
+    DeleteCollection(ctx context.Context, collectionID, userID string) error
 }

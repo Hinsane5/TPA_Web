@@ -21,6 +21,9 @@ service PostsService {
     rpc GetReels (GetReelsRequest) returns (GetReelsResponse);
     rpc GetExplorePosts(GetExplorePostsRequest) returns (GetExplorePostsResponse);
     rpc GetUserReels(GetUserReelsRequest) returns (GetPostsResponse); 
+    rpc GetCollectionPosts(GetCollectionPostsRequest) returns (GetCollectionPostsResponse);
+    rpc UpdateCollection(UpdateCollectionRequest) returns (CollectionResponse);
+    rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -192,4 +195,31 @@ message GetExplorePostsResponse {
 
 message GetUserReelsRequest {
     string user_id = 1;
+}
+
+message GetCollectionPostsRequest {
+    string collection_id = 1;
+    string user_id = 2;
+    int32 limit = 3;
+    int32 offset = 4;
+}
+
+message GetCollectionPostsResponse {
+    repeated PostResponse posts = 1;
+}
+
+message UpdateCollectionRequest {
+    string collection_id = 1;
+    string user_id = 2;
+    string name = 3;
+}
+
+message DeleteCollectionRequest {
+    string collection_id = 1;
+    string user_id = 2;
+}
+
+message DeleteCollectionResponse {
+    bool success = 1;
+    string message = 2;
 }

@@ -563,3 +563,71 @@ func (s *Server) GetUserReels(ctx context.Context, req *pb.GetUserReelsRequest) 
 
     return &pb.GetPostsResponse{Posts: pbPosts}, nil
 }
+
+func (s *Server) GetCollectionPosts(ctx context.Context, req *pb.GetCollectionPostsRequest) (*pb.GetCollectionPostsResponse, error) {
+    posts, err := s.service.GetCollectionPosts(ctx, req.CollectionId, int(req.Limit), int(req.Offset))
+    if err != nil {
+        log.Printf("Failed to get collection posts: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch collection posts")
+    }
+
+    var pbPosts []*pb.PostResponse
+    expiry := time.Hour * 1
+
+    for _, post := range posts {
+        var pbMedia []*pb.PostMediaResponse
+        for _, m := range post.Media {
+            reqParams := make(url.Values)
+            reqParams.Set("response-content-type", m.MediaType)
+
+            presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+            
+            mediaURLString := ""
+            if err == nil {
+                // Docker networking fix
+                mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+                mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
+            }
+
+            pbMedia = append(pbMedia, &pb.PostMediaResponse{
+                MediaUrl:  mediaURLString,
+                MediaType: m.MediaType,
+            })
+        }
+
+        pbPosts = append(pbPosts, &pb.PostResponse{
+            Id:            post.ID.String(),
+            UserId:        post.UserID.String(),
+            Media:         pbMedia,
+            Caption:       post.Caption,
+            Location:      post.Location,
+            CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+            LikesCount:    post.LikesCount,
+            CommentsCount: post.CommentsCount,
+            IsLiked:       post.IsLiked,
+            IsReel:        post.IsReel,
+        })
+    }
+
+    return &pb.GetCollectionPostsResponse{Posts: pbPosts}, nil
+}
+
+func (s *Server) UpdateCollection(ctx context.Context, req *pb.UpdateCollectionRequest) (*pb.CollectionResponse, error) {
+    col, err := s.service.UpdateCollection(ctx, req.CollectionId, req.Name, req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, err.Error())
+    }
+    return &pb.CollectionResponse{
+        Id:     col.ID.String(),
+        Name:   col.Name,
+        UserId: col.UserID.String(),
+    }, nil
+}
+
+func (s *Server) DeleteCollection(ctx context.Context, req *pb.DeleteCollectionRequest) (*pb.DeleteCollectionResponse, error) {
+    err := s.service.DeleteCollection(ctx, req.CollectionId, req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, err.Error())
+    }
+    return &pb.DeleteCollectionResponse{Success: true, Message: "Collection deleted"}, nil
+}

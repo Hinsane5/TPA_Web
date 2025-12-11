@@ -158,6 +158,24 @@ export const postsApi = {
   getUserReels: (userId: string) => {
     return apiClient.get(`/v1/posts/user/${userId}/reels`);
   },
+
+  getCollectionPosts: (
+    collectionId: string,
+    limit: number = 15,
+    offset: number = 0
+  ) => {
+    return apiClient.get(`/v1/posts/collections/${collectionId}/posts`, {
+      params: { limit, offset },
+    });
+  },
+
+  updateCollection: (collectionId: string, name: string) => {
+    return apiClient.put(`/v1/posts/collections/${collectionId}`, { name });
+  },
+
+  deleteCollection: (collectionId: string) => {
+    return apiClient.delete(`/v1/posts/collections/${collectionId}`);
+  },
 };
 
 export const usersApi = {

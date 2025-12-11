@@ -233,3 +233,15 @@ func (s *PostService) CreateComment(ctx context.Context, req *pb.CreateCommentRe
 func (s *PostService) GetUserReels(ctx context.Context, userID string) ([]*domain.Post, error) {
     return s.repo.GetReelsByUserID(ctx, userID)
 }
+
+func (s *PostService) GetCollectionPosts(ctx context.Context, collectionID string, limit, offset int) ([]*domain.Post, error) {
+    return s.repo.GetCollectionPosts(ctx, collectionID, limit, offset)
+}
+
+func (s *PostService) UpdateCollection(ctx context.Context, collectionID, name, userID string) (*domain.Collection, error) {
+    return s.repo.UpdateCollection(ctx, collectionID, name, userID)
+}
+
+func (s *PostService) DeleteCollection(ctx context.Context, collectionID, userID string) error {
+    return s.repo.DeleteCollection(ctx, collectionID, userID)
+}

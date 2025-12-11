@@ -10,6 +10,7 @@ import ReelsPage from "../components/ReelsPage.vue";
 import MessagesPage from "../components/MessagesPage.vue";
 import ProfilePage from "../components/ProfilePage.vue";
 import DashboardLayout from "../components/DashboardLayout.vue";
+import CollectionDetailPage from "../components/CollectionDetailPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -73,6 +74,14 @@ const router = createRouter({
           name: "messages",
           component: MessagesPage,
         },
+
+        {
+          path: "profile/saved/:collectionID",
+          name: "collection-detail",
+          component: CollectionDetailPage,
+          props: true,
+        },
+
         {
           path: "profile/:id?",
           name: "profile",

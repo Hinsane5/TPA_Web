@@ -35,6 +35,9 @@ const (
 	PostsService_GetReels_FullMethodName           = "/posts.PostsService/GetReels"
 	PostsService_GetExplorePosts_FullMethodName    = "/posts.PostsService/GetExplorePosts"
 	PostsService_GetUserReels_FullMethodName       = "/posts.PostsService/GetUserReels"
+	PostsService_GetCollectionPosts_FullMethodName = "/posts.PostsService/GetCollectionPosts"
+	PostsService_UpdateCollection_FullMethodName   = "/posts.PostsService/UpdateCollection"
+	PostsService_DeleteCollection_FullMethodName   = "/posts.PostsService/DeleteCollection"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -57,6 +60,9 @@ type PostsServiceClient interface {
 	GetReels(ctx context.Context, in *GetReelsRequest, opts ...grpc.CallOption) (*GetReelsResponse, error)
 	GetExplorePosts(ctx context.Context, in *GetExplorePostsRequest, opts ...grpc.CallOption) (*GetExplorePostsResponse, error)
 	GetUserReels(ctx context.Context, in *GetUserReelsRequest, opts ...grpc.CallOption) (*GetPostsResponse, error)
+	GetCollectionPosts(ctx context.Context, in *GetCollectionPostsRequest, opts ...grpc.CallOption) (*GetCollectionPostsResponse, error)
+	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error)
+	DeleteCollection(ctx context.Context, in *DeleteCollectionRequest, opts ...grpc.CallOption) (*DeleteCollectionResponse, error)
 }
 
 type postsServiceClient struct {
@@ -227,6 +233,36 @@ func (c *postsServiceClient) GetUserReels(ctx context.Context, in *GetUserReelsR
 	return out, nil
 }
 
+func (c *postsServiceClient) GetCollectionPosts(ctx context.Context, in *GetCollectionPostsRequest, opts ...grpc.CallOption) (*GetCollectionPostsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCollectionPostsResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetCollectionPosts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CollectionResponse)
+	err := c.cc.Invoke(ctx, PostsService_UpdateCollection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) DeleteCollection(ctx context.Context, in *DeleteCollectionRequest, opts ...grpc.CallOption) (*DeleteCollectionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteCollectionResponse)
+	err := c.cc.Invoke(ctx, PostsService_DeleteCollection_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -247,6 +283,9 @@ type PostsServiceServer interface {
 	GetReels(context.Context, *GetReelsRequest) (*GetReelsResponse, error)
 	GetExplorePosts(context.Context, *GetExplorePostsRequest) (*GetExplorePostsResponse, error)
 	GetUserReels(context.Context, *GetUserReelsRequest) (*GetPostsResponse, error)
+	GetCollectionPosts(context.Context, *GetCollectionPostsRequest) (*GetCollectionPostsResponse, error)
+	UpdateCollection(context.Context, *UpdateCollectionRequest) (*CollectionResponse, error)
+	DeleteCollection(context.Context, *DeleteCollectionRequest) (*DeleteCollectionResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -304,6 +343,15 @@ func (UnimplementedPostsServiceServer) GetExplorePosts(context.Context, *GetExpl
 }
 func (UnimplementedPostsServiceServer) GetUserReels(context.Context, *GetUserReelsRequest) (*GetPostsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserReels not implemented")
+}
+func (UnimplementedPostsServiceServer) GetCollectionPosts(context.Context, *GetCollectionPostsRequest) (*GetCollectionPostsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCollectionPosts not implemented")
+}
+func (UnimplementedPostsServiceServer) UpdateCollection(context.Context, *UpdateCollectionRequest) (*CollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateCollection not implemented")
+}
+func (UnimplementedPostsServiceServer) DeleteCollection(context.Context, *DeleteCollectionRequest) (*DeleteCollectionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteCollection not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -614,6 +662,60 @@ func _PostsService_GetUserReels_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetCollectionPosts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCollectionPostsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetCollectionPosts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetCollectionPosts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetCollectionPosts(ctx, req.(*GetCollectionPostsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_UpdateCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).UpdateCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_UpdateCollection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).UpdateCollection(ctx, req.(*UpdateCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_DeleteCollection_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteCollectionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).DeleteCollection(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_DeleteCollection_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).DeleteCollection(ctx, req.(*DeleteCollectionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -684,6 +786,18 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserReels",
 			Handler:    _PostsService_GetUserReels_Handler,
+		},
+		{
+			MethodName: "GetCollectionPosts",
+			Handler:    _PostsService_GetCollectionPosts_Handler,
+		},
+		{
+			MethodName: "UpdateCollection",
+			Handler:    _PostsService_UpdateCollection_Handler,
+		},
+		{
+			MethodName: "DeleteCollection",
+			Handler:    _PostsService_DeleteCollection_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
