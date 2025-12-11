@@ -160,7 +160,7 @@ const getShareTypeName = computed(() => {
 
 const getShareTypeIcon = computed(() => {
   if (props.message.messageType === 'reel_share') return 'reels';
-  return 'post'; // Re-use post icon for others or add specific ones
+  return 'post';
 });
 
 const getShareIcon = computed(() => {

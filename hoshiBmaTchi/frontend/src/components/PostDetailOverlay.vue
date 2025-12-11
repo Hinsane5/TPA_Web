@@ -131,7 +131,7 @@
               <button class="icon-button" @click="focusInput">
                 <img src="/icons/comment-icon.png" class="icon" />
               </button>
-              <button class="icon-button">
+              <button class="icon-button" @click="showShareModal = true">
                 <img src="/icons/share-icon.png" class="icon" />
               </button>
             </div>
@@ -247,6 +247,15 @@
         </div>
       </div>
     </div>
+
+    <ShareModal 
+      v-if="showShareModal"
+      :contentId="post.id"
+      type="post"
+      :thumbnail="currentMedia ? getDisplayUrl(currentMedia.media_url) : ''"
+      @close="showShareModal = false"
+    />
+
   </div>
 </template>
 
@@ -254,6 +263,7 @@
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { format } from "date-fns";
 import { postsApi, usersApi } from "@/services/apiService";
+import ShareModal from "./ShareModal.vue";
 import CommentItem from "./commentItem.vue";
 
 const props = defineProps(["isOpen", "post"]);
@@ -281,6 +291,7 @@ const currentUserId = localStorage.getItem("userID");
 const currentUsername = localStorage.getItem("username") || "me";
 const currentUserPic = localStorage.getItem("profilePicture") || "";
 const isOwnPost = props.post.user_id === currentUserId;
+const showShareModal = ref(false);
 
 watch(
   () => props.post.id,

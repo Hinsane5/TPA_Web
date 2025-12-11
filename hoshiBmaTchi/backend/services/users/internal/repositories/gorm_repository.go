@@ -144,3 +144,17 @@ func (r *gormUserRepository) GetSuggestedUsers(ctx context.Context, userID strin
 
     return users, nil
 }
+
+// Add this method to gormUserRepository
+
+func (r *gormUserRepository) GetFollowingUsers(userID string) ([]*domain.User, error) {
+	var users []*domain.User
+	err := r.db.Joins("JOIN follows ON follows.following_id = users.id").
+		Where("follows.follower_id = ?", userID).
+		Find(&users).Error
+
+	if err != nil {
+		return nil, err
+	}
+	return users, nil
+}

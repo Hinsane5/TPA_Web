@@ -835,3 +835,33 @@ func (h *UserHandler) GetSuggestedUsers(ctx context.Context, req *pb.GetSuggeste
         Users: responseUsers,
     }, nil
 }
+
+// Add this method to UserHandler
+
+func (h *UserHandler) GetFollowingProfiles(ctx context.Context, req *pb.GetFollowingListRequest) (*pb.GetFollowingProfilesResponse, error) {
+    if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "User ID is required")
+    }
+
+    // 1. Call the new Repo function
+    users, err := h.repo.GetFollowingUsers(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch following profiles")
+    }
+
+    // 2. Map domain users to Proto users
+    var responseUsers []*pb.UserProfile
+    for _, u := range users {
+        responseUsers = append(responseUsers, &pb.UserProfile{
+            UserId:            u.ID.String(),
+            Username:          u.Username,
+            Name:              u.Name,
+            ProfilePictureUrl: u.ProfilePictureURL,
+            IsFollowing:       true, // Since we are fetching the following list, this is true
+        })
+    }
+
+    return &pb.GetFollowingProfilesResponse{
+        Users: responseUsers,
+    }, nil
+}

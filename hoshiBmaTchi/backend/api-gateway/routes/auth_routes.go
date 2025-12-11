@@ -26,10 +26,13 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 	usersGroup := router.Group("/api/v1/users")
 	usersGroup.Use(authHandler.AuthMiddleware())
 	{
-		usersGroup.GET("/:id", authHandler.GetUserProfile)
-		usersGroup.POST("/:id/follow", authHandler.FollowUser) 
-    	usersGroup.DELETE("/:id/follow", authHandler.UnfollowUser)
+		usersGroup.GET("/following", authHandler.GetFollowingUsers)
+
 		usersGroup.GET("/search", authHandler.SearchUsers)
 		usersGroup.GET("/suggested", authHandler.GetSuggestedUsers)
+		
+
+		usersGroup.GET("/:id", authHandler.GetUserProfile)
+		usersGroup.POST("/:id/follow", authHandler.FollowUser)
 	}
 }

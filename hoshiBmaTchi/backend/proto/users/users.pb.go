@@ -1522,6 +1522,50 @@ func (x *GetSuggestedUsersResponse) GetUsers() []*UserProfile {
 	return nil
 }
 
+type GetFollowingProfilesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*UserProfile         `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetFollowingProfilesResponse) Reset() {
+	*x = GetFollowingProfilesResponse{}
+	mi := &file_users_users_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetFollowingProfilesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetFollowingProfilesResponse) ProtoMessage() {}
+
+func (x *GetFollowingProfilesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetFollowingProfilesResponse.ProtoReflect.Descriptor instead.
+func (*GetFollowingProfilesResponse) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *GetFollowingProfilesResponse) GetUsers() []*UserProfile {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
 var File_users_users_proto protoreflect.FileDescriptor
 
 const file_users_users_proto_rawDesc = "" +
@@ -1624,7 +1668,9 @@ const file_users_users_proto_rawDesc = "" +
 	"\x18GetSuggestedUsersRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"E\n" +
 	"\x19GetSuggestedUsersResponse\x12(\n" +
-	"\x05users\x18\x01 \x03(\v2\x12.users.UserProfileR\x05users2\xf5\b\n" +
+	"\x05users\x18\x01 \x03(\v2\x12.users.UserProfileR\x05users\"H\n" +
+	"\x1cGetFollowingProfilesResponse\x12(\n" +
+	"\x05users\x18\x01 \x03(\v2\x12.users.UserProfileR\x05users2\xd2\t\n" +
 	"\vUserService\x12G\n" +
 	"\fRegisterUser\x12\x1a.users.RegisterUserRequest\x1a\x1b.users.RegisterUserResponse\x128\n" +
 	"\aSendOtp\x12\x15.users.SendOtpRequest\x1a\x16.users.SendOtpResponse\x12F\n" +
@@ -1641,7 +1687,8 @@ const file_users_users_proto_rawDesc = "" +
 	"\x10GetFollowingList\x12\x1e.users.GetFollowingListRequest\x1a\x1f.users.GetFollowingListResponse\x12D\n" +
 	"\vSearchUsers\x12\x19.users.SearchUsersRequest\x1a\x1a.users.SearchUsersResponse\x12S\n" +
 	"\x11GetUserByUsername\x12\x1f.users.GetUserByUsernameRequest\x1a\x1d.users.GetUserProfileResponse\x12V\n" +
-	"\x11GetSuggestedUsers\x12\x1f.users.GetSuggestedUsersRequest\x1a .users.GetSuggestedUsersResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
+	"\x11GetSuggestedUsers\x12\x1f.users.GetSuggestedUsersRequest\x1a .users.GetSuggestedUsersResponse\x12[\n" +
+	"\x14GetFollowingProfiles\x12\x1e.users.GetFollowingListRequest\x1a#.users.GetFollowingProfilesResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
 
 var (
 	file_users_users_proto_rawDescOnce sync.Once
@@ -1655,78 +1702,82 @@ func file_users_users_proto_rawDescGZIP() []byte {
 	return file_users_users_proto_rawDescData
 }
 
-var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
+var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
 var file_users_users_proto_goTypes = []any{
-	(*LoginWithGoogleRequest)(nil),      // 0: users.LoginWithGoogleRequest
-	(*TokenResponse)(nil),               // 1: users.TokenResponse
-	(*LoginUserRequest)(nil),            // 2: users.LoginUserRequest
-	(*LoginUserResponse)(nil),           // 3: users.LoginUserResponse
-	(*VerifyLogin2FARequest)(nil),       // 4: users.VerifyLogin2FARequest
-	(*SendOtpRequest)(nil),              // 5: users.SendOtpRequest
-	(*SendOtpResponse)(nil),             // 6: users.SendOtpResponse
-	(*RequestPasswordResetRequest)(nil), // 7: users.RequestPasswordResetRequest
-	(*PerformPasswordResetRequest)(nil), // 8: users.PerformPasswordResetRequest
-	(*RegisterUserRequest)(nil),         // 9: users.RegisterUserRequest
-	(*RegisterUserResponse)(nil),        // 10: users.RegisterUserResponse
-	(*ValidateTokenRequest)(nil),        // 11: users.ValidateTokenRequest
-	(*ValidateTokenResponse)(nil),       // 12: users.ValidateTokenResponse
-	(*GetUserProfileRequest)(nil),       // 13: users.GetUserProfileRequest
-	(*GetUserProfileResponse)(nil),      // 14: users.GetUserProfileResponse
-	(*FollowUserRequest)(nil),           // 15: users.FollowUserRequest
-	(*FollowUserResponse)(nil),          // 16: users.FollowUserResponse
-	(*UnfollowUserRequest)(nil),         // 17: users.UnfollowUserRequest
-	(*UnfollowUserResponse)(nil),        // 18: users.UnfollowUserResponse
-	(*GetFollowingListRequest)(nil),     // 19: users.GetFollowingListRequest
-	(*GetFollowingListResponse)(nil),    // 20: users.GetFollowingListResponse
-	(*UserProfile)(nil),                 // 21: users.UserProfile
-	(*SearchUsersRequest)(nil),          // 22: users.SearchUsersRequest
-	(*SearchUsersResponse)(nil),         // 23: users.SearchUsersResponse
-	(*GetUserByUsernameRequest)(nil),    // 24: users.GetUserByUsernameRequest
-	(*GetSuggestedUsersRequest)(nil),    // 25: users.GetSuggestedUsersRequest
-	(*GetSuggestedUsersResponse)(nil),   // 26: users.GetSuggestedUsersResponse
-	(*timestamppb.Timestamp)(nil),       // 27: google.protobuf.Timestamp
+	(*LoginWithGoogleRequest)(nil),       // 0: users.LoginWithGoogleRequest
+	(*TokenResponse)(nil),                // 1: users.TokenResponse
+	(*LoginUserRequest)(nil),             // 2: users.LoginUserRequest
+	(*LoginUserResponse)(nil),            // 3: users.LoginUserResponse
+	(*VerifyLogin2FARequest)(nil),        // 4: users.VerifyLogin2FARequest
+	(*SendOtpRequest)(nil),               // 5: users.SendOtpRequest
+	(*SendOtpResponse)(nil),              // 6: users.SendOtpResponse
+	(*RequestPasswordResetRequest)(nil),  // 7: users.RequestPasswordResetRequest
+	(*PerformPasswordResetRequest)(nil),  // 8: users.PerformPasswordResetRequest
+	(*RegisterUserRequest)(nil),          // 9: users.RegisterUserRequest
+	(*RegisterUserResponse)(nil),         // 10: users.RegisterUserResponse
+	(*ValidateTokenRequest)(nil),         // 11: users.ValidateTokenRequest
+	(*ValidateTokenResponse)(nil),        // 12: users.ValidateTokenResponse
+	(*GetUserProfileRequest)(nil),        // 13: users.GetUserProfileRequest
+	(*GetUserProfileResponse)(nil),       // 14: users.GetUserProfileResponse
+	(*FollowUserRequest)(nil),            // 15: users.FollowUserRequest
+	(*FollowUserResponse)(nil),           // 16: users.FollowUserResponse
+	(*UnfollowUserRequest)(nil),          // 17: users.UnfollowUserRequest
+	(*UnfollowUserResponse)(nil),         // 18: users.UnfollowUserResponse
+	(*GetFollowingListRequest)(nil),      // 19: users.GetFollowingListRequest
+	(*GetFollowingListResponse)(nil),     // 20: users.GetFollowingListResponse
+	(*UserProfile)(nil),                  // 21: users.UserProfile
+	(*SearchUsersRequest)(nil),           // 22: users.SearchUsersRequest
+	(*SearchUsersResponse)(nil),          // 23: users.SearchUsersResponse
+	(*GetUserByUsernameRequest)(nil),     // 24: users.GetUserByUsernameRequest
+	(*GetSuggestedUsersRequest)(nil),     // 25: users.GetSuggestedUsersRequest
+	(*GetSuggestedUsersResponse)(nil),    // 26: users.GetSuggestedUsersResponse
+	(*GetFollowingProfilesResponse)(nil), // 27: users.GetFollowingProfilesResponse
+	(*timestamppb.Timestamp)(nil),        // 28: google.protobuf.Timestamp
 }
 var file_users_users_proto_depIdxs = []int32{
 	1,  // 0: users.LoginUserResponse.tokens:type_name -> users.TokenResponse
-	27, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
-	27, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
+	28, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
+	28, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
 	21, // 3: users.SearchUsersResponse.users:type_name -> users.UserProfile
 	21, // 4: users.GetSuggestedUsersResponse.users:type_name -> users.UserProfile
-	9,  // 5: users.UserService.RegisterUser:input_type -> users.RegisterUserRequest
-	5,  // 6: users.UserService.SendOtp:input_type -> users.SendOtpRequest
-	0,  // 7: users.UserService.LoginWithGoogle:input_type -> users.LoginWithGoogleRequest
-	2,  // 8: users.UserService.LoginUser:input_type -> users.LoginUserRequest
-	4,  // 9: users.UserService.VerifyLogin2FA:input_type -> users.VerifyLogin2FARequest
-	7,  // 10: users.UserService.RequestPasswordReset:input_type -> users.RequestPasswordResetRequest
-	8,  // 11: users.UserService.PerformPasswordReset:input_type -> users.PerformPasswordResetRequest
-	11, // 12: users.UserService.ValidateToken:input_type -> users.ValidateTokenRequest
-	13, // 13: users.UserService.GetUserProfile:input_type -> users.GetUserProfileRequest
-	15, // 14: users.UserService.FollowUser:input_type -> users.FollowUserRequest
-	17, // 15: users.UserService.UnfollowUser:input_type -> users.UnfollowUserRequest
-	19, // 16: users.UserService.GetFollowingList:input_type -> users.GetFollowingListRequest
-	22, // 17: users.UserService.SearchUsers:input_type -> users.SearchUsersRequest
-	24, // 18: users.UserService.GetUserByUsername:input_type -> users.GetUserByUsernameRequest
-	25, // 19: users.UserService.GetSuggestedUsers:input_type -> users.GetSuggestedUsersRequest
-	10, // 20: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
-	6,  // 21: users.UserService.SendOtp:output_type -> users.SendOtpResponse
-	1,  // 22: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
-	3,  // 23: users.UserService.LoginUser:output_type -> users.LoginUserResponse
-	1,  // 24: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
-	6,  // 25: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
-	6,  // 26: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
-	12, // 27: users.UserService.ValidateToken:output_type -> users.ValidateTokenResponse
-	14, // 28: users.UserService.GetUserProfile:output_type -> users.GetUserProfileResponse
-	16, // 29: users.UserService.FollowUser:output_type -> users.FollowUserResponse
-	18, // 30: users.UserService.UnfollowUser:output_type -> users.UnfollowUserResponse
-	20, // 31: users.UserService.GetFollowingList:output_type -> users.GetFollowingListResponse
-	23, // 32: users.UserService.SearchUsers:output_type -> users.SearchUsersResponse
-	14, // 33: users.UserService.GetUserByUsername:output_type -> users.GetUserProfileResponse
-	26, // 34: users.UserService.GetSuggestedUsers:output_type -> users.GetSuggestedUsersResponse
-	20, // [20:35] is the sub-list for method output_type
-	5,  // [5:20] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	21, // 5: users.GetFollowingProfilesResponse.users:type_name -> users.UserProfile
+	9,  // 6: users.UserService.RegisterUser:input_type -> users.RegisterUserRequest
+	5,  // 7: users.UserService.SendOtp:input_type -> users.SendOtpRequest
+	0,  // 8: users.UserService.LoginWithGoogle:input_type -> users.LoginWithGoogleRequest
+	2,  // 9: users.UserService.LoginUser:input_type -> users.LoginUserRequest
+	4,  // 10: users.UserService.VerifyLogin2FA:input_type -> users.VerifyLogin2FARequest
+	7,  // 11: users.UserService.RequestPasswordReset:input_type -> users.RequestPasswordResetRequest
+	8,  // 12: users.UserService.PerformPasswordReset:input_type -> users.PerformPasswordResetRequest
+	11, // 13: users.UserService.ValidateToken:input_type -> users.ValidateTokenRequest
+	13, // 14: users.UserService.GetUserProfile:input_type -> users.GetUserProfileRequest
+	15, // 15: users.UserService.FollowUser:input_type -> users.FollowUserRequest
+	17, // 16: users.UserService.UnfollowUser:input_type -> users.UnfollowUserRequest
+	19, // 17: users.UserService.GetFollowingList:input_type -> users.GetFollowingListRequest
+	22, // 18: users.UserService.SearchUsers:input_type -> users.SearchUsersRequest
+	24, // 19: users.UserService.GetUserByUsername:input_type -> users.GetUserByUsernameRequest
+	25, // 20: users.UserService.GetSuggestedUsers:input_type -> users.GetSuggestedUsersRequest
+	19, // 21: users.UserService.GetFollowingProfiles:input_type -> users.GetFollowingListRequest
+	10, // 22: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
+	6,  // 23: users.UserService.SendOtp:output_type -> users.SendOtpResponse
+	1,  // 24: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
+	3,  // 25: users.UserService.LoginUser:output_type -> users.LoginUserResponse
+	1,  // 26: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
+	6,  // 27: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
+	6,  // 28: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
+	12, // 29: users.UserService.ValidateToken:output_type -> users.ValidateTokenResponse
+	14, // 30: users.UserService.GetUserProfile:output_type -> users.GetUserProfileResponse
+	16, // 31: users.UserService.FollowUser:output_type -> users.FollowUserResponse
+	18, // 32: users.UserService.UnfollowUser:output_type -> users.UnfollowUserResponse
+	20, // 33: users.UserService.GetFollowingList:output_type -> users.GetFollowingListResponse
+	23, // 34: users.UserService.SearchUsers:output_type -> users.SearchUsersResponse
+	14, // 35: users.UserService.GetUserByUsername:output_type -> users.GetUserProfileResponse
+	26, // 36: users.UserService.GetSuggestedUsers:output_type -> users.GetSuggestedUsersResponse
+	27, // 37: users.UserService.GetFollowingProfiles:output_type -> users.GetFollowingProfilesResponse
+	22, // [22:38] is the sub-list for method output_type
+	6,  // [6:22] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_users_users_proto_init() }
@@ -1740,7 +1791,7 @@ func file_users_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_users_proto_rawDesc), len(file_users_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   27,
+			NumMessages:   28,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

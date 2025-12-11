@@ -19,4 +19,5 @@ type UserRepository interface{
 	GetFollowing(userID string) ([]string, error)
 	SearchUsers(ctx context.Context, query string) ([]*domain.User, error)
 	GetSuggestedUsers(ctx context.Context, userID string) ([]*domain.User, error)
+	GetFollowingUsers(userID string) ([]*domain.User, error)
 }
