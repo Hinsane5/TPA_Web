@@ -1,96 +1,222 @@
 <template>
-  <div class="mini-messages" :style="{ left: position.x + 'px', top: position.y + 'px' }" @mousedown="startDrag">
-    <div class="messages-header" @mousemove.stop>
-      <span class="messages-title">💬 Messages</span>
-      <button class="minimize-btn" @click="isMinimized = !isMinimized">{{ isMinimized ? '▲' : '▼' }}</button>
+  <div 
+    v-if="isVisible" 
+    class="mini-messages-pill" 
+    :style="{ left: position.x + 'px', top: position.y + 'px' }" 
+    @mousedown="startDrag"
+  >
+    <div class="pill-header">
+      <div class="icon-wrapper">
+        <img 
+          src="../../public/icons/messages-icon.png" 
+          alt="Messages" 
+          class="messenger-icon" 
+        />
+        
+        <div v-if="unreadSourcesCount > 0" class="badge">
+          {{ unreadSourcesCount }}
+        </div>
+      </div>
+      <span class="label">Messages</span>
     </div>
-    <div v-if="!isMinimized" class="messages-content">
-      <!-- Mini messages content will be populated from backend -->
-      <div class="empty-state">
-        <p>No recent messages</p>
+
+    <div class="avatars-container">
+      <div 
+        v-for="(user, index) in recentChatUsers" 
+        :key="user.id" 
+        class="avatar-wrapper"
+        :style="{ zIndex: 3 - index }"
+      >
+        <img :src="user.avatar || '/placeholder.svg'" :alt="user.username" class="avatar-img" />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useChatStore } from '../composables/useChatStore';
+import type { User } from '../types/chat';
 
-const isMinimized = ref(false)
-const position = ref({ x: 1570, y: 850 })
-const isDragging = ref(false)
-const dragStart = ref({ x: 0, y: 0 })
+const router = useRouter();
+const route = useRoute();
+const chatStore = useChatStore();
+
+const isVisible = computed(() => {
+  return route.path !== '/dashboard/messages';
+});
+
+onMounted(async () => {
+  await chatStore.fetchConversations();
+});
+
+const sortedConversations = computed(() => {
+  return [...chatStore.conversations.value].sort((a, b) => {
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
+});
+
+const recentChatUsers = computed(() => {
+  const users: Partial<User>[] = [];
+  const myId = chatStore.currentUser.value?.id;
+
+  const topConvos = sortedConversations.value.slice(0, 3);
+
+  topConvos.forEach((conv) => {
+    const other = conv.participants.find((p) => p.id !== myId);
+
+    if (other) {
+      users.push(other);
+    } else if (conv.participants.length > 0 && conv.participants[0]) {
+      users.push(conv.participants[0]);
+    }
+  });
+
+  return users;
+});
+
+// 3. Count of conversations with unread messages
+const unreadSourcesCount = computed(() => {
+  return chatStore.conversations.value.filter(c => c.unreadCount > 0).length;
+});
+
+// --- Drag & Interaction Logic ---
+const position = ref({ x: window.innerWidth - 350, y: window.innerHeight - 100 });
+const isDragging = ref(false);
+const dragStart = ref({ x: 0, y: 0 });
+const hasMoved = ref(false); // Track if actual movement occurred to distinguish click from drag
 
 const startDrag = (event: MouseEvent) => {
-  isDragging.value = true
-  dragStart.value = { x: event.clientX - position.value.x, y: event.clientY - position.value.y }
+  isDragging.value = true;
+  hasMoved.value = false; // Reset movement tracker
+  dragStart.value = { x: event.clientX - position.value.x, y: event.clientY - position.value.y };
   
   const handleMouseMove = (moveEvent: MouseEvent) => {
     if (isDragging.value) {
+      hasMoved.value = true; // User is dragging
       position.value = {
         x: moveEvent.clientX - dragStart.value.x,
         y: moveEvent.clientY - dragStart.value.y,
-      }
+      };
     }
-  }
+  };
   
   const handleMouseUp = () => {
-    isDragging.value = false
-    window.removeEventListener('mousemove', handleMouseMove)
-    window.removeEventListener('mouseup', handleMouseUp)
-  }
+    isDragging.value = false;
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+
+    // If no movement occurred, treat it as a click
+    if (!hasMoved.value) {
+      navigateToMessages();
+    }
+  };
   
-  window.addEventListener('mousemove', handleMouseMove)
-  window.addEventListener('mouseup', handleMouseUp)
-}
+  window.addEventListener('mousemove', handleMouseMove);
+  window.addEventListener('mouseup', handleMouseUp);
+};
+
+const navigateToMessages = () => {
+  router.push('/dashboard/messages');
+};
 </script>
 
 <style scoped>
-.mini-messages {
+.mini-messages-pill {
   position: fixed;
-  width: 300px;
-  background: var(--surface-light);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  z-index: 400;
-  user-select: none;
-}
-
-.messages-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 15px;
-  border-bottom: 1px solid var(--border-color);
-  cursor: move;
-  background: var(--background-dark);
-}
-
-.messages-title {
-  color: var(--text-primary);
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.minimize-btn {
-  background: none;
-  border: none;
-  color: var(--text-primary);
+  justify-content: space-between;
+  
+  /* Pill Shape & Sizing */
+  min-width: 180px;
+  height: 56px;
+  padding: 0 16px;
+  border-radius: 28px; /* Half of height for full rounded ends */
+  
+  /* Visual Style (Dark Theme compliant) */
+  background-color: #262626; /* Dark grey similar to screenshots */
+  border: 1px solid #363636;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  color: white;
+  
+  /* Behavior */
+  z-index: 1000;
+  user-select: none;
   cursor: pointer;
-  font-size: 12px;
-  padding: 4px 8px;
+  transition: transform 0.1s ease;
 }
 
-.messages-content {
-  max-height: 400px;
-  overflow-y: auto;
+.mini-messages-pill:active {
+  transform: scale(0.98);
 }
 
-.empty-state {
-  padding: 20px;
-  text-align: center;
-  color: var(--text-secondary);
-  font-size: 14px;
+.pill-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.messenger-icon {
+  width: 24px;
+  height: 24px;
+  color: white;
+}
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background-color: #ff3040; /* Red notification color */
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  min-width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #262626; /* Match background to create "cutout" effect */
+}
+
+.label {
+  font-weight: 600;
+  font-size: 15px;
+  color: #f5f5f5;
+}
+
+.avatars-container {
+  display: flex;
+  align-items: center;
+  margin-left: 12px;
+}
+
+.avatar-wrapper {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #262626; /* Border matches background for separation */
+  overflow: hidden;
+  margin-left: -12px; /* Negative margin for overlapping effect */
+  background-color: #404040;
+}
+
+.avatar-wrapper:first-child {
+  margin-left: 0;
+}
+
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>

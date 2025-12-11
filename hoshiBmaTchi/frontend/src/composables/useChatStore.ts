@@ -64,7 +64,11 @@ export function useChatStore() {
         const mappedConversations = data.map((c: any) => ({
           ...c,
           participants: c.participants || [],
-          updatedAt: c.created_at || new Date().toISOString(),
+          updatedAt:
+            c.last_message?.created_at ||
+            c.updated_at ||
+            c.created_at ||
+            new Date().toISOString(),
         }));
 
         const enrichedConversations = await Promise.all(
@@ -310,5 +314,6 @@ export function useChatStore() {
     sendMessage,
     deleteConversation,
     unsendMessage,
+    fetchConversations,
   };
 }
