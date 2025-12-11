@@ -74,3 +74,4 @@ func (s *ChatGRPCServer) GetMessageHistory(ctx context.Context, req *pb.GetHisto
 
 	return &pb.GetHistoryResponse{Messages: pbMsgs}, nil
 }
+

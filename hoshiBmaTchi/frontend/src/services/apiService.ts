@@ -105,6 +105,10 @@ export const postsApi = {
     return apiClient.post("/v1/posts", data);
   },
 
+  getPost: (postId: string) => {
+    return apiClient.get(`/v1/posts/${postId}`);
+  },
+
   getPostByUserID: (userId: string) => {
     return apiClient.get(`/v1/posts/user/${userId}`);
   },

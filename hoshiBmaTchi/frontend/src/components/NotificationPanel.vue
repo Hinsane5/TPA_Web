@@ -43,12 +43,10 @@ const router = useRouter();
 const closePanel = () => emit('close');
 
 const handleNotificationClick = (notif: Notification) => {
-  // 1. Debug: Check if the click is even registering
-  console.log("Notification Clicked:", notif);
-
+  console.log("Clicked Notification:", notif);
+  console.log("Entity ID:", notif.entity_id); 
   closePanel();
   
-  // 2. Safety: Ensure fields exist and handle case sensitivity
   const type = notif.type ? notif.type.toLowerCase() : "";
   const targetId = notif.sender_id;
 
@@ -57,18 +55,27 @@ const handleNotificationClick = (notif: Notification) => {
     return;
   }
 
-  // 3. Logic: Redirect based on type
-  if (['follow', 'mention', 'like', 'comment'].includes(type)) {
-    console.log(`Redirecting to profile of user: ${targetId}`);
-    
+  if (['follow', 'mention'].includes(type)) {
     router.push({ 
       name: 'profile', 
       params: { id: targetId } 
-    }).then(() => {
-        // Force reload if we are already on a profile page but changing users
-        // (Optional, as your ProfilePage watcher handles this, but good for safety)
     });
-  } else {
+  } 
+  else if (['like', 'comment'].includes(type)) {
+    if (notif.entity_id) {
+      router.push({ 
+        name: 'post-detail', 
+        params: { id: notif.entity_id } 
+      });
+    } else {
+      console.warn("Notification missing entity_id for post redirection");
+      router.push({ 
+        name: 'profile', 
+        params: { id: targetId } 
+      });
+    }
+  } 
+  else {
     console.warn("Unknown notification type:", type);
   }
 };

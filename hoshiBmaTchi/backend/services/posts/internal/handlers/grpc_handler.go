@@ -362,10 +362,6 @@ func (h *Server) ToggleSavePost(ctx context.Context, req *pb.ToggleSavePostReque
 	}, nil
 }
 
-func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
-	return nil, nil
-}
-
 func (s *Server) GetUserMentions(ctx context.Context, req *pb.GetUserMentionsRequest) (*pb.GetPostsResponse, error) {
     posts, err := s.service.GetUserMentions(ctx, req)
     if err != nil {
@@ -630,4 +626,55 @@ func (s *Server) DeleteCollection(ctx context.Context, req *pb.DeleteCollectionR
         return nil, status.Error(codes.Internal, err.Error())
     }
     return &pb.DeleteCollectionResponse{Success: true, Message: "Collection deleted"}, nil
+}
+
+func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
+    // 1. Fetch from Repo
+    post, err := s.repo.GetPostByID(ctx, req.GetPostId())
+    if err != nil {
+        log.Printf("Failed to fetch post %s: %v", req.GetPostId(), err)
+        return nil, status.Error(codes.NotFound, "Post not found")
+    }
+
+	isLiked := false
+    if req.UserId != "" {
+        isLiked, _ = s.repo.IsPostLikedByUser(ctx, req.GetPostId(), req.UserId)
+    }
+
+    // 2. Generate Presigned URLs for Media
+    var pbMedia []*pb.PostMediaResponse
+    expiry := time.Hour * 1
+
+    for _, m := range post.Media {
+        reqParams := make(url.Values)
+        reqParams.Set("response-content-type", m.MediaType)
+
+        presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
+        
+        mediaURLString := ""
+        if err == nil {
+            // Fix for local docker networking if needed
+            mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
+            mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
+        }
+
+        pbMedia = append(pbMedia, &pb.PostMediaResponse{
+            MediaUrl:  mediaURLString,
+            MediaType: m.MediaType,
+        })
+    }
+
+    // 3. Return Response
+    return &pb.PostResponse{
+        Id:            post.ID.String(),
+        UserId:        post.UserID.String(),
+        Media:         pbMedia,
+        Caption:       post.Caption,
+        Location:      post.Location,
+        CreatedAt:     post.CreatedAt.Format(time.RFC3339),
+        LikesCount:    post.LikesCount,
+        CommentsCount: post.CommentsCount,
+        IsLiked:       isLiked,
+        IsReel:        post.IsReel,
+    }, nil
 }

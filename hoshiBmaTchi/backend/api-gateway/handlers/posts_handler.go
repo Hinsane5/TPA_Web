@@ -597,3 +597,67 @@ func (h *PostsHandler) DeleteCollection(c *gin.Context) {
     }
     c.JSON(http.StatusOK, gin.H{"message": "Collection deleted"})
 }
+
+func (h *PostsHandler) GetPostByID(c *gin.Context) {
+    postID := c.Param("postID")
+    if postID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Post ID is required"})
+        return
+    }
+
+    userID := ""
+    if val, exists := c.Get("userID"); exists {
+        userID = val.(string)
+    }
+
+    // 1. Get Post Data
+    res, err := h.postsClient.GetPostByID(context.Background(), &postsProto.GetPostByIDRequest{
+        PostId: postID,
+        UserId: userID,
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch post: " + err.Error()})
+        }
+        return
+    }
+
+    // 2. Get Author Data
+    username := "Unknown"
+    profilePic := ""
+    
+    userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+        UserId: res.UserId,
+    })
+    if err == nil {
+        username = userRes.Username
+        profilePic = userRes.ProfilePictureUrl
+    }
+
+    // 3. Format Response
+    var mediaList []gin.H
+    for _, m := range res.Media {
+        mediaList = append(mediaList, gin.H{
+            "media_url":  m.MediaUrl,
+            "media_type": m.MediaType,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{
+        "id":              res.Id,
+        "user_id":         res.UserId,
+        "username":        username,
+        "profile_picture": profilePic,
+        "media":           mediaList,
+        "caption":         res.Caption,
+        "location":        res.Location,
+        "created_at":      res.CreatedAt,
+        "likes_count":     res.LikesCount,
+        "comments_count":  res.CommentsCount,
+        "is_liked":        res.IsLiked,
+        "is_reel":         res.IsReel,
+    })
+}

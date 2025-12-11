@@ -65,6 +65,7 @@ message GetPostsResponse {
 
 message GetPostByIDRequest {
     string post_id = 1;
+    string user_id = 2;
 }
 
 message PostResponse {

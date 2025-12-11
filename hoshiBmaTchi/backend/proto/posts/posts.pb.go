@@ -388,6 +388,7 @@ func (x *GetPostsResponse) GetPosts() []*PostResponse {
 type GetPostByIDRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -425,6 +426,13 @@ func (*GetPostByIDRequest) Descriptor() ([]byte, []int) {
 func (x *GetPostByIDRequest) GetPostId() string {
 	if x != nil {
 		return x.PostId
+	}
+	return ""
+}
+
+func (x *GetPostByIDRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
 	}
 	return ""
 }
@@ -2061,9 +2069,10 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x17GetPostsByUserIDRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"=\n" +
 	"\x10GetPostsResponse\x12)\n" +
-	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\"-\n" +
+	"\x05posts\x18\x01 \x03(\v2\x13.posts.PostResponseR\x05posts\"F\n" +
 	"\x12GetPostByIDRequest\x12\x17\n" +
-	"\apost_id\x18\x01 \x01(\tR\x06postId\"\xb8\x02\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"\xb8\x02\n" +
 	"\fPostResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\x12.\n" +

@@ -195,12 +195,40 @@ const handleStoryCreated = () => {
 }
 
 const handleNotificationClick = (notif: Notification) => {
-
+  // Close the notification drawer
   isNotificationOpen.value = false;
-  if (notif.type === 'follow' || notif.type === 'mention' || notif.type === 'like' || notif.type === 'comment') {
-    router.push({ name: 'profile', params: { id: notif.sender_id } });
+
+  const type = notif.type ? notif.type.toLowerCase() : "";
+  const targetId = notif.sender_id;
+
+  // 1. Follow & Mention -> Go to User Profile
+  if (['follow', 'mention'].includes(type)) {
+    router.push({ 
+      name: 'profile', 
+      params: { id: targetId } 
+    });
   } 
+  // 2. Like & Comment -> Go to Post Detail Page
+  else if (['like', 'comment'].includes(type)) {
+    if (notif.entity_id) {
+      router.push({ 
+        name: 'post-detail', 
+        params: { id: notif.entity_id } 
+      });
+    } else {
+      console.warn("Notification missing entity_id, falling back to profile");
+      router.push({ 
+        name: 'profile', 
+        params: { id: targetId } 
+      });
+    }
+  }
+  // Default fallback
+  else {
+     router.push({ name: 'profile', params: { id: targetId } });
+  }
   
+  // Mark as read
   if (!notif.is_read) {
     notificationStore.markAsRead(notif.ID);
   }

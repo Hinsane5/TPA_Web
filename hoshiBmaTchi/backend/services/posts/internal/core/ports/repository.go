@@ -33,4 +33,5 @@ type PostRepository interface {
 	GetCollectionPosts(ctx context.Context, collectionID string, limit, offset int) ([]*domain.Post, error)
     UpdateCollection(ctx context.Context, collectionID, name, userID string) (*domain.Collection, error)
     DeleteCollection(ctx context.Context, collectionID, userID string) error
+	IsPostLikedByUser(ctx context.Context, postID, userID string) (bool, error)
 }

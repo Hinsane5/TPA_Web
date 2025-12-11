@@ -22,12 +22,23 @@ func (r *GormPostRepository) CreatePost(ctx context.Context, post *domain.Post) 
 }
 
 func (r *GormPostRepository) GetPostByID(ctx context.Context, postID string) (*domain.Post, error) {
-	var post domain.Post
-	err := r.db.WithContext(ctx).Where("id = ?", postID).First(&post).Error
-	if err != nil {
-		return nil, err
-	}
-	return &post, nil
+    var post domain.Post
+    // 1. Fetch Post with Media
+    if err := r.db.Preload("Media").Where("id = ?", postID).First(&post).Error; err != nil {
+        return nil, err
+    }
+
+    // 2. Count Likes
+    var likesCount int64
+    r.db.Model(&domain.PostLike{}).Where("post_id = ?", postID).Count(&likesCount)
+    post.LikesCount = int32(likesCount)
+
+    // 3. Count Comments
+    var commentsCount int64
+    r.db.Model(&domain.PostComment{}).Where("post_id = ?", postID).Count(&commentsCount)
+    post.CommentsCount = int32(commentsCount)
+
+    return &post, nil
 }
 
 func (r *GormPostRepository) GetPostsByUserID(ctx context.Context, userID string) ([]*domain.Post, error) {
@@ -419,5 +430,13 @@ func (r *GormPostRepository) DeleteCollection(ctx context.Context, collectionID,
         }
         return nil
     })
+}
+
+func (r *GormPostRepository) IsPostLikedByUser(ctx context.Context, postID, userID string) (bool, error) {
+    var count int64
+    err := r.db.Model(&domain.PostLike{}).
+        Where("post_id = ? AND user_id = ?", postID, userID).
+        Count(&count).Error
+    return count > 0, err
 }
 

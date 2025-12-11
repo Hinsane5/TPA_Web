@@ -11,6 +11,7 @@ import MessagesPage from "../components/MessagesPage.vue";
 import ProfilePage from "../components/ProfilePage.vue";
 import DashboardLayout from "../components/DashboardLayout.vue";
 import CollectionDetailPage from "../components/CollectionDetailPage.vue";
+import PostDetailPage from "../components/PostDetailPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -86,6 +87,13 @@ const router = createRouter({
           path: "profile/:id?",
           name: "profile",
           component: ProfilePage,
+        },
+
+        {
+          path: "post/:id",
+          name: "post-detail",
+          component: PostDetailPage,
+          props: true,
         },
       ],
     },
