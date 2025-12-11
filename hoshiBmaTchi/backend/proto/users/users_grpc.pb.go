@@ -33,6 +33,7 @@ const (
 	UserService_GetFollowingList_FullMethodName     = "/users.UserService/GetFollowingList"
 	UserService_SearchUsers_FullMethodName          = "/users.UserService/SearchUsers"
 	UserService_GetUserByUsername_FullMethodName    = "/users.UserService/GetUserByUsername"
+	UserService_GetSuggestedUsers_FullMethodName    = "/users.UserService/GetSuggestedUsers"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -53,6 +54,7 @@ type UserServiceClient interface {
 	GetFollowingList(ctx context.Context, in *GetFollowingListRequest, opts ...grpc.CallOption) (*GetFollowingListResponse, error)
 	SearchUsers(ctx context.Context, in *SearchUsersRequest, opts ...grpc.CallOption) (*SearchUsersResponse, error)
 	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*GetUserProfileResponse, error)
+	GetSuggestedUsers(ctx context.Context, in *GetSuggestedUsersRequest, opts ...grpc.CallOption) (*GetSuggestedUsersResponse, error)
 }
 
 type userServiceClient struct {
@@ -203,6 +205,16 @@ func (c *userServiceClient) GetUserByUsername(ctx context.Context, in *GetUserBy
 	return out, nil
 }
 
+func (c *userServiceClient) GetSuggestedUsers(ctx context.Context, in *GetSuggestedUsersRequest, opts ...grpc.CallOption) (*GetSuggestedUsersResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSuggestedUsersResponse)
+	err := c.cc.Invoke(ctx, UserService_GetSuggestedUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -221,6 +233,7 @@ type UserServiceServer interface {
 	GetFollowingList(context.Context, *GetFollowingListRequest) (*GetFollowingListResponse, error)
 	SearchUsers(context.Context, *SearchUsersRequest) (*SearchUsersResponse, error)
 	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserProfileResponse, error)
+	GetSuggestedUsers(context.Context, *GetSuggestedUsersRequest) (*GetSuggestedUsersResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -272,6 +285,9 @@ func (UnimplementedUserServiceServer) SearchUsers(context.Context, *SearchUsersR
 }
 func (UnimplementedUserServiceServer) GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserProfileResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserByUsername not implemented")
+}
+func (UnimplementedUserServiceServer) GetSuggestedUsers(context.Context, *GetSuggestedUsersRequest) (*GetSuggestedUsersResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSuggestedUsers not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -546,6 +562,24 @@ func _UserService_GetUserByUsername_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetSuggestedUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSuggestedUsersRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetSuggestedUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetSuggestedUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetSuggestedUsers(ctx, req.(*GetSuggestedUsersRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -608,6 +642,10 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUserByUsername",
 			Handler:    _UserService_GetUserByUsername_Handler,
+		},
+		{
+			MethodName: "GetSuggestedUsers",
+			Handler:    _UserService_GetSuggestedUsers_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

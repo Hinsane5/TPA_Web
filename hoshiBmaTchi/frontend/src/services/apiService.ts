@@ -200,7 +200,7 @@ export const usersApi = {
         try {
           const parts = token.split(".");
           if (parts.length >= 2) {
-            const payloadPart = parts[1]; 
+            const payloadPart = parts[1];
 
             if (payloadPart) {
               const payload = JSON.parse(atob(payloadPart));
@@ -219,6 +219,10 @@ export const usersApi = {
 
   searchUsers: (query: string) => {
     return apiClient.get(`/v1/users/search`, { params: { q: query } });
+  },
+
+  getSuggestedUsers: () => {
+    return apiClient.get("/v1/users/suggested");
   },
 };
 

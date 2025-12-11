@@ -51,20 +51,8 @@
         <div ref="scrollTrigger" class="scroll-trigger"></div>
       </div>
 
-      <div class="suggested-section">
-        <div class="suggested-header">
-          <h3>Suggested for you</h3>
-          <a href="#">See all</a>
-        </div>
-
-        <div class="suggested-user" v-for="n in 5" :key="`suggested-${n}`">
-          <div class="suggested-avatar">👤</div>
-          <div class="suggested-info">
-            <p class="suggested-name">user{{ n }}</p>
-            <p class="suggested-label">Suggested for you</p>
-          </div>
-          <button class="follow-btn">Follow</button>
-        </div>
+      <div class="sidebar-wrapper">
+        <SuggestedAccounts />
       </div>
     </div>
 
@@ -89,6 +77,7 @@ import PostDetailOverlay from './PostDetailOverlay.vue';
 import StoriesCarouselOverlay from './StoriesCarouselOverlay.vue'; 
 import MiniCarouselContainer from './MiniCarouselContainer.vue';
 import { useStories } from '../composables/useStories';
+import SuggestedAccounts from './SuggestedAccounts.vue';
 
 interface Post {
   id: string;
@@ -424,6 +413,7 @@ onMounted(() => {
   cursor: pointer;
 }
 
+
 .suggested-section {
   background: #1a1a1a;
   border-radius: 8px;
@@ -520,6 +510,11 @@ onMounted(() => {
   border-radius: 4px;
 }
 
+.sidebar-wrapper {
+  width: 100%;
+}
+
+
 /* Responsive */
 @media (max-width: 1024px) {
   .feed-container {
@@ -527,6 +522,10 @@ onMounted(() => {
   }
 
   .suggested-section {
+    display: none;
+  }
+
+  .sidebar-wrapper {
     display: none;
   }
 }

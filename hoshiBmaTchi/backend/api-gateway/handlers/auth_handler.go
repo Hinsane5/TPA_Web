@@ -414,3 +414,22 @@ func (h *AuthHandler) SearchUsers (c *gin.Context){
 
     c.JSON(http.StatusOK, gin.H{"users": res.Users})
 }
+
+func (h *AuthHandler) GetSuggestedUsers(c *gin.Context) {
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    res, err := h.UserClient.GetSuggestedUsers(context.Background(), &pb.GetSuggestedUsersRequest{
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}

@@ -125,3 +125,22 @@ func (r *gormUserRepository) SearchUsers(ctx context.Context, query string) ([]*
     }
     return users, nil
 }
+
+func (r *gormUserRepository) GetSuggestedUsers(ctx context.Context, userID string) ([]*domain.User, error) {
+    var users []*domain.User
+    
+    subQuery := r.db.Table("follows").Select("following_id").Where("follower_id = ?", userID)
+
+    err := r.db.WithContext(ctx).
+        Where("id != ?", userID).               
+        Where("id NOT IN (?)", subQuery).       
+        Order("RANDOM()").                      
+        Limit(5).                               
+        Find(&users).Error
+
+    if err != nil {
+        return nil, err
+    }
+
+    return users, nil
+}

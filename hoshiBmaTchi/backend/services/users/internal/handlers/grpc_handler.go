@@ -809,3 +809,29 @@ func (h *UserHandler) GetUserByUsername(ctx context.Context, req *pb.GetUserByUs
         UserId: user.ID.String(),
     })
 }
+
+func (h *UserHandler) GetSuggestedUsers(ctx context.Context, req *pb.GetSuggestedUsersRequest) (*pb.GetSuggestedUsersResponse, error) {
+    if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "User ID is required")
+    }
+
+    users, err := h.repo.GetSuggestedUsers(ctx, req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch suggested users")
+    }
+
+    var responseUsers []*pb.UserProfile
+    for _, u := range users {
+        responseUsers = append(responseUsers, &pb.UserProfile{
+            UserId:            u.ID.String(),
+            Username:          u.Username,
+            Name:              u.Name,
+            ProfilePictureUrl: u.ProfilePictureURL,
+            IsFollowing:       false, // By definition, these are not followed
+        })
+    }
+
+    return &pb.GetSuggestedUsersResponse{
+        Users: responseUsers,
+    }, nil
+}
