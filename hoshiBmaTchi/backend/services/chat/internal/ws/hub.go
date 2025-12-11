@@ -78,3 +78,7 @@ func (h *Hub) sendToLocalClients(msg []byte) {
 		}
 	}
 }
+
+func (h *Hub) Broadcast(message []byte) {
+	h.broadcast <- message
+}

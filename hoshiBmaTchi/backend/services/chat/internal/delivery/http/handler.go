@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -319,6 +320,21 @@ func (h *ChatHandler) ShareContent(c *gin.Context) {
 	if err := h.Repo.SaveMessage(c, msg); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send share message"})
 		return
+	}
+
+	wsMsg := map[string]interface{}{
+		"type":            "new_message",
+		"id":              msg.ID,
+		"conversation_id": msg.ConversationID,
+		"sender_id":       msg.SenderID,
+		"content":         msg.Content,
+		"media_url":       msg.MediaURL,
+		"media_type":      msg.MediaType,
+		"created_at":      msg.CreatedAt,
+	}
+
+	if msgBytes, err := json.Marshal(wsMsg); err == nil {
+		h.Hub.Broadcast(msgBytes)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Content shared successfully", "conversation_id": conversationID})

@@ -18,13 +18,17 @@
         ></p>
         <div v-else-if="message.messageType === 'image'" class="message-media">
           <img
-            :src="message.content"
+            :src="getDisplayUrl(message.content)"
             :alt="message.senderName"
             class="media-image"
           />
         </div>
         <div v-else-if="message.messageType === 'video'" class="message-media">
-          <video :src="message.content" class="media-video" controls></video>
+          <video 
+            :src="getDisplayUrl(message.content)" 
+            class="media-video" 
+            controls
+          ></video>
         </div>
         <div v-else-if="message.messageType === 'gif'" class="message-media">
           <img
@@ -36,6 +40,15 @@
 
         <div v-else-if="isSharedContent" class="shared-content-card" @click="viewSharedContent">
           <div class="shared-media-preview">
+            <video
+                v-if="isSharedVideo"
+                :src="getDisplayUrl(message.mediaUrl)"
+                class="shared-thumbnail"
+                muted
+                autoplay
+                loop
+                playsinline
+              ></video>
             <img 
               v-if="message.mediaUrl" 
               :src="getDisplayUrl(message.mediaUrl)" 
@@ -192,7 +205,15 @@ const viewSharedContent = () => {
   }
 };
 
-
+const isSharedVideo = computed(() => {
+  if (props.message.messageType === 'reel_share') return true;
+  
+  if (props.message.mediaUrl) {
+    const url = props.message.mediaUrl.toLowerCase();
+    return url.endsWith('.mp4') || url.endsWith('.mov') || url.endsWith('.webm');
+  }
+  return false;
+});
 
 </script>
 

@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isOpen" class="overlay-backdrop" @click="$emit('close')">
+  <div v-if="isOpen" class="overlay-backdrop" @click.self="$emit('close')">
     <div class="overlay-container" @click.stop>
       <div class="overlay-left">
         <div class="media-container" @dblclick="$emit('toggle-like', post)">
