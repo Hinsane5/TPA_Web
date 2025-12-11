@@ -34,6 +34,28 @@
           />
         </div>
 
+        <div v-else-if="isSharedContent" class="shared-content-card" @click="viewSharedContent">
+          <div class="shared-media-preview">
+            <img 
+              v-if="message.mediaUrl" 
+              :src="getDisplayUrl(message.mediaUrl)" 
+              class="shared-thumbnail" 
+            />
+            <div v-else class="shared-placeholder">
+              <span class="placeholder-icon">{{ getShareIcon }}</span>
+            </div>
+            
+            <div class="type-badge">
+              <img :src="`/icons/${getShareTypeIcon}-icon.png`" class="badge-icon" />
+            </div>
+          </div>
+          
+          <div class="shared-info">
+            <span class="shared-title">Shared {{ getShareTypeName }}</span>
+            <span class="view-link">Tap to view</span>
+          </div>
+        </div>
+
         <div v-if="message.isEdited" class="edited-indicator">(edited)</div>
       </div>
 
@@ -68,6 +90,7 @@
 
 <script setup lang="ts">
 import type { Message } from "../types/chat";
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { usersApi } from "../services/apiService";
 import router from "@/router";
@@ -77,7 +100,7 @@ interface Props {
   isOwnMessage: boolean;
 }
 
-defineProps<Props>();
+const props = defineProps<Props>();
 defineEmits<{
   unsend: [messageId: string];
 }>();
@@ -97,6 +120,10 @@ const parseMessage = (text: string) => {
     '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
   );
 };
+
+const isSharedContent = computed(() => {
+  return ['post_share', 'reel_share', 'story_share'].includes(props.message.messageType);
+});
 
 const handleMessageClick = async (event: MouseEvent) => {
   const target = event.target as HTMLElement;
@@ -123,6 +150,49 @@ const handleMessageClick = async (event: MouseEvent) => {
     }
   }
 };
+
+const getShareTypeName = computed(() => {
+  if (props.message.messageType === 'post_share') return 'Post';
+  if (props.message.messageType === 'reel_share') return 'Reel';
+  if (props.message.messageType === 'story_share') return 'Story';
+  return 'Content';
+});
+
+const getShareTypeIcon = computed(() => {
+  if (props.message.messageType === 'reel_share') return 'reels';
+  return 'post'; // Re-use post icon for others or add specific ones
+});
+
+const getShareIcon = computed(() => {
+  if (props.message.messageType === 'post_share') return '📸';
+  if (props.message.messageType === 'reel_share') return '🎬';
+  if (props.message.messageType === 'story_share') return '⭕';
+  return '🔗';
+});
+
+const getDisplayUrl = (url: string | undefined) => {
+  if (!url) return "";
+  return url
+    .replace("http://minio:9000", "http://localhost:9000")
+    .replace("http://backend:9000", "http://localhost:9000");
+};
+
+const viewSharedContent = () => {
+  const contentId = props.message.content; // Content ID is stored in message content for shares
+  
+  if (props.message.messageType === 'post_share') {
+    // Navigate to post (or open overlay logic if implemented)
+    // router.push(`/p/${contentId}`); 
+    alert("Navigating to Post: " + contentId);
+  } else if (props.message.messageType === 'reel_share') {
+    // router.push(`/reels/${contentId}`);
+    alert("Navigating to Reel: " + contentId);
+  } else if (props.message.messageType === 'story_share') {
+     alert("View Story: " + contentId);
+  }
+};
+
+
 
 </script>
 

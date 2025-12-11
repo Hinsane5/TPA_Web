@@ -12,17 +12,20 @@ export interface Message {
   senderName: string;
   senderAvatar: string;
   content: string;
-  messageType: "text" | "image" | "gif" | "video";
-
-
+  messageType:
+    | "text"
+    | "image"
+    | "gif"
+    | "video"
+    | "post_share"
+    | "reel_share"
+    | "story_share";
   timestamp: Date | string;
   status: "sending" | "sent" | "seen";
   isEdited: boolean;
   canUnsend: boolean;
 
-
   createdAt: Date | string;
-
 
   conversationId?: string;
   isUnsent?: boolean;

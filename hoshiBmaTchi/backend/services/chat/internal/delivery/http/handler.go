@@ -31,6 +31,13 @@ type ChatHandler struct {
 	Hub  *ws.Hub
 }
 
+type ShareContentRequest struct {
+	RecipientID string `json:"recipient_id" binding:"required"`
+	ContentID   string `json:"content_id" binding:"required"`
+	Type        string `json:"type" binding:"required"`
+	Thumbnail   string `json:"thumbnail"`
+}
+
 func NewChatHandler(repo *repositories.ChatRepository, hub *ws.Hub) *ChatHandler {
 	return &ChatHandler{Repo: repo, Hub: hub}
 }
@@ -42,6 +49,7 @@ func (h *ChatHandler) RegisterRoutes(r *gin.Engine){
 	{
 		chatGroup.GET("", h.GetConversations)
 		chatGroup.POST("", h.CreateGroupChat) 
+		chatGroup.POST("/share", h.ShareContent)
 
 		chatGroup.GET("/:id/messages", h.GetMessageHistory)
 		chatGroup.GET("/search", h.SearchMessages) 
@@ -263,4 +271,55 @@ func getHeaderType(contentType string) string {
     return "image"
 }
 
+func (h *ChatHandler) ShareContent(c *gin.Context) {
+	var req ShareContentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
+	senderID := c.GetHeader("X-User-ID")
+	if senderID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var conversationID uuid.UUID
+	
+	existingConv, err := h.Repo.FindDirectConversation(c, senderID, req.RecipientID)
+	if err == nil && existingConv != nil {
+		conversationID = existingConv.ID
+	} else {
+		conv := &domain.Conversation{
+			Name:      "Direct Message",
+			IsGroup:   false,
+			CreatedAt: time.Now(),
+		}
+		userIDs := []string{senderID, req.RecipientID}
+		if err := h.Repo.CreateConversation(c, conv, userIDs); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create conversation for sharing"})
+			return
+		}
+		conversationID = conv.ID
+	}
+
+	// 2. Create Message
+	sID, _ := uuid.Parse(senderID)
+	
+	msg := &domain.Message{
+		ID:             uuid.New(),
+		ConversationID: conversationID,
+		SenderID:       sID,
+		Content:        req.ContentID, 
+		MediaType:      req.Type + "_share",
+		MediaURL:       req.Thumbnail,      
+		CreatedAt:      time.Now(),
+	}
+
+	if err := h.Repo.SaveMessage(c, msg); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send share message"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Content shared successfully", "conversation_id": conversationID})
+}

@@ -1,6 +1,3 @@
-Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** and **Script**. I have applied the fixes to resolve the "Failed to resolve component" warning and the broken image URLs.
-
-```html
 <template>
   <div class="stories-overlay">
     <div class="overlay-backdrop" @click="closeOverlay"></div>
@@ -84,7 +81,7 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
             title="Like"
           >
             <img 
-              src="../../public/icons/liked-icon.png" 
+              src="/icons/liked-icon.png" 
               alt="Like" 
               class="icon-img"
             />
@@ -95,7 +92,7 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
             title="Share"
           >
             <img 
-              src="../../public/icons/share-icon.png" 
+              src="/icons/share-icon.png" 
               alt="Share" 
               class="icon-img" 
             />
@@ -120,11 +117,12 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
       />
     </div>
 
-    <ShareStoryModal 
-      v-if="showShareModal"
-      :story="currentStory"
+    <ShareModal 
+      v-if="showShareModal && currentStory"
+      :contentId="currentStory?.id || ''"
+      type="story"
+      :thumbnail="getSafeImageUrl(currentStory?.mediaUrl)"
       @close="showShareModal = false"
-      @send="sendStory"
     />
   </div>
 </template>
@@ -132,9 +130,8 @@ Here is the corrected `StoriesCarouselOverlay.vue` containing the **Template** a
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { useStories } from '../composables/useStories';
-import ShareStoryModal from './ShareStoryModal.vue';
+import ShareModal from './ShareModal.vue';
 import ProgressBarsContainer from './ProgressBarsContainer.vue';
-// FIX: Import the missing component to resolve the Vue Warning
 import MiniCarouselContainer from './MiniCarouselContainer.vue';
 
 const props = defineProps<{
@@ -161,7 +158,6 @@ const {
   toggleLike,
   startProgress,
   stopProgress,
-  sendStory,
 } = useStories();
 
 const closeOverlay = () => {
@@ -215,10 +211,10 @@ const formatTime = (date: Date | string | undefined) => {
   return `${Math.floor(diff / 86400000)}d`;
 };
 
-const getSafeImageUrl = (url: string) => {
+const getSafeImageUrl = (url: string | undefined) => {
   if (!url) return '';
-  if (url.includes('minio:9000')) {
-    return url.replace('minio:9000', 'localhost:9000');
+  if (url.includes('minio:9000') || url.includes('backend:9000')) {
+    return url.replace('minio:9000', 'localhost:9000').replace('backend:9000', 'localhost:9000');
   }
   return url;
 };

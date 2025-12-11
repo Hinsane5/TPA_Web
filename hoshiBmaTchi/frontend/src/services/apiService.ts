@@ -228,13 +228,22 @@ export const usersApi = {
 
 export const chatApi = {
   getOrCreateConversation: (targetUserId: string) => {
-
     return apiClient.post(`/chats`, {
-      name: "Direct Message", 
-      user_ids: [targetUserId], 
-      is_group: false, 
+      name: "Direct Message",
+      user_ids: [targetUserId],
+      is_group: false,
     });
   },
+
+  shareContent: (data: {
+    recipient_id: string;
+    content_id: string;
+    type: string;
+    thumbnail?: string;
+  }) => {
+    return apiClient.post(`/chats/share`, data);
+  },
+  
 };
 
 export const storiesApi = {

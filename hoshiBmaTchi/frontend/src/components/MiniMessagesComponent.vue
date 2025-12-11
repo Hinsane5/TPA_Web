@@ -129,20 +129,18 @@ const navigateToMessages = () => {
   align-items: center;
   justify-content: space-between;
   
-  /* Pill Shape & Sizing */
+
   min-width: 180px;
   height: 56px;
   padding: 0 16px;
-  border-radius: 28px; /* Half of height for full rounded ends */
+  border-radius: 28px;
   
-  /* Visual Style (Dark Theme compliant) */
-  background-color: #262626; /* Dark grey similar to screenshots */
+  background-color: #262626; 
   border: 1px solid #363636;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   color: white;
   
-  /* Behavior */
-  z-index: 1000;
+  z-index: 1;
   user-select: none;
   cursor: pointer;
   transition: transform 0.1s ease;

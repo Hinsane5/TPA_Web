@@ -433,3 +433,4 @@ func (h *AuthHandler) GetSuggestedUsers(c *gin.Context) {
 
     c.JSON(http.StatusOK, res)
 }
+

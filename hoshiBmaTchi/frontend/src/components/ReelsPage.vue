@@ -99,6 +99,14 @@
       :post="activeReelForComments" 
       @close="closeCommentOverlay"
     />
+
+    <ShareModal 
+        v-if="showShareModal"
+        :contentId="activeReelForShare?.id"
+        type="reel"
+        :thumbnail="activeReelForShare?.thumbnail_url"
+        @close="closeShareModal"
+     />
   </div>
 </template>
 
@@ -106,8 +114,11 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { reelsApi, usersApi } from '../services/apiService';
-import { formatDistanceToNow } from 'date-fns';
 import PostDetailOverlay from './PostDetailOverlay.vue';
+import ShareModal from './ShareModal.vue';
+
+const showShareModal = ref(false);
+const activeReelForShare = ref<any>(null);
 
 const showCommentOverlay = ref(false);
 const activeReelForComments = ref<any>(null);
@@ -313,10 +324,13 @@ const closeCommentOverlay = () => {
 };
 
 const openShareModal = (reel: any) => {
-  const recipient = prompt("Enter recipient username (Mock Share):");
-  if (recipient) {
-    alert(`Reel shared to ${recipient}`);
-  }
+  activeReelForShare.value = reel;
+  showShareModal.value = true;
+};
+
+const closeShareModal = () => {
+  showShareModal.value = false;
+  activeReelForShare.value = null;
 };
 
 const openMoreOptions = (reel: any) => {

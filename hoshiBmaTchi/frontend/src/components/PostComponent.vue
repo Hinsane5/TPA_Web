@@ -97,7 +97,10 @@
             class="action-icon"
           />
         </button>
-        <button class="action-button" title="Share">
+        <button
+          class="action-button"
+          title="Share"
+          @click="showShareModal = true"  >
           <img src="/icons/share-icon.png" alt="Share" class="action-icon" />
         </button>
       </div>
@@ -203,6 +206,14 @@
         View all {{ post.comments_count }} comments
       </button>
     </div>
+
+    <ShareModal 
+      v-if="showShareModal" 
+      :contentId="post.id"
+      type="post"
+      :thumbnail="currentMedia?.media_url"
+      @close="showShareModal = false"
+    />
   </div>
 </template>
 
@@ -211,50 +222,42 @@ import { ref, computed, onMounted, nextTick } from "vue";
 import { formatDistanceToNow } from "date-fns";
 import { postsApi, usersApi } from "../services/apiService";
 import { useRouter } from 'vue-router';
+import ShareModal from "./ShareModal.vue";
 
 const router = useRouter();
 
-// Props & Emits
 const props = defineProps({
   post: { type: Object, required: true },
 });
 const emit = defineEmits(["open-detail", "toggle-like"]);
 
-// State
 const isSaved = ref(false);
-const savedCollectionId = ref<string | null>(null); // Track which collection it's saved to
+const savedCollectionId = ref<string | null>(null); 
 const showPopover = ref(false);
 const showCreateInput = ref(false);
 const collections = ref<any[]>([]);
 const newCollectionName = ref("");
 const createInputRef = ref<HTMLInputElement | null>(null);
 const currentIndex = ref(0);
+const showShareModal = ref(false);
 
-// Initialize
 onMounted(() => {
   if (props.post.is_saved !== undefined) {
     isSaved.value = props.post.is_saved;
-    // Note: Backend might not return *which* collection it is saved to in the feed feed response
-    // For now, we assume generic save unless we fetch details.
   }
 });
 
-// --- HOVER LOGIC ---
 const handleMouseEnter = () => {
   showPopover.value = true;
-  // Fetch collections when hovering to ensure fresh list
   fetchCollections();
 };
 
 const handleMouseLeave = () => {
-  // Delay slightly so moving mouse to popover doesn't kill it immediately
-  // But since popover is inside the wrapper, simple leave works if wrapper wraps both.
   showPopover.value = false;
-  showCreateInput.value = false; // Reset input view
+  showCreateInput.value = false; 
   newCollectionName.value = "";
 };
 
-// --- DATA FETCHING ---
 const fetchCollections = async () => {
   try {
     const res = await postsApi.getUserCollections();
@@ -264,33 +267,28 @@ const fetchCollections = async () => {
   }
 };
 
-// --- ACTIONS ---
 const toggleDefaultSave = async () => {
-  // Clicking the icon directly toggles generic save (or unsaves)
   if (isSaved.value) {
     await toggleSaveApi("");
     isSaved.value = false;
     savedCollectionId.value = null;
   } else {
-    await toggleSaveApi(""); // Save to 'All Posts'
+    await toggleSaveApi("");
     isSaved.value = true;
     savedCollectionId.value = "";
   }
 };
 
 const saveToCollection = async (collectionId: string) => {
-  // If clicking the one currently saved, unsave it
   if (isSaved.value && savedCollectionId.value === collectionId) {
-    await toggleSaveApi(collectionId); // backend handles toggle logic
+    await toggleSaveApi(collectionId); 
     isSaved.value = false;
     savedCollectionId.value = null;
   } else {
-    // Save to specific collection
     await toggleSaveApi(collectionId);
     isSaved.value = true;
     savedCollectionId.value = collectionId;
   }
-  // Close menu after selection for better UX
   showPopover.value = false;
 };
 
@@ -314,16 +312,13 @@ const createNewCollection = async () => {
   try {
     const res = await postsApi.createCollection(newCollectionName.value);
     
-    // Refresh list
     await fetchCollections();
     
-    // Automatically save to the new collection
-    const newId = res.data.id || res.data.collection_id; // adjusting based on likely response
+    const newId = res.data.id || res.data.collection_id;
     if (newId) {
       await saveToCollection(newId);
     }
     
-    // Reset UI
     newCollectionName.value = "";
     showCreateInput.value = false;
   } catch (error) {
@@ -331,7 +326,6 @@ const createNewCollection = async () => {
   }
 };
 
-// --- MEDIA HELPERS ---
 const mediaList = computed(() => {
   if (props.post.media?.length > 0) return props.post.media;
   if (props.post.media_url) {
@@ -352,9 +346,7 @@ const getDisplayUrl = (url: string) => {
 };
 
 const getCollectionCover = (col: any) => {
-  // Use the array from backend if available
   if (col.cover_images && col.cover_images.length > 0) return col.cover_images[0];
-  // Fallback if parsing saved_posts structure
   if (col.saved_posts && col.saved_posts.length > 0) {
     const p = col.saved_posts[0].post || col.saved_posts[0];
     if (p.media?.length > 0) return p.media[0].media_url;
@@ -362,7 +354,6 @@ const getCollectionCover = (col: any) => {
   return null;
 };
 
-// --- MISC ---
 const getInitials = (username: string) => username ? username.substring(0, 2).toUpperCase() : "UN";
 const formatTime = (dateStr: string) => {
   try { return dateStr ? formatDistanceToNow(new Date(dateStr), { addSuffix: true }) : ""; } 
@@ -735,7 +726,6 @@ const parseCaption = (text: string) => {
   font-weight: bold;
 }
 
-/* Footer & Create Section */
 .popover-footer {
   border-top: 1px solid #363636;
   padding: 4px 0;
