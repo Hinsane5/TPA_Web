@@ -25,7 +25,14 @@
       </div>
       <div class="notif-content-area">
         <ul class="notification-list">
-          <li v-for="notification in notificationStore.notifications" :key="notification.ID" class="notification-item" :class="{ 'unread': !notification.is_read }">
+          <li 
+            v-for="notification in notificationStore.notifications" 
+            :key="notification.ID" 
+            class="notification-item" 
+            :class="{ 'unread': !notification.is_read }"
+            @click="handleNotificationClick(notification)"
+            style="cursor: pointer;"
+          >
             <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="user" class="notif-avatar">
             
             <div class="notif-text-content">
@@ -90,7 +97,8 @@ import { formatDistanceToNow } from 'date-fns' // Import Date Fns
 import type { DashboardPage } from '../types'
 import Sidebar from './Sidebar.vue'
 import SearchPanel from './SearchPanel.vue'
-// Removed NotificationPanel import since we inlined the UI
+
+import type { Notification } from '@/types';
 import CreatePostOverlay from './CreatePostOverlay.vue'
 import MiniMessagesComponent from './MiniMessagesComponent.vue'
 import { useAuth } from '../composables/useAuth'
@@ -185,6 +193,18 @@ const handleStoryCreated = () => {
   console.log('Story created successfully')
   fetchStories()
 }
+
+const handleNotificationClick = (notif: Notification) => {
+
+  isNotificationOpen.value = false;
+  if (notif.type === 'follow' || notif.type === 'mention' || notif.type === 'like' || notif.type === 'comment') {
+    router.push({ name: 'profile', params: { id: notif.sender_id } });
+  } 
+  
+  if (!notif.is_read) {
+    notificationStore.markAsRead(notif.ID);
+  }
+};
 
 onMounted(() => {
   if (user.value?.id) {

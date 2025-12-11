@@ -10,12 +10,12 @@
         <div 
           v-for="notif in store.notifications" 
           :key="notif.ID" 
-          class="notification-item"
+          class="notif-item" 
           @click="handleNotificationClick(notif)"
         >
           <img :src="notif.sender_image || '/icons/profile-icon.png'" class="avatar" />
           
-          <div class="content">
+          <div class="notif-content">
             <span class="username">{{ notif.sender_name }}</span>
             <span class="message">{{ notif.message }}</span>
           </div>
@@ -32,6 +32,7 @@
 <script setup lang="ts">
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
+import type { Notification } from '@/types';
 
 defineProps<{ isOpen: boolean }>();
 const emit = defineEmits<{ close: [] }>();
@@ -41,16 +42,34 @@ const router = useRouter();
 
 const closePanel = () => emit('close');
 
-const handleNotificationClick = (notif: any) => {
+const handleNotificationClick = (notif: Notification) => {
+  // 1. Debug: Check if the click is even registering
+  console.log("Notification Clicked:", notif);
+
   closePanel();
   
-  if (notif.type === 'like' || notif.type === 'comment') {
-    // Navigate to post (Assuming you have a route named 'PostDetail')
-    // router.push({ name: 'PostDetail', params: { id: notif.entity_id } });
-    router.push({ name: 'profile', params: { id: notif.sender_id } });
-    console.log("Navigating to post:", notif.entity_id);
+  // 2. Safety: Ensure fields exist and handle case sensitivity
+  const type = notif.type ? notif.type.toLowerCase() : "";
+  const targetId = notif.sender_id;
+
+  if (!targetId) {
+    console.error("Error: Notification is missing sender_id", notif);
+    return;
+  }
+
+  // 3. Logic: Redirect based on type
+  if (['follow', 'mention', 'like', 'comment'].includes(type)) {
+    console.log(`Redirecting to profile of user: ${targetId}`);
+    
+    router.push({ 
+      name: 'profile', 
+      params: { id: targetId } 
+    }).then(() => {
+        // Force reload if we are already on a profile page but changing users
+        // (Optional, as your ProfilePage watcher handles this, but good for safety)
+    });
   } else {
-    router.push({ name: 'profile', params: { username: notif.sender_name } });
+    console.warn("Unknown notification type:", type);
   }
 };
 </script>
@@ -120,6 +139,7 @@ const handleNotificationClick = (notif: any) => {
   color: var(--text-secondary);
 }
 
+/* These classes now match the HTML template */
 .notif-item {
   display: flex;
   align-items: center;
@@ -135,10 +155,13 @@ const handleNotificationClick = (notif: any) => {
   height: 44px;
   border-radius: 50%;
   margin-right: 12px;
+  object-fit: cover;
 }
 .notif-content {
   flex: 1;
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
 }
 .username {
   font-weight: 600;
