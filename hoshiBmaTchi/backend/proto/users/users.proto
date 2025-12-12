@@ -24,6 +24,9 @@ service UserService {
   rpc GetUserByUsername(GetUserByUsernameRequest) returns (GetUserProfileResponse);
   rpc GetSuggestedUsers(GetSuggestedUsersRequest) returns (GetSuggestedUsersResponse);
   rpc GetFollowingProfiles(GetFollowingListRequest) returns (GetFollowingProfilesResponse);
+  rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
+  rpc UnblockUser(UnblockUserRequest) returns (UnblockUserResponse);
+  rpc GetBlockedList(GetBlockedListRequest) returns (GetBlockedListResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -176,4 +179,30 @@ message GetSuggestedUsersResponse {
 
 message GetFollowingProfilesResponse {
   repeated UserProfile users = 1; 
+}
+
+message BlockUserRequest {
+  string blocker_id = 1;
+  string blocked_id = 2;
+}
+
+message BlockUserResponse {
+  string message = 1;
+}
+
+message UnblockUserRequest {
+  string blocker_id = 1;
+  string blocked_id = 2;
+}
+
+message UnblockUserResponse {
+  string message = 1;
+}
+
+message GetBlockedListRequest {
+  string user_id = 1;
+}
+
+message GetBlockedListResponse {
+  repeated UserProfile users = 1;
 }

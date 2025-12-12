@@ -17,7 +17,11 @@ type UserRepository interface{
     DeleteFollow(followerID, followingID string) error
     IsFollowing(followerID, followingID string) (bool, error)
 	GetFollowing(userID string) ([]string, error)
-	SearchUsers(ctx context.Context, query string) ([]*domain.User, error)
+	SearchUsers(ctx context.Context, query string, userID string) ([]*domain.User, error)
 	GetSuggestedUsers(ctx context.Context, userID string) ([]*domain.User, error)
 	GetFollowingUsers(userID string) ([]*domain.User, error)
+	CreateBlock(blockerID, blockedID string) error
+    DeleteBlock(blockerID, blockedID string) error
+    GetBlockedUsers(userID string) ([]*domain.User, error)
+    IsBlocked(userA, userB string) (bool, error)
 }

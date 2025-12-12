@@ -49,6 +49,20 @@
                 <button class="action-btn" @click="handleMessageClick">
                   Message
                 </button>
+
+                <div class="more-options-wrapper" style="position: relative;">
+                  <button class="action-btn" @click="showMoreOptions = !showMoreOptions">
+                    •••
+                  </button>
+                  <div v-if="showMoreOptions" class="options-dropdown">
+                    <button @click="handleBlockUser" class="dropdown-item danger">
+                      Block User
+                    </button>
+                    <button @click="showMoreOptions = false" class="dropdown-item">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
               </template>
             </div>
           </div>
@@ -232,6 +246,7 @@ const isFollowing = ref(false);
 
 const showPostOverlay = ref(false);
 const selectedPost = ref<any>(null);
+const showMoreOptions = ref(false);
 
 const profileUser = ref({
   id: "",
@@ -389,6 +404,19 @@ const handleLikeUpdate = (post: any) => {
   if (target) {
     target.is_liked = !target.is_liked;
     target.likes_count += target.is_liked ? 1 : -1;
+  }
+};
+
+const handleBlockUser = async () => {
+  if (!confirm("Are you sure you want to block this user? They will not be able to see your profile or posts.")) return;
+  
+  try {
+    await usersApi.blockUser(profileUser.value.id);
+    alert("User blocked.");
+    router.push("/"); 
+  } catch (error) {
+    console.error("Failed to block user:", error);
+    alert("Failed to block user.");
   }
 };
 
@@ -755,6 +783,33 @@ watch(activeTab, (newTab) => {
   height: auto;
   border-radius: 8px;
   object-fit: contain;
+}
+
+.options-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: #262626;
+  border: 1px solid #404040;
+  border-radius: 8px;
+  overflow: hidden;
+  z-index: 100;
+  width: 150px;
+}
+.dropdown-item {
+  width: 100%;
+  padding: 10px;
+  text-align: left;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+.dropdown-item:hover {
+  background: #383838;
+}
+.dropdown-item.danger {
+  color: #ff4d4d;
 }
 
 /* Responsive Design */

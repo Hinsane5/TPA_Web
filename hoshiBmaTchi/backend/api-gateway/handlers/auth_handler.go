@@ -452,3 +452,64 @@ func (h *AuthHandler) GetFollowingUsers(c *gin.Context) {
 
     c.JSON(http.StatusOK, res)
 }
+
+func (h *AuthHandler) BlockUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    _, err := h.UserClient.BlockUser(context.Background(), &pb.BlockUserRequest{
+        BlockerId: currentUserID.(string),
+        BlockedId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User blocked successfully"})
+}
+
+func (h *AuthHandler) UnblockUser(c *gin.Context) {
+    targetUserID := c.Param("id")
+    currentUserID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    _, err := h.UserClient.UnblockUser(context.Background(), &pb.UnblockUserRequest{
+        BlockerId: currentUserID.(string),
+        BlockedId: targetUserID,
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "User unblocked successfully"})
+}
+
+func (h *AuthHandler) GetBlockedUsers(c *gin.Context) {
+    currentUserID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    res, err := h.UserClient.GetBlockedList(context.Background(), &pb.GetBlockedListRequest{
+        UserId: currentUserID.(string),
+    })
+
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+
+    c.JSON(http.StatusOK, res)
+}

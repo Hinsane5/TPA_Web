@@ -228,6 +228,18 @@ export const usersApi = {
   getSuggestedUsers: () => {
     return apiClient.get("/v1/users/suggested");
   },
+
+  blockUser: (userId: string) => {
+    return apiClient.post(`/v1/users/${userId}/block`);
+  },
+
+  unblockUser: (userId: string) => {
+    return apiClient.delete(`/v1/users/${userId}/block`);
+  },
+
+  getBlockedUsers: () => {
+    return apiClient.get(`/v1/users/blocked`);
+  },
 };
 
 export const chatApi = {

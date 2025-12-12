@@ -31,6 +31,9 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 		usersGroup.GET("/search", authHandler.SearchUsers)
 		usersGroup.GET("/suggested", authHandler.GetSuggestedUsers)
 		
+		usersGroup.POST("/:id/block", authHandler.BlockUser)
+        usersGroup.DELETE("/:id/block", authHandler.UnblockUser)
+        usersGroup.GET("/blocked", authHandler.GetBlockedUsers)
 
 		usersGroup.GET("/:id", authHandler.GetUserProfile)
 		usersGroup.POST("/:id/follow", authHandler.FollowUser)

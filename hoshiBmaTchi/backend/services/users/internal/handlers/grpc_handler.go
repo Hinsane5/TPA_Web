@@ -581,10 +581,16 @@ func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfile
 
 	isFollowing := false
     if req.ViewerId != "" && req.ViewerId != req.UserId {
-        // Use the existing IsFollowing method in your repository
         status, err := h.repo.IsFollowing(req.ViewerId, req.UserId)
         if err == nil {
             isFollowing = status
+        }
+    }
+
+	if req.ViewerId != "" && req.ViewerId != req.UserId {
+        isBlocked, err := h.repo.IsBlocked(req.ViewerId, req.UserId)
+        if err == nil && isBlocked {
+            return nil, status.Error(codes.NotFound, "User not found")
         }
     }
 
@@ -746,7 +752,7 @@ func jaroWinkler(s1, s2 string) float64{
 }
 
 func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersRequest) (*pb.SearchUsersResponse, error){
-	candidates, err := h.repo.SearchUsers(ctx, req.Query)
+	candidates, err := h.repo.SearchUsers(ctx, req.Query, req.UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -836,20 +842,16 @@ func (h *UserHandler) GetSuggestedUsers(ctx context.Context, req *pb.GetSuggeste
     }, nil
 }
 
-// Add this method to UserHandler
-
 func (h *UserHandler) GetFollowingProfiles(ctx context.Context, req *pb.GetFollowingListRequest) (*pb.GetFollowingProfilesResponse, error) {
     if req.UserId == "" {
         return nil, status.Error(codes.InvalidArgument, "User ID is required")
     }
 
-    // 1. Call the new Repo function
     users, err := h.repo.GetFollowingUsers(req.UserId)
     if err != nil {
         return nil, status.Error(codes.Internal, "Failed to fetch following profiles")
     }
 
-    // 2. Map domain users to Proto users
     var responseUsers []*pb.UserProfile
     for _, u := range users {
         responseUsers = append(responseUsers, &pb.UserProfile{
@@ -857,11 +859,56 @@ func (h *UserHandler) GetFollowingProfiles(ctx context.Context, req *pb.GetFollo
             Username:          u.Username,
             Name:              u.Name,
             ProfilePictureUrl: u.ProfilePictureURL,
-            IsFollowing:       true, // Since we are fetching the following list, this is true
+            IsFollowing:       true,
         })
     }
 
     return &pb.GetFollowingProfilesResponse{
         Users: responseUsers,
     }, nil
+}
+
+func (h *UserHandler) BlockUser(ctx context.Context, req *pb.BlockUserRequest) (*pb.BlockUserResponse, error) {
+    if req.BlockerId == req.BlockedId {
+        return nil, status.Error(codes.InvalidArgument, "Cannot block yourself")
+    }
+
+    err := h.repo.CreateBlock(req.BlockerId, req.BlockedId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to block user")
+    }
+
+    return &pb.BlockUserResponse{Message: "User blocked successfully"}, nil
+}
+
+func (h *UserHandler) UnblockUser(ctx context.Context, req *pb.UnblockUserRequest) (*pb.UnblockUserResponse, error) {
+    err := h.repo.DeleteBlock(req.BlockerId, req.BlockedId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to unblock user")
+    }
+
+    return &pb.UnblockUserResponse{Message: "User unblocked successfully"}, nil
+}
+
+func (h *UserHandler) GetBlockedList(ctx context.Context, req *pb.GetBlockedListRequest) (*pb.GetBlockedListResponse, error) {
+    if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "User ID required")
+    }
+
+    users, err := h.repo.GetBlockedUsers(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch blocked users")
+    }
+
+    var responseUsers []*pb.UserProfile
+    for _, u := range users {
+        responseUsers = append(responseUsers, &pb.UserProfile{
+            UserId:            u.ID.String(),
+            Username:          u.Username,
+            Name:              u.Name,
+            ProfilePictureUrl: u.ProfilePictureURL,
+        })
+    }
+
+    return &pb.GetBlockedListResponse{Users: responseUsers}, nil
 }

@@ -35,6 +35,9 @@ const (
 	UserService_GetUserByUsername_FullMethodName    = "/users.UserService/GetUserByUsername"
 	UserService_GetSuggestedUsers_FullMethodName    = "/users.UserService/GetSuggestedUsers"
 	UserService_GetFollowingProfiles_FullMethodName = "/users.UserService/GetFollowingProfiles"
+	UserService_BlockUser_FullMethodName            = "/users.UserService/BlockUser"
+	UserService_UnblockUser_FullMethodName          = "/users.UserService/UnblockUser"
+	UserService_GetBlockedList_FullMethodName       = "/users.UserService/GetBlockedList"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -57,6 +60,9 @@ type UserServiceClient interface {
 	GetUserByUsername(ctx context.Context, in *GetUserByUsernameRequest, opts ...grpc.CallOption) (*GetUserProfileResponse, error)
 	GetSuggestedUsers(ctx context.Context, in *GetSuggestedUsersRequest, opts ...grpc.CallOption) (*GetSuggestedUsersResponse, error)
 	GetFollowingProfiles(ctx context.Context, in *GetFollowingListRequest, opts ...grpc.CallOption) (*GetFollowingProfilesResponse, error)
+	BlockUser(ctx context.Context, in *BlockUserRequest, opts ...grpc.CallOption) (*BlockUserResponse, error)
+	UnblockUser(ctx context.Context, in *UnblockUserRequest, opts ...grpc.CallOption) (*UnblockUserResponse, error)
+	GetBlockedList(ctx context.Context, in *GetBlockedListRequest, opts ...grpc.CallOption) (*GetBlockedListResponse, error)
 }
 
 type userServiceClient struct {
@@ -227,6 +233,36 @@ func (c *userServiceClient) GetFollowingProfiles(ctx context.Context, in *GetFol
 	return out, nil
 }
 
+func (c *userServiceClient) BlockUser(ctx context.Context, in *BlockUserRequest, opts ...grpc.CallOption) (*BlockUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(BlockUserResponse)
+	err := c.cc.Invoke(ctx, UserService_BlockUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UnblockUser(ctx context.Context, in *UnblockUserRequest, opts ...grpc.CallOption) (*UnblockUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UnblockUserResponse)
+	err := c.cc.Invoke(ctx, UserService_UnblockUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetBlockedList(ctx context.Context, in *GetBlockedListRequest, opts ...grpc.CallOption) (*GetBlockedListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetBlockedListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetBlockedList_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -247,6 +283,9 @@ type UserServiceServer interface {
 	GetUserByUsername(context.Context, *GetUserByUsernameRequest) (*GetUserProfileResponse, error)
 	GetSuggestedUsers(context.Context, *GetSuggestedUsersRequest) (*GetSuggestedUsersResponse, error)
 	GetFollowingProfiles(context.Context, *GetFollowingListRequest) (*GetFollowingProfilesResponse, error)
+	BlockUser(context.Context, *BlockUserRequest) (*BlockUserResponse, error)
+	UnblockUser(context.Context, *UnblockUserRequest) (*UnblockUserResponse, error)
+	GetBlockedList(context.Context, *GetBlockedListRequest) (*GetBlockedListResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -304,6 +343,15 @@ func (UnimplementedUserServiceServer) GetSuggestedUsers(context.Context, *GetSug
 }
 func (UnimplementedUserServiceServer) GetFollowingProfiles(context.Context, *GetFollowingListRequest) (*GetFollowingProfilesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFollowingProfiles not implemented")
+}
+func (UnimplementedUserServiceServer) BlockUser(context.Context, *BlockUserRequest) (*BlockUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BlockUser not implemented")
+}
+func (UnimplementedUserServiceServer) UnblockUser(context.Context, *UnblockUserRequest) (*UnblockUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnblockUser not implemented")
+}
+func (UnimplementedUserServiceServer) GetBlockedList(context.Context, *GetBlockedListRequest) (*GetBlockedListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBlockedList not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -614,6 +662,60 @@ func _UserService_GetFollowingProfiles_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_BlockUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlockUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).BlockUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_BlockUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).BlockUser(ctx, req.(*BlockUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UnblockUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UnblockUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UnblockUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UnblockUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UnblockUser(ctx, req.(*UnblockUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetBlockedList_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBlockedListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetBlockedList(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetBlockedList_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetBlockedList(ctx, req.(*GetBlockedListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -684,6 +786,18 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFollowingProfiles",
 			Handler:    _UserService_GetFollowingProfiles_Handler,
+		},
+		{
+			MethodName: "BlockUser",
+			Handler:    _UserService_BlockUser_Handler,
+		},
+		{
+			MethodName: "UnblockUser",
+			Handler:    _UserService_UnblockUser_Handler,
+		},
+		{
+			MethodName: "GetBlockedList",
+			Handler:    _UserService_GetBlockedList_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -13,7 +13,7 @@ type gormUserRepository struct{
 }
 
 func NewGormUserRepository(db *gorm.DB) *gormUserRepository{
-	err := db.AutoMigrate(&domain.User{}, &domain.Follow{})
+	err := db.AutoMigrate(&domain.User{}, &domain.Follow{}, &domain.Block{})
     if err != nil {
     
     }
@@ -112,11 +112,19 @@ func (r *gormUserRepository) GetFollowing(userID string) ([]string, error){
 	return followingIDs, nil
 }
 
-func (r *gormUserRepository) SearchUsers(ctx context.Context, query string) ([]*domain.User, error) {
+func (r *gormUserRepository) SearchUsers(ctx context.Context, query string, userID string) ([]*domain.User, error) {
     var users []*domain.User
     wildcard := "%" + query + "%"
+    
+    blockedSubQuery := r.db.Table("blocks").Select("blocked_id").Where("blocker_id = ?", userID)
+    
+    blockerSubQuery := r.db.Table("blocks").Select("blocker_id").Where("blocked_id = ?", userID)
+
     err := r.db.WithContext(ctx).
         Where("username ILIKE ? OR name ILIKE ?", wildcard, wildcard).
+        Where("id != ?", userID).
+        Where("id NOT IN (?)", blockedSubQuery).
+        Where("id NOT IN (?)", blockerSubQuery).
         Limit(20).
         Find(&users).Error
     
@@ -129,11 +137,21 @@ func (r *gormUserRepository) SearchUsers(ctx context.Context, query string) ([]*
 func (r *gormUserRepository) GetSuggestedUsers(ctx context.Context, userID string) ([]*domain.User, error) {
     var users []*domain.User
     
-    subQuery := r.db.Table("follows").Select("following_id").Where("follower_id = ?", userID)
+    // 1. Exclude people you already follow
+    followingSubQuery := r.db.Table("follows").Select("following_id").Where("follower_id = ?", userID)
+    
+    // 2. Exclude people YOU blocked
+    blockedSubQuery := r.db.Table("blocks").Select("blocked_id").Where("blocker_id = ?", userID)
+    
+    // 3. Exclude people who blocked YOU
+    blockerSubQuery := r.db.Table("blocks").Select("blocker_id").Where("blocked_id = ?", userID)
 
+    // Execute Main Query
     err := r.db.WithContext(ctx).
         Where("id != ?", userID).               
-        Where("id NOT IN (?)", subQuery).       
+        Where("id NOT IN (?)", followingSubQuery).       
+        Where("id NOT IN (?)", blockedSubQuery). 
+        Where("id NOT IN (?)", blockerSubQuery).
         Order("RANDOM()").                      
         Limit(5).                               
         Find(&users).Error
@@ -145,7 +163,6 @@ func (r *gormUserRepository) GetSuggestedUsers(ctx context.Context, userID strin
     return users, nil
 }
 
-// Add this method to gormUserRepository
 
 func (r *gormUserRepository) GetFollowingUsers(userID string) ([]*domain.User, error) {
 	var users []*domain.User
@@ -157,4 +174,42 @@ func (r *gormUserRepository) GetFollowingUsers(userID string) ([]*domain.User, e
 		return nil, err
 	}
 	return users, nil
+}
+
+func (r *gormUserRepository) CreateBlock(blockerID, blockedID string) error {
+    // 1. Create Block Record
+    block := &domain.Block{
+        BlockerID: uuid.MustParse(blockerID),
+        BlockedID: uuid.MustParse(blockedID),
+    }
+    if err := r.db.Create(block).Error; err != nil {
+        return err
+    }
+
+    r.db.Where("(follower_id = ? AND following_id = ?) OR (follower_id = ? AND following_id = ?)", 
+        blockerID, blockedID, blockedID, blockerID).Delete(&domain.Follow{})
+        
+    return nil
+}
+
+func (r *gormUserRepository) DeleteBlock(blockerID, blockedID string) error {
+    return r.db.Where("blocker_id = ? AND blocked_id = ?", blockerID, blockedID).
+        Delete(&domain.Block{}).Error
+}
+
+func (r *gormUserRepository) GetBlockedUsers(userID string) ([]*domain.User, error) {
+    var users []*domain.User
+    err := r.db.Joins("JOIN blocks ON blocks.blocked_id = users.id").
+        Where("blocks.blocker_id = ?", userID).
+        Find(&users).Error
+    return users, err
+}
+
+func (r *gormUserRepository) IsBlocked(userA, userB string) (bool, error) {
+    var count int64
+    err := r.db.Model(&domain.Block{}).
+        Where("(blocker_id = ? AND blocked_id = ?) OR (blocker_id = ? AND blocked_id = ?)", 
+        userA, userB, userB, userA).
+        Count(&count).Error
+    return count > 0, err
 }

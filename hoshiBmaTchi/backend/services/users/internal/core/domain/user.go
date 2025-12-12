@@ -14,6 +14,13 @@ type Follow struct {
     CreatedAt   time.Time
 }
 
+type Block struct {
+    ID        uuid.UUID `gorm:"type:uuid;primary_key;"`
+    BlockerID uuid.UUID `gorm:"type:uuid;not null;index"`
+    BlockedID uuid.UUID `gorm:"type:uuid;not null;index"`
+    CreatedAt time.Time
+}
+
 type User struct{
 
 	ID          uuid.UUID `gorm:"type:uuid;primary_key;"`
@@ -51,4 +58,9 @@ func (user *User) BeforeCreate(tx *gorm.DB) (err error) {
 func (follow *Follow) BeforeCreate(tx *gorm.DB) (err error) {
 	follow.ID = uuid.New()
 	return
+}
+
+func (block *Block) BeforeCreate(tx *gorm.DB) (err error) {
+    block.ID = uuid.New()
+    return
 }
