@@ -4,11 +4,15 @@ tmp_dir = "tmp"
 [build]
   
   cmd = "go build -o tmp/posts-service ./cmd"
-  
   bin = "tmp/posts-service"
 
+  poll = true
+  poll_interval = 1000
+
+  include_ext = ["go", "tpl", "tmpl", "html"]
+
 [log]
-  level = "error"
+  level = "info"
 
 [misc]
   clean_on_exit = true
