@@ -45,15 +45,22 @@ func NewPostService(repo ports.PostRepository, amqpChan *amqp.Channel, userClien
 func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*domain.Post, error) {
 	userID, _ := uuid.Parse(req.UserId)
 
+    log.Printf("[DEBUG] ---------------- START CREATE POST ----------------")
+    log.Printf("[DEBUG] Incoming Post from User: %s", req.UserId)
+    log.Printf("[DEBUG] Caption: %s", req.Caption)
+
 	post := &domain.Post{
 		UserID:   userID,
 		Caption:  req.Caption,
 		Location: req.Location,
+        IsReel:   req.IsReel,
 	}
-
 
 	uniqueUsernames := make(map[string]bool)
 	matches := mentionRegex.FindAllStringSubmatch(req.Caption, -1)
+
+    log.Printf("[DEBUG] Regex found %d potential mentions", len(matches))
+
 	for _, match := range matches {
 		if len(match) > 1 {
 			uniqueUsernames[match[1]] = true 
@@ -61,6 +68,28 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	}
 
 	var mentions []domain.UserMention
+    var mentionedUsers []*userPb.GetUserProfileResponse
+
+    for username := range uniqueUsernames {
+        log.Printf("[DEBUG] Attempting to resolve username: '%s'", username)
+        targetUser, err := s.userClient.GetUserByUsername(ctx, &userPb.GetUserByUsernameRequest{Username: username})
+
+        
+
+       if err != nil {
+            log.Printf("[ERROR] Failed to call GetUserByUsername for '%s': %v", username, err)
+        } else if targetUser == nil {
+            log.Printf("[WARN] User '%s' returned nil/not found", username)
+        } else {
+            log.Printf("[DEBUG] SUCCESS! Resolved '%s' to UserID: %s", username, targetUser.Id)
+            
+            mentions = append(mentions, domain.UserMention{
+                MentionedUserID: uuid.MustParse(targetUser.Id),
+                CreatedByUserID: userID,
+            })
+            mentionedUsers = append(mentionedUsers, targetUser)
+        }
+    }
 	
 	err := s.repo.CreatePostWithMentions(ctx, post, mentions)
 	if err != nil {
@@ -68,21 +97,15 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 	}
 
 	go func() {
-		// Fetch Sender Profile for Notification Payload
 		senderProfile, err := s.userClient.GetUserProfile(context.Background(), &userPb.GetUserProfileRequest{UserId: req.UserId})
 		if err != nil {
-			log.Printf("Failed to fetch sender profile for notification: %v", err)
 			return
 		}
 		
-		for username := range uniqueUsernames {
-        // [FIX] Use GetUserByUsername instead of SearchUsers
-        // This is much faster and guarantees finding the exact match
-        targetUser, err := s.userClient.GetUserByUsername(context.Background(), &userPb.GetUserByUsernameRequest{Username: username})
-        
-        if err == nil && targetUser != nil {
+        // Re-using the resolved mentions logic conceptually, but for notifications
+		for _, mention := range mentions {
             event := NotificationEvent{
-                RecipientID: targetUser.Id, // Note: GetUserProfileResponse uses 'Id', not 'UserId'
+                RecipientID: mention.MentionedUserID.String(),
                 SenderID:    req.UserId,
                 SenderName:  senderProfile.Username,
                 SenderImage: senderProfile.ProfilePictureUrl,
@@ -90,12 +113,8 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
                 EntityID:    post.ID.String(), 
                 Message:     "mentioned you in a post",
             }
-
             s.publishNotification(event)
-        } else {
-            log.Printf("[WARN] Mentioned user '%s' not found", username)
         }
-    }
 	}()
 
 	return post, nil

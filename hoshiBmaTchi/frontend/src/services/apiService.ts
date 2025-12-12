@@ -150,7 +150,7 @@ export const postsApi = {
   },
 
   getUserMentions: (targetUserId: string) => {
-    return apiClient.get(`/posts/mentions/${targetUserId}`);
+    return apiClient.get(`/v1/posts/mentions/${targetUserId}`);
   },
 
   getExplorePosts: (limit: number, offset: number, hashtag: string = "") => {

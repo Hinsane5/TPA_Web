@@ -47,6 +47,7 @@ func main() {
         &domain.Collection{}, 
         &domain.SavedPost{},
         &domain.PostMedia{}, 
+		&domain.UserMention{},
     )
 	if err != nil {
 		log.Fatalf("Failed to automigrate: %v", err)

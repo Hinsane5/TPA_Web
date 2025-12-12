@@ -144,7 +144,40 @@
       </div>
 
       <div v-if="activeTab === 'mentions'" class="mentions-grid">
-        <div v-if="!hasContent" class="empty-state">
+        <div
+          class="grid-item"
+          v-for="post in mentionsPosts"
+          :key="post.id"
+          @click="openPostDetail(post)"
+        >
+          <img
+            :src="getThumbnail(post)"
+            class="post-image"
+            loading="lazy"
+            alt="Mentioned post"
+          />
+
+          <div class="grid-hover-overlay">
+            <div class="hover-stat">
+              <img
+                src="/icons/notifications-icon.png"
+                class="hover-icon"
+                alt="Likes"
+              />
+              {{ post.likes_count || 0 }}
+            </div>
+            <div class="hover-stat">
+              <img
+                src="/icons/comment-icon.png"
+                class="hover-icon"
+                alt="Comments"
+              />
+              {{ post.comments_count || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="mentionsPosts.length === 0" class="empty-state">
           <p>No mentions yet.</p>
         </div>
       </div>
@@ -362,7 +395,7 @@ const handleLikeUpdate = (post: any) => {
 const loadMentions = async () => {
   try {
     const res = await postsApi.getUserMentions(profileUser.value.id);
-    mentionsPosts.value = res.data.posts || [];
+    mentionsPosts.value = res.data.data || []; 
     hasContent.value = mentionsPosts.value.length > 0;
   } catch (error) {
     console.error("Failed to load mentions", error);

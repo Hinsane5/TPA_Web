@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"log"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/google/uuid"
@@ -226,6 +227,7 @@ func (r *GormPostRepository) CreatePostWithMentions(ctx context.Context, post *d
 }
 
 func (r *GormPostRepository) GetPostsByMention(ctx context.Context, targetUserID string, limit, offset int) ([]domain.Post, error) {
+    log.Printf("[DEBUG] GetPostsByMention called for TargetUserID: %s", targetUserID)    
     var posts []domain.Post
     
     err := r.db.Table("posts").
@@ -234,10 +236,29 @@ func (r *GormPostRepository) GetPostsByMention(ctx context.Context, targetUserID
 		Order("posts.created_at DESC").
 		Limit(limit).
 		Offset(offset).
-		Preload("Media").
+		Preload("Media", func(db *gorm.DB) *gorm.DB {
+            return db.Order("sequence asc")
+        }).
 		Find(&posts).Error
 
-    return posts, err
+    if err != nil {
+        log.Printf("[ERROR] Database query failed: %v", err)
+        return nil, err
+    }
+
+    for i := range posts {
+        var likes int64
+        r.db.Model(&domain.PostLike{}).Where("post_id = ?", posts[i].ID).Count(&likes)
+        posts[i].LikesCount = int32(likes)
+
+        var comments int64
+        r.db.Model(&domain.PostComment{}).Where("post_id = ?", posts[i].ID).Count(&comments)
+        posts[i].CommentsCount = int32(comments)
+        
+    }
+
+    log.Printf("[DEBUG] Query successful. Found %d posts for user %s", len(posts), targetUserID)
+    return posts, nil
 }
 
 // Add this function to the file

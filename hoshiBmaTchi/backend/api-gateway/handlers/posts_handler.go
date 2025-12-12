@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"strconv"
 
@@ -361,20 +362,67 @@ func (h *PostsHandler) GetUserCollections(c *gin.Context) {
 
 func (h *PostsHandler) GetUserMentions(c *gin.Context) {
     targetID := c.Param("target_id")
-    userID := c.GetString("user_id") 
+    log.Printf("[DEBUG-GATEWAY] GetUserMentions Request. TargetID: %s", targetID)
+    
+    // Pagination
+    limit, _ := strconv.Atoi(c.DefaultQuery("limit", "15"))
+    offset, _ := strconv.Atoi(c.DefaultQuery("offset", "0"))
 
+    // Call gRPC Service
     res, err := h.postsClient.GetUserMentions(context.Background(), &postsProto.GetUserMentionsRequest{
-        UserId:       userID,
         TargetUserId: targetID,
-        Limit:        15,
-        Offset:       0,
+        Limit:        int32(limit),
+        Offset:       int32(offset),
     })
     
     if err != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        if s, ok := status.FromError(err); ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        }
         return
     }
-    c.JSON(http.StatusOK, res)
+
+    // Enrich Data (similar to GetHomeFeed)
+    var enrichedPosts []gin.H
+
+    for _, post := range res.Posts {
+        userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
+            UserId: post.UserId,
+        })
+        
+        username := "Unknown"
+        profilePic := ""
+        if err == nil {
+            username = userRes.Username
+            profilePic = userRes.ProfilePictureUrl
+        }
+
+        var mediaList []gin.H
+        for _, m := range post.Media {
+            mediaList = append(mediaList, gin.H{
+                "media_url":  m.MediaUrl,
+                "media_type": m.MediaType,
+            })
+        }
+
+        enrichedPosts = append(enrichedPosts, gin.H{
+            "id":              post.Id,
+            "user_id":         post.UserId,
+            "username":        username,
+            "profile_picture": profilePic,
+            "media":           mediaList,
+            "caption":         post.Caption,
+            "likes_count":     post.LikesCount,
+            "comments_count":  post.CommentsCount,
+            "created_at":      post.CreatedAt,
+            "is_liked":        post.IsLiked,
+        })
+    }
+    
+    // Return standard "data" wrapper
+    c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
 }
 
 func (h *PostsHandler) GetReelsFeed(c *gin.Context) {
