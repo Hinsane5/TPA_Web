@@ -44,6 +44,40 @@ type User struct{
 
 	Followers []Follow `gorm:"foreignKey:FollowingID"`
     Following []Follow `gorm:"foreignKey:FollowerID"`
+
+	PushNotificationsEnabled bool `gorm:"default:true"`
+    EmailNotificationsEnabled bool `gorm:"default:true"`
+
+	IsPrivate       bool `gorm:"default:false"`
+
+	CloseFriends []CloseFriend `gorm:"foreignKey:UserID"`
+    HiddenStoryViewers []HiddenStoryViewer `gorm:"foreignKey:UserID"`
+    VerificationRequests []VerificationRequest `gorm:"foreignKey:UserID"`
+}
+
+type CloseFriend struct {
+    ID          uuid.UUID `gorm:"type:uuid;primary_key;"`
+    UserID      uuid.UUID `gorm:"type:uuid;not null;index"`
+    CloseFriendID uuid.UUID `gorm:"type:uuid;not null;index"`
+    CreatedAt   time.Time
+}
+
+type HiddenStoryViewer struct {
+    ID          uuid.UUID `gorm:"type:uuid;primary_key;"`
+    UserID      uuid.UUID `gorm:"type:uuid;not null;index"`
+    HiddenUserID uuid.UUID `gorm:"type:uuid;not null;index"`
+    CreatedAt   time.Time
+}
+
+type VerificationRequest struct {
+    ID              uuid.UUID `gorm:"type:uuid;primary_key;"`
+    UserID          uuid.UUID `gorm:"type:uuid;not null"`
+    NationalIDNumber string   `gorm:"not null"`
+    Reason          string    `gorm:"type:text"`
+    SelfieURL       string
+    Status          string    `gorm:"default:'PENDING'"`
+    CreatedAt       time.Time
+    UpdatedAt       time.Time
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

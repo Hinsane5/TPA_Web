@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"time"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
 	"github.com/google/uuid"
@@ -13,7 +14,14 @@ type gormUserRepository struct{
 }
 
 func NewGormUserRepository(db *gorm.DB) *gormUserRepository{
-	err := db.AutoMigrate(&domain.User{}, &domain.Follow{}, &domain.Block{})
+	err := db.AutoMigrate(
+		&domain.User{}, 
+		&domain.Follow{}, 
+		&domain.Block{},
+		&domain.CloseFriend{},
+		&domain.HiddenStoryViewer{},
+		&domain.VerificationRequest{},
+	)
     if err != nil {
     
     }
@@ -213,3 +221,66 @@ func (r *gormUserRepository) IsBlocked(userA, userB string) (bool, error) {
         Count(&count).Error
     return count > 0, err
 }
+
+// --- Close Friends Operations ---
+func (r *gormUserRepository) AddCloseFriend(userID, targetID uuid.UUID) error {
+	cf := domain.CloseFriend{
+		ID:            uuid.New(),
+		UserID:        userID,
+		CloseFriendID: targetID,
+		CreatedAt:     time.Now(),
+	}
+	return r.db.Create(&cf).Error
+}
+
+func (r *gormUserRepository) RemoveCloseFriend(userID, targetID uuid.UUID) error {
+	return r.db.Where("user_id = ? AND close_friend_id = ?", userID, targetID).Delete(&domain.CloseFriend{}).Error
+}
+
+func (r *gormUserRepository) GetCloseFriends(userID uuid.UUID) ([]domain.User, error) {
+	var users []domain.User
+	err := r.db.Joins("JOIN close_friends on close_friends.close_friend_id = users.id").
+		Where("close_friends.user_id = ?", userID).
+		Find(&users).Error
+	return users, err
+}
+
+// --- Hidden Story Operations ---
+
+func (r *gormUserRepository) HideStoryFromUser(userID, targetID uuid.UUID) error {
+	hide := domain.HiddenStoryViewer{
+		ID:           uuid.New(),
+		UserID:       userID,
+		HiddenUserID: targetID,
+		CreatedAt:    time.Now(),
+	}
+	return r.db.Create(&hide).Error
+}
+
+func (r *gormUserRepository) UnhideStoryFromUser(userID, targetID uuid.UUID) error {
+	return r.db.Where("user_id = ? AND hidden_user_id = ?", userID, targetID).Delete(&domain.HiddenStoryViewer{}).Error
+}
+
+func (r *gormUserRepository) GetHiddenStoryUsers(userID uuid.UUID) ([]domain.User, error) {
+	var users []domain.User
+	err := r.db.Joins("JOIN hidden_story_viewers on hidden_story_viewers.hidden_user_id = users.id").
+		Where("hidden_story_viewers.user_id = ?", userID).
+		Find(&users).Error
+	return users, err
+}
+
+// --- Verification Operations ---
+
+func (r *gormUserRepository) CreateVerificationRequest(req *domain.VerificationRequest) error {
+	// ID generation logic in GORM BeforeCreate hooks is safer, but redundant explicit assignment is fine
+	if req.ID == uuid.Nil {
+		req.ID = uuid.New()
+	}
+	req.CreatedAt = time.Now()
+	return r.db.Create(req).Error
+}
+
+func (r *gormUserRepository) UpdateUser(user *domain.User) error {
+	return r.db.Save(user).Error
+}
+

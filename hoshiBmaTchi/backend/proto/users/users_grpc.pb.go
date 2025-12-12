@@ -19,25 +19,36 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	UserService_RegisterUser_FullMethodName         = "/users.UserService/RegisterUser"
-	UserService_SendOtp_FullMethodName              = "/users.UserService/SendOtp"
-	UserService_LoginWithGoogle_FullMethodName      = "/users.UserService/LoginWithGoogle"
-	UserService_LoginUser_FullMethodName            = "/users.UserService/LoginUser"
-	UserService_VerifyLogin2FA_FullMethodName       = "/users.UserService/VerifyLogin2FA"
-	UserService_RequestPasswordReset_FullMethodName = "/users.UserService/RequestPasswordReset"
-	UserService_PerformPasswordReset_FullMethodName = "/users.UserService/PerformPasswordReset"
-	UserService_ValidateToken_FullMethodName        = "/users.UserService/ValidateToken"
-	UserService_GetUserProfile_FullMethodName       = "/users.UserService/GetUserProfile"
-	UserService_FollowUser_FullMethodName           = "/users.UserService/FollowUser"
-	UserService_UnfollowUser_FullMethodName         = "/users.UserService/UnfollowUser"
-	UserService_GetFollowingList_FullMethodName     = "/users.UserService/GetFollowingList"
-	UserService_SearchUsers_FullMethodName          = "/users.UserService/SearchUsers"
-	UserService_GetUserByUsername_FullMethodName    = "/users.UserService/GetUserByUsername"
-	UserService_GetSuggestedUsers_FullMethodName    = "/users.UserService/GetSuggestedUsers"
-	UserService_GetFollowingProfiles_FullMethodName = "/users.UserService/GetFollowingProfiles"
-	UserService_BlockUser_FullMethodName            = "/users.UserService/BlockUser"
-	UserService_UnblockUser_FullMethodName          = "/users.UserService/UnblockUser"
-	UserService_GetBlockedList_FullMethodName       = "/users.UserService/GetBlockedList"
+	UserService_RegisterUser_FullMethodName               = "/users.UserService/RegisterUser"
+	UserService_SendOtp_FullMethodName                    = "/users.UserService/SendOtp"
+	UserService_LoginWithGoogle_FullMethodName            = "/users.UserService/LoginWithGoogle"
+	UserService_LoginUser_FullMethodName                  = "/users.UserService/LoginUser"
+	UserService_VerifyLogin2FA_FullMethodName             = "/users.UserService/VerifyLogin2FA"
+	UserService_RequestPasswordReset_FullMethodName       = "/users.UserService/RequestPasswordReset"
+	UserService_PerformPasswordReset_FullMethodName       = "/users.UserService/PerformPasswordReset"
+	UserService_ValidateToken_FullMethodName              = "/users.UserService/ValidateToken"
+	UserService_GetUserProfile_FullMethodName             = "/users.UserService/GetUserProfile"
+	UserService_FollowUser_FullMethodName                 = "/users.UserService/FollowUser"
+	UserService_UnfollowUser_FullMethodName               = "/users.UserService/UnfollowUser"
+	UserService_GetFollowingList_FullMethodName           = "/users.UserService/GetFollowingList"
+	UserService_SearchUsers_FullMethodName                = "/users.UserService/SearchUsers"
+	UserService_GetUserByUsername_FullMethodName          = "/users.UserService/GetUserByUsername"
+	UserService_GetSuggestedUsers_FullMethodName          = "/users.UserService/GetSuggestedUsers"
+	UserService_GetFollowingProfiles_FullMethodName       = "/users.UserService/GetFollowingProfiles"
+	UserService_BlockUser_FullMethodName                  = "/users.UserService/BlockUser"
+	UserService_UnblockUser_FullMethodName                = "/users.UserService/UnblockUser"
+	UserService_GetBlockedList_FullMethodName             = "/users.UserService/GetBlockedList"
+	UserService_UpdateUserProfile_FullMethodName          = "/users.UserService/UpdateUserProfile"
+	UserService_UpdateNotificationSettings_FullMethodName = "/users.UserService/UpdateNotificationSettings"
+	UserService_UpdatePrivacySettings_FullMethodName      = "/users.UserService/UpdatePrivacySettings"
+	UserService_GetSettings_FullMethodName                = "/users.UserService/GetSettings"
+	UserService_AddCloseFriend_FullMethodName             = "/users.UserService/AddCloseFriend"
+	UserService_RemoveCloseFriend_FullMethodName          = "/users.UserService/RemoveCloseFriend"
+	UserService_GetCloseFriends_FullMethodName            = "/users.UserService/GetCloseFriends"
+	UserService_HideStoryFromUser_FullMethodName          = "/users.UserService/HideStoryFromUser"
+	UserService_UnhideStoryFromUser_FullMethodName        = "/users.UserService/UnhideStoryFromUser"
+	UserService_GetHiddenStoryUsers_FullMethodName        = "/users.UserService/GetHiddenStoryUsers"
+	UserService_RequestVerification_FullMethodName        = "/users.UserService/RequestVerification"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -63,6 +74,17 @@ type UserServiceClient interface {
 	BlockUser(ctx context.Context, in *BlockUserRequest, opts ...grpc.CallOption) (*BlockUserResponse, error)
 	UnblockUser(ctx context.Context, in *UnblockUserRequest, opts ...grpc.CallOption) (*UnblockUserResponse, error)
 	GetBlockedList(ctx context.Context, in *GetBlockedListRequest, opts ...grpc.CallOption) (*GetBlockedListResponse, error)
+	UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UpdateUserProfileResponse, error)
+	UpdateNotificationSettings(ctx context.Context, in *UpdateNotificationSettingsRequest, opts ...grpc.CallOption) (*UpdateNotificationSettingsResponse, error)
+	UpdatePrivacySettings(ctx context.Context, in *UpdatePrivacySettingsRequest, opts ...grpc.CallOption) (*UpdatePrivacySettingsResponse, error)
+	GetSettings(ctx context.Context, in *GetSettingsRequest, opts ...grpc.CallOption) (*GetSettingsResponse, error)
+	AddCloseFriend(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error)
+	RemoveCloseFriend(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error)
+	GetCloseFriends(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (*GetListResponse, error)
+	HideStoryFromUser(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error)
+	UnhideStoryFromUser(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error)
+	GetHiddenStoryUsers(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (*GetListResponse, error)
+	RequestVerification(ctx context.Context, in *RequestVerificationRequest, opts ...grpc.CallOption) (*RequestVerificationResponse, error)
 }
 
 type userServiceClient struct {
@@ -263,6 +285,116 @@ func (c *userServiceClient) GetBlockedList(ctx context.Context, in *GetBlockedLi
 	return out, nil
 }
 
+func (c *userServiceClient) UpdateUserProfile(ctx context.Context, in *UpdateUserProfileRequest, opts ...grpc.CallOption) (*UpdateUserProfileResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserProfileResponse)
+	err := c.cc.Invoke(ctx, UserService_UpdateUserProfile_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UpdateNotificationSettings(ctx context.Context, in *UpdateNotificationSettingsRequest, opts ...grpc.CallOption) (*UpdateNotificationSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateNotificationSettingsResponse)
+	err := c.cc.Invoke(ctx, UserService_UpdateNotificationSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UpdatePrivacySettings(ctx context.Context, in *UpdatePrivacySettingsRequest, opts ...grpc.CallOption) (*UpdatePrivacySettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdatePrivacySettingsResponse)
+	err := c.cc.Invoke(ctx, UserService_UpdatePrivacySettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetSettings(ctx context.Context, in *GetSettingsRequest, opts ...grpc.CallOption) (*GetSettingsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSettingsResponse)
+	err := c.cc.Invoke(ctx, UserService_GetSettings_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) AddCloseFriend(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManageRelationResponse)
+	err := c.cc.Invoke(ctx, UserService_AddCloseFriend_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RemoveCloseFriend(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManageRelationResponse)
+	err := c.cc.Invoke(ctx, UserService_RemoveCloseFriend_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetCloseFriends(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (*GetListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetCloseFriends_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) HideStoryFromUser(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManageRelationResponse)
+	err := c.cc.Invoke(ctx, UserService_HideStoryFromUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) UnhideStoryFromUser(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ManageRelationResponse)
+	err := c.cc.Invoke(ctx, UserService_UnhideStoryFromUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetHiddenStoryUsers(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (*GetListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetHiddenStoryUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) RequestVerification(ctx context.Context, in *RequestVerificationRequest, opts ...grpc.CallOption) (*RequestVerificationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RequestVerificationResponse)
+	err := c.cc.Invoke(ctx, UserService_RequestVerification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -286,6 +418,17 @@ type UserServiceServer interface {
 	BlockUser(context.Context, *BlockUserRequest) (*BlockUserResponse, error)
 	UnblockUser(context.Context, *UnblockUserRequest) (*UnblockUserResponse, error)
 	GetBlockedList(context.Context, *GetBlockedListRequest) (*GetBlockedListResponse, error)
+	UpdateUserProfile(context.Context, *UpdateUserProfileRequest) (*UpdateUserProfileResponse, error)
+	UpdateNotificationSettings(context.Context, *UpdateNotificationSettingsRequest) (*UpdateNotificationSettingsResponse, error)
+	UpdatePrivacySettings(context.Context, *UpdatePrivacySettingsRequest) (*UpdatePrivacySettingsResponse, error)
+	GetSettings(context.Context, *GetSettingsRequest) (*GetSettingsResponse, error)
+	AddCloseFriend(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error)
+	RemoveCloseFriend(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error)
+	GetCloseFriends(context.Context, *GetListRequest) (*GetListResponse, error)
+	HideStoryFromUser(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error)
+	UnhideStoryFromUser(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error)
+	GetHiddenStoryUsers(context.Context, *GetListRequest) (*GetListResponse, error)
+	RequestVerification(context.Context, *RequestVerificationRequest) (*RequestVerificationResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -352,6 +495,39 @@ func (UnimplementedUserServiceServer) UnblockUser(context.Context, *UnblockUserR
 }
 func (UnimplementedUserServiceServer) GetBlockedList(context.Context, *GetBlockedListRequest) (*GetBlockedListResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBlockedList not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateUserProfile(context.Context, *UpdateUserProfileRequest) (*UpdateUserProfileResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserProfile not implemented")
+}
+func (UnimplementedUserServiceServer) UpdateNotificationSettings(context.Context, *UpdateNotificationSettingsRequest) (*UpdateNotificationSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateNotificationSettings not implemented")
+}
+func (UnimplementedUserServiceServer) UpdatePrivacySettings(context.Context, *UpdatePrivacySettingsRequest) (*UpdatePrivacySettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdatePrivacySettings not implemented")
+}
+func (UnimplementedUserServiceServer) GetSettings(context.Context, *GetSettingsRequest) (*GetSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSettings not implemented")
+}
+func (UnimplementedUserServiceServer) AddCloseFriend(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddCloseFriend not implemented")
+}
+func (UnimplementedUserServiceServer) RemoveCloseFriend(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RemoveCloseFriend not implemented")
+}
+func (UnimplementedUserServiceServer) GetCloseFriends(context.Context, *GetListRequest) (*GetListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCloseFriends not implemented")
+}
+func (UnimplementedUserServiceServer) HideStoryFromUser(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HideStoryFromUser not implemented")
+}
+func (UnimplementedUserServiceServer) UnhideStoryFromUser(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UnhideStoryFromUser not implemented")
+}
+func (UnimplementedUserServiceServer) GetHiddenStoryUsers(context.Context, *GetListRequest) (*GetListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetHiddenStoryUsers not implemented")
+}
+func (UnimplementedUserServiceServer) RequestVerification(context.Context, *RequestVerificationRequest) (*RequestVerificationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RequestVerification not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -716,6 +892,204 @@ func _UserService_GetBlockedList_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_UpdateUserProfile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserProfileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateUserProfile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UpdateUserProfile_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateUserProfile(ctx, req.(*UpdateUserProfileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UpdateNotificationSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateNotificationSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdateNotificationSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UpdateNotificationSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdateNotificationSettings(ctx, req.(*UpdateNotificationSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UpdatePrivacySettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdatePrivacySettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UpdatePrivacySettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UpdatePrivacySettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UpdatePrivacySettings(ctx, req.(*UpdatePrivacySettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetSettings(ctx, req.(*GetSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_AddCloseFriend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManageRelationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).AddCloseFriend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_AddCloseFriend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).AddCloseFriend(ctx, req.(*ManageRelationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RemoveCloseFriend_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManageRelationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RemoveCloseFriend(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RemoveCloseFriend_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RemoveCloseFriend(ctx, req.(*ManageRelationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetCloseFriends_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetCloseFriends(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetCloseFriends_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetCloseFriends(ctx, req.(*GetListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_HideStoryFromUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManageRelationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).HideStoryFromUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_HideStoryFromUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).HideStoryFromUser(ctx, req.(*ManageRelationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_UnhideStoryFromUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ManageRelationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).UnhideStoryFromUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_UnhideStoryFromUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).UnhideStoryFromUser(ctx, req.(*ManageRelationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetHiddenStoryUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetListRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetHiddenStoryUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetHiddenStoryUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetHiddenStoryUsers(ctx, req.(*GetListRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_RequestVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RequestVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).RequestVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_RequestVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).RequestVerification(ctx, req.(*RequestVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -798,6 +1172,50 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetBlockedList",
 			Handler:    _UserService_GetBlockedList_Handler,
+		},
+		{
+			MethodName: "UpdateUserProfile",
+			Handler:    _UserService_UpdateUserProfile_Handler,
+		},
+		{
+			MethodName: "UpdateNotificationSettings",
+			Handler:    _UserService_UpdateNotificationSettings_Handler,
+		},
+		{
+			MethodName: "UpdatePrivacySettings",
+			Handler:    _UserService_UpdatePrivacySettings_Handler,
+		},
+		{
+			MethodName: "GetSettings",
+			Handler:    _UserService_GetSettings_Handler,
+		},
+		{
+			MethodName: "AddCloseFriend",
+			Handler:    _UserService_AddCloseFriend_Handler,
+		},
+		{
+			MethodName: "RemoveCloseFriend",
+			Handler:    _UserService_RemoveCloseFriend_Handler,
+		},
+		{
+			MethodName: "GetCloseFriends",
+			Handler:    _UserService_GetCloseFriends_Handler,
+		},
+		{
+			MethodName: "HideStoryFromUser",
+			Handler:    _UserService_HideStoryFromUser_Handler,
+		},
+		{
+			MethodName: "UnhideStoryFromUser",
+			Handler:    _UserService_UnhideStoryFromUser_Handler,
+		},
+		{
+			MethodName: "GetHiddenStoryUsers",
+			Handler:    _UserService_GetHiddenStoryUsers_Handler,
+		},
+		{
+			MethodName: "RequestVerification",
+			Handler:    _UserService_RequestVerification_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

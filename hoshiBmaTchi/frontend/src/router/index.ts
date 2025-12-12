@@ -12,6 +12,7 @@ import ProfilePage from "../components/ProfilePage.vue";
 import DashboardLayout from "../components/DashboardLayout.vue";
 import CollectionDetailPage from "../components/CollectionDetailPage.vue";
 import PostDetailPage from "../components/PostDetailPage.vue";
+import SettingsPage from "../components/SettingsPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -81,6 +82,12 @@ const router = createRouter({
           name: "collection-detail",
           component: CollectionDetailPage,
           props: true,
+        },
+
+        {
+          path: "settings",
+          name: "settings",
+          component: SettingsPage,
         },
 
         {

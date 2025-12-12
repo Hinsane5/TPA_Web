@@ -29,7 +29,7 @@
               <template v-if="isOwnProfile">
                 <button class="action-btn">Edit profile</button>
                 <button class="action-btn">View archive</button>
-                <button class="action-btn settings-btn" title="Settings">
+                <button class="action-btn settings-btn" title="Settings" @click="goToSettings">
                   <img
                     src="/icons/setting-icon.png"
                     alt="Settings"
@@ -428,6 +428,10 @@ const loadMentions = async () => {
   } catch (error) {
     console.error("Failed to load mentions", error);
   }
+};
+
+const goToSettings = () => {
+  router.push({ name: "settings" });
 };
 
 onMounted(() => {

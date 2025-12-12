@@ -52,6 +52,7 @@ func main(){
     }))
 
 	authHandler := handlers.NewAuthHandler(userClient)
+	settingsHandler := handlers.NewSettingsHandler(userClient)
 	postsHandler := handlers.NewPostsHandler(postsClient, userClient)
 	storiesHandler := handlers.NewStoriesHandler(storiesClient, userClient)
 
@@ -62,6 +63,8 @@ func main(){
 	routes.SetupChatRoutes(router, authHandler)
 
 	routes.SetupStoriesRoutes(router, storiesHandler, authHandler)
+
+	routes.SetupSettingsRoutes(router, settingsHandler, authHandler)
 	
 	log.Println("API Gateway listening on port :8080")
 	router.Run(":8080")

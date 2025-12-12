@@ -364,15 +364,12 @@ export const reelsApi = {
 };
 
 export const markNotificationsRead = async (userId: string) => {
-  // Use port 8084 for Notification Service
   const response = await fetch(
     `http://localhost:8084/notifications/${userId}/read`,
     {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
-        // If your backend requires a token, fetch it from localStorage:
-        // 'Authorization': `Bearer ${localStorage.getItem('accessToken')}`
       },
     }
   );
@@ -381,4 +378,63 @@ export const markNotificationsRead = async (userId: string) => {
     throw new Error("Failed to mark notifications as read");
   }
   return response.json();
+};
+
+export const settingsApi = {
+  updateProfile: (data: {
+    name: string;
+    bio: string;
+    gender: string;
+    profile_picture_url?: string;
+  }) => {
+    return apiClient.put("/v1/settings/profile", data);
+  },
+
+  getSettings: () => {
+    return apiClient.get("/v1/settings/preferences");
+  },
+
+  updateNotifications: (enablePush: boolean, enableEmail: boolean) => {
+    return apiClient.put("/v1/settings/notifications", {
+      enable_push: enablePush,
+      enable_email: enableEmail,
+    });
+  },
+
+  updatePrivacy: (isPrivate: boolean) => {
+    return apiClient.put("/v1/settings/privacy", { is_private: isPrivate });
+  },
+
+  getCloseFriends: () => {
+    return apiClient.get("/v1/settings/close-friends");
+  },
+  addCloseFriend: (targetUserId: string) => {
+    return apiClient.post(`/v1/settings/close-friends/${targetUserId}`);
+  },
+  removeCloseFriend: (targetUserId: string) => {
+    return apiClient.delete(`/v1/settings/close-friends/${targetUserId}`);
+  },
+
+  getBlockedUsers: () => {
+    return apiClient.get("/v1/users/blocked");
+  },
+  unblockUser: (targetUserId: string) => {
+    return apiClient.delete(`/v1/users/${targetUserId}/block`);
+  },
+
+  getHiddenStoryUsers: () => {
+    return apiClient.get("/v1/settings/story-hide");
+  },
+  hideStoryFromUser: (targetUserId: string) => {
+    return apiClient.post(`/v1/settings/story-hide/${targetUserId}`);
+  },
+  unhideStoryFromUser: (targetUserId: string) => {
+    return apiClient.delete(`/v1/settings/story-hide/${targetUserId}`);
+  },
+
+  requestVerification: (data: FormData) => {
+    return apiClient.post("/v1/settings/verification-request", data, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };

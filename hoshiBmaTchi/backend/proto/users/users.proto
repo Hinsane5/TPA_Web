@@ -27,6 +27,18 @@ service UserService {
   rpc BlockUser(BlockUserRequest) returns (BlockUserResponse);
   rpc UnblockUser(UnblockUserRequest) returns (UnblockUserResponse);
   rpc GetBlockedList(GetBlockedListRequest) returns (GetBlockedListResponse);
+
+  rpc UpdateUserProfile(UpdateUserProfileRequest) returns (UpdateUserProfileResponse);
+  rpc UpdateNotificationSettings(UpdateNotificationSettingsRequest) returns (UpdateNotificationSettingsResponse);
+  rpc UpdatePrivacySettings(UpdatePrivacySettingsRequest) returns (UpdatePrivacySettingsResponse);
+  rpc GetSettings(GetSettingsRequest) returns (GetSettingsResponse);
+  rpc AddCloseFriend(ManageRelationRequest) returns (ManageRelationResponse);
+  rpc RemoveCloseFriend(ManageRelationRequest) returns (ManageRelationResponse);
+  rpc GetCloseFriends(GetListRequest) returns (GetListResponse);
+  rpc HideStoryFromUser(ManageRelationRequest) returns (ManageRelationResponse);
+  rpc UnhideStoryFromUser(ManageRelationRequest) returns (ManageRelationResponse);
+  rpc GetHiddenStoryUsers(GetListRequest) returns (GetListResponse);
+  rpc RequestVerification(RequestVerificationRequest) returns (RequestVerificationResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -205,4 +217,74 @@ message GetBlockedListRequest {
 
 message GetBlockedListResponse {
   repeated UserProfile users = 1;
+}
+
+message UpdateUserProfileRequest {
+  string user_id = 1;
+  string name = 2;
+  string bio = 3;
+  string gender = 4;
+  string profile_picture_url = 5; // Optional
+}
+
+message UpdateUserProfileResponse {
+  UserProfile user = 1;
+}
+
+message UpdateNotificationSettingsRequest {
+  string user_id = 1;
+  bool enable_push = 2;
+  bool enable_email = 3;
+}
+
+message UpdateNotificationSettingsResponse {
+  bool success = 1;
+}
+
+message UpdatePrivacySettingsRequest {
+  string user_id = 1;
+  bool is_private = 2;
+}
+
+message UpdatePrivacySettingsResponse {
+  bool success = 1;
+  bool is_private = 2;
+}
+
+message GetSettingsRequest {
+  string user_id = 1;
+}
+
+message GetSettingsResponse {
+  bool enable_push = 1;
+  bool enable_email = 2;
+  bool is_private = 3;
+}
+
+message ManageRelationRequest {
+  string user_id = 1;
+  string target_user_id = 2;
+}
+
+message ManageRelationResponse {
+  bool success = 1;
+}
+
+message GetListRequest {
+  string user_id = 1;
+}
+
+message GetListResponse {
+  repeated UserProfile users = 1;
+}
+
+message RequestVerificationRequest {
+  string user_id = 1;
+  string national_id_number = 2;
+  string reason = 3;
+  string selfie_url = 4;
+}
+
+message RequestVerificationResponse {
+  string message = 1; 
 }

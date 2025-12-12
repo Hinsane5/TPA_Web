@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/users/internal/core/domain"
+	"github.com/google/uuid"
 )
 
 type UserRepository interface{
@@ -24,4 +25,18 @@ type UserRepository interface{
     DeleteBlock(blockerID, blockedID string) error
     GetBlockedUsers(userID string) ([]*domain.User, error)
     IsBlocked(userA, userB string) (bool, error)
+	UpdateUser(user *domain.User) error
+	
+	// Close Friends
+	AddCloseFriend(userID, targetID uuid.UUID) error
+	RemoveCloseFriend(userID, targetID uuid.UUID) error
+	GetCloseFriends(userID uuid.UUID) ([]domain.User, error)
+	
+	// Hidden Stories
+	HideStoryFromUser(userID, targetID uuid.UUID) error
+	UnhideStoryFromUser(userID, targetID uuid.UUID) error
+	GetHiddenStoryUsers(userID uuid.UUID) ([]domain.User, error)
+
+	// Verification
+	CreateVerificationRequest(req *domain.VerificationRequest) error
 }
