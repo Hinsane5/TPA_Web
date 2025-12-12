@@ -432,9 +432,11 @@ export const settingsApi = {
     return apiClient.delete(`/v1/settings/story-hide/${targetUserId}`);
   },
 
-  requestVerification: (data: FormData) => {
-    return apiClient.post("/v1/settings/verification-request", data, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  requestVerification: (data: {
+    national_id: string;
+    reason: string;
+    selfie_url: string;
+  }) => {
+    return apiClient.post("/v1/settings/verification-request", data);
   },
 };

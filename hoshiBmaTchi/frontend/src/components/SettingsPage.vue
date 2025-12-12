@@ -26,7 +26,7 @@
           <div class="form-group">
             <label>Bio (Max 150 chars)</label>
             <textarea v-model="profileForm.bio" maxlength="150"></textarea>
-            <small>{{ profileForm.bio.length }}/150</small>
+            <small>{{ (profileForm.bio || '').length }}/150</small>
           </div>
           <div class="form-group">
             <label>Gender</label>
@@ -70,8 +70,10 @@
         <input v-model="searchQuery" @input="searchUsers" placeholder="Search users to add..." class="search-bar"/>
         <div v-if="searchResults.length > 0" class="user-list search-results">
             <div v-for="user in searchResults" :key="user.id" class="user-item">
-                <img :src="user.profile_picture_url" class="avatar-small"/>
-                <span>{{ user.username }}</span>
+                <div class="user-info">
+                  <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
+                  <span>{{ user.username }}</span>
+                </div>
                 <button @click="addToCloseFriends(user)">Add</button>
             </div>
         </div>
@@ -80,7 +82,7 @@
         <div class="user-list">
           <div v-for="user in closeFriendsList" :key="user.id" class="user-item">
             <div class="user-info">
-              <img :src="user.profile_picture_url" class="avatar-small" />
+              <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
             <button @click="removeFromCloseFriends(user.id)" class="btn-danger">Remove</button>
@@ -93,7 +95,7 @@
         <div class="user-list">
           <div v-for="user in blockedList" :key="user.id" class="user-item">
              <div class="user-info">
-              <img :src="user.profile_picture_url" class="avatar-small" />
+              <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
             <button @click="unblockUser(user.id)" class="btn-secondary">Unblock</button>
@@ -107,8 +109,10 @@
         <input v-model="searchQueryStory" @input="searchUsersStory" placeholder="Search users to hide..." class="search-bar"/>
         <div v-if="searchResultsStory.length > 0" class="user-list search-results">
             <div v-for="user in searchResultsStory" :key="user.id" class="user-item">
-                <img :src="user.profile_picture_url" class="avatar-small"/>
-                <span>{{ user.username }}</span>
+                <div class="user-info">
+                  <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
+                  <span>{{ user.username }}</span>
+                </div>
                 <button @click="hideStory(user)">Hide</button>
             </div>
         </div>
@@ -117,7 +121,7 @@
         <div class="user-list">
           <div v-for="user in hiddenStoryList" :key="user.id" class="user-item">
              <div class="user-info">
-              <img :src="user.profile_picture_url" class="avatar-small" />
+              <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
             <button @click="unhideStory(user.id)" class="btn-secondary">Unhide</button>
@@ -138,7 +142,7 @@
           </div>
           <div class="form-group">
             <label>Photo of your face (Selfie)</label>
-            <input type="file" ref="selfieInput" required accept="image/*" @change="handleSelfieChange" />
+            <input type="file" ref="selfieInput" required accept="image/*" />
           </div>
           <button type="submit" class="btn-primary">Submit Request</button>
         </form>
@@ -153,8 +157,10 @@ import { ref, onMounted, reactive } from 'vue';
 import { settingsApi, usersApi, postsApi } from '@/services/apiService';
 import { useAuth } from '@/composables/useAuth';
 
-const { user } = useAuth(); // Assuming you have an auth composable
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const { user } = useAuth();
 const currentTab = ref('edit-profile');
+
 const tabs = [
   { id: 'edit-profile', label: 'Edit Profile' },
   { id: 'notifications', label: 'Notifications' },
@@ -175,22 +181,30 @@ const profileForm = reactive({
 });
 
 const triggerFileInput = () => fileInput.value?.click();
+
 const handleFileChange = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
-    // Reuse postsApi.generateUploadUrl or similar logic to upload to MinIO
-    // For brevity, assume we get a URL back
-    const res = await postsApi.generateUploadUrl(file.name, file.type);
-    await postsApi.uploadFileToMinio(res.data.upload_url, file);
-    // Construct public URL (assuming format)
-    profileForm.profile_picture_url = res.data.public_url || res.data.upload_url.split('?')[0]; 
+    try {
+      // 1. Get Presigned URL
+      const res = await postsApi.generateUploadUrl(file.name, file.type);
+      const uploadUrl = res.data.upload_url;
+      // 2. Upload to MinIO
+      await postsApi.uploadFileToMinio(uploadUrl, file);
+      // 3. Set Public URL
+      profileForm.profile_picture_url = res.data.public_url || uploadUrl.split('?')[0]; 
+    } catch (error) {
+      alert("Failed to upload image");
+      console.error(error);
+    }
   }
 };
+
 const saveProfile = async () => {
     try {
         await settingsApi.updateProfile(profileForm);
         alert('Profile saved!');
-    } catch(e) { alert('Failed to save'); }
+    } catch(e) { alert('Failed to save profile'); }
 };
 
 // 2 & 3. Settings (Notif & Privacy)
@@ -198,10 +212,14 @@ const notifSettings = reactive({ enable_push: true, enable_email: true });
 const privacySettings = reactive({ is_private: false });
 
 const saveNotifications = async () => {
-  await settingsApi.updateNotifications(notifSettings.enable_push, notifSettings.enable_email);
+  try {
+    await settingsApi.updateNotifications(notifSettings.enable_push, notifSettings.enable_email);
+  } catch (e) { console.error("Failed to update notifications", e); }
 };
 const savePrivacy = async () => {
-  await settingsApi.updatePrivacy(privacySettings.is_private);
+  try {
+    await settingsApi.updatePrivacy(privacySettings.is_private);
+  } catch (e) { console.error("Failed to update privacy", e); }
 };
 
 // 4. Close Friends
@@ -211,25 +229,33 @@ const searchResults = ref<any[]>([]);
 
 const searchUsers = async () => {
     if(searchQuery.value.length < 3) return;
-    const res = await usersApi.searchUsers(searchQuery.value);
-    searchResults.value = res.data.users || [];
+    try {
+      const res = await usersApi.searchUsers(searchQuery.value);
+      searchResults.value = res.data.users || [];
+    } catch(e) { console.error(e); }
 };
 const addToCloseFriends = async (user: any) => {
-    await settingsApi.addCloseFriend(user.id);
-    closeFriendsList.value.push(user);
-    searchResults.value = [];
-    searchQuery.value = '';
+    try {
+      await settingsApi.addCloseFriend(user.id);
+      closeFriendsList.value.push(user);
+      searchResults.value = [];
+      searchQuery.value = '';
+    } catch(e) { alert("Failed to add user"); }
 };
 const removeFromCloseFriends = async (id: string) => {
-    await settingsApi.removeCloseFriend(id);
-    closeFriendsList.value = closeFriendsList.value.filter(u => u.id !== id);
+    try {
+      await settingsApi.removeCloseFriend(id);
+      closeFriendsList.value = closeFriendsList.value.filter(u => u.id !== id);
+    } catch(e) { alert("Failed to remove user"); }
 };
 
 // 5. Blocked
 const blockedList = ref<any[]>([]);
 const unblockUser = async (id: string) => {
-    await settingsApi.unblockUser(id);
-    blockedList.value = blockedList.value.filter(u => u.id !== id);
+    try {
+      await settingsApi.unblockUser(id);
+      blockedList.value = blockedList.value.filter(u => u.id !== id);
+    } catch(e) { alert("Failed to unblock user"); }
 };
 
 // 6. Hide Story
@@ -239,99 +265,114 @@ const searchResultsStory = ref<any[]>([]);
 
 const searchUsersStory = async () => {
     if(searchQueryStory.value.length < 3) return;
-    const res = await usersApi.searchUsers(searchQueryStory.value);
-    searchResultsStory.value = res.data.users || [];
+    try {
+      const res = await usersApi.searchUsers(searchQueryStory.value);
+      searchResultsStory.value = res.data.users || [];
+    } catch(e) { console.error(e); }
 };
 const hideStory = async (user: any) => {
-    await settingsApi.hideStoryFromUser(user.id);
-    hiddenStoryList.value.push(user);
-    searchResultsStory.value = [];
-    searchQueryStory.value = '';
+    try {
+      await settingsApi.hideStoryFromUser(user.id);
+      hiddenStoryList.value.push(user);
+      searchResultsStory.value = [];
+      searchQueryStory.value = '';
+    } catch(e) { alert("Failed to hide story from user"); }
 };
 const unhideStory = async (id: string) => {
-    await settingsApi.unhideStoryFromUser(id);
-    hiddenStoryList.value = hiddenStoryList.value.filter(u => u.id !== id);
+    try {
+      await settingsApi.unhideStoryFromUser(id);
+      hiddenStoryList.value = hiddenStoryList.value.filter(u => u.id !== id);
+    } catch(e) { alert("Failed to unhide story"); }
 };
 
 // 7. Request Verified
 const selfieInput = ref<HTMLInputElement | null>(null);
 const verifyForm = reactive({ national_id: '', reason: '' });
-const handleSelfieChange = (event: Event) => { /* Handle file similar to profile pic or keep as File object for FormData */ };
 
 const submitVerification = async () => {
     const file = selfieInput.value?.files?.[0];
-    if(!file) return alert("Photo required");
-    
-    // First upload image to get URL
-    const res = await postsApi.generateUploadUrl(file.name, file.type);
-    await postsApi.uploadFileToMinio(res.data.upload_url, file);
-    const selfieUrl = res.data.public_url || res.data.upload_url.split('?')[0];
-
-    // Submit request
-    const formData = new FormData();
-    formData.append('national_id', verifyForm.national_id);
-    formData.append('reason', verifyForm.reason);
-    formData.append('selfie_url', selfieUrl);
+    if(!file) return alert("Selfie photo required");
     
     try {
-        await settingsApi.requestVerification(formData);
-        alert("Request Submitted!");
-        verifyForm.national_id = '';
-        verifyForm.reason = '';
-    } catch(e) { alert("Submission failed"); }
+      // 1. Upload Image First
+      const res = await postsApi.generateUploadUrl(file.name, file.type);
+      const uploadUrl = res.data.upload_url;
+      await postsApi.uploadFileToMinio(uploadUrl, file);
+      const selfieUrl = res.data.public_url || uploadUrl.split('?')[0];
+
+      // 2. Submit Request as JSON (Backend expects JSON binding)
+      const requestData = {
+          national_id: verifyForm.national_id,
+          reason: verifyForm.reason,
+          selfie_url: selfieUrl
+      };
+      
+      await settingsApi.requestVerification(requestData);
+      
+      alert("Request Submitted Successfully!");
+      verifyForm.national_id = '';
+      verifyForm.reason = '';
+      if (selfieInput.value) selfieInput.value.value = ''; // Reset file input
+    } catch(e) { 
+      alert("Submission failed"); 
+      console.error(e);
+    }
 };
 
 onMounted(async () => {
-    // Fetch initial profile data
-    const me = await usersApi.getMe();
-    Object.assign(profileForm, {
-        name: me.data.name,
-        bio: me.data.bio,
-        gender: me.data.gender,
-        profile_picture_url: me.data.profile_picture_url
-    });
+    try {
+      // FIX: Handle potential null values to prevent runtime crashes
+      const me = await usersApi.getMe();
+      Object.assign(profileForm, {
+          name: me.data.name || '',
+          bio: me.data.bio || '', // Ensure bio is string
+          gender: me.data.gender || 'Prefer not to say',
+          profile_picture_url: me.data.profile_picture_url || ''
+      });
 
-    // Fetch Preferences
-    const prefs = await settingsApi.getSettings();
-    notifSettings.enable_push = prefs.data.enable_push;
-    notifSettings.enable_email = prefs.data.enable_email;
-    privacySettings.is_private = prefs.data.is_private;
+      // Fetch Preferences
+      const prefs = await settingsApi.getSettings();
+      if(prefs.data) {
+        notifSettings.enable_push = !!prefs.data.enable_push;
+        notifSettings.enable_email = !!prefs.data.enable_email;
+        privacySettings.is_private = !!prefs.data.is_private;
+      }
 
-    // Fetch Lists
-    const [cfRes, blRes, hsRes] = await Promise.all([
-        settingsApi.getCloseFriends(),
-        settingsApi.getBlockedUsers(),
-        settingsApi.getHiddenStoryUsers()
-    ]);
-    
-    closeFriendsList.value = cfRes.data.users || [];
-    blockedList.value = blRes.data.users || [];
-    hiddenStoryList.value = hsRes.data.users || [];
+      // Fetch Lists
+      const [cfRes, blRes, hsRes] = await Promise.all([
+          settingsApi.getCloseFriends(),
+          settingsApi.getBlockedUsers(),
+          settingsApi.getHiddenStoryUsers()
+      ]);
+      
+      closeFriendsList.value = cfRes.data.users || [];
+      blockedList.value = blRes.data.users || [];
+      hiddenStoryList.value = hsRes.data.users || [];
+    } catch (e) {
+      console.error("Error loading settings data", e);
+    }
 });
-
 </script>
 
 <style scoped>
 .settings-container { 
     display: flex; 
     height: 100vh; 
-    background-color: 
-    var(--bg-color); 
+    background-color: var(--bg-color); 
     color: var(--text-color); 
 }
 
 .settings-sidebar { 
     width: 250px; 
-    border-right: 
-    1px solid var(--border-color); 
+    border-right: 1px solid var(--border-color); 
     padding: 20px; 
 }
 
 .settings-sidebar li { 
-    padding: 15px; cursor: 
-    pointer; 
+    padding: 15px; cursor: pointer; 
     list-style: none; 
     border-radius: 8px; 
+    margin-bottom: 5px;
 }
 
 
@@ -354,6 +395,7 @@ onMounted(async () => {
     margin-bottom: 20px; 
     display: flex; 
     flex-direction: column; 
+    gap: 8px;
 }
 
 .form-group input, .form-group textarea, .form-group select { 
@@ -369,15 +411,25 @@ onMounted(async () => {
     justify-content: space-between; 
     align-items: center; 
     margin-bottom: 20px; 
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+.label-desc {
+  max-width: 80%;
 }
 
 .user-list { 
-    margin-top: 20px; }
+    margin-top: 20px; 
+}
+
 .user-item { 
     display: flex; 
     align-items: center; 
     justify-content: space-between; 
     margin-bottom: 15px; 
+    padding: 8px;
+    background: var(--card-bg);
+    border-radius: 8px;
 }
 
 .user-info { 
@@ -390,6 +442,22 @@ onMounted(async () => {
     width: 40px; 
     height: 40px; 
     border-radius: 50%; 
+    object-fit: cover;
+}
+
+.avatar-preview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 10px;
+}
+
+.profile-pic-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
 }
 
 .btn-primary { 
@@ -401,11 +469,20 @@ onMounted(async () => {
     cursor: pointer; 
 }
 
+.btn-secondary {
+    background: #efefef;
+    color: black;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer; 
+}
+
 .btn-danger { 
     background: #ed4956; 
     color: white; 
     border: none; 
-    padding: 5px 10px; 
+    padding: 8px 16px; 
     border-radius: 4px; 
     cursor: pointer; 
 }
@@ -417,6 +494,14 @@ onMounted(async () => {
     background: var(--input-bg); 
     border: 1px solid var(--border-color); 
     color: white; 
+    border-radius: 4px;
 }
 
+.search-results {
+    background: var(--dropdown-bg);
+    padding: 10px;
+    border-radius: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
 </style>
