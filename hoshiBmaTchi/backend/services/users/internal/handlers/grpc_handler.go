@@ -912,3 +912,179 @@ func (h *UserHandler) GetBlockedList(ctx context.Context, req *pb.GetBlockedList
 
     return &pb.GetBlockedListResponse{Users: responseUsers}, nil
 }
+
+func (h *UserHandler) GetSettings(ctx context.Context, req *pb.GetSettingsRequest) (*pb.GetSettingsResponse, error) {
+    user, err := h.repo.FindByID(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch user settings")
+    }
+
+    // Map your domain model fields to the proto response
+    // Note: Ensure your domain.User struct actually has these fields. 
+    // based on your Register function, you have SubscribedToNewsletter (Email) and 2FA.
+    // You might need to add IsPrivate and PushEnabled to your User model if they aren't there.
+    
+    return &pb.GetSettingsResponse{
+        IsPrivate:   user.IsPrivate,            // Ensure this exists in domain.User
+        EnablePush:  user.PushNotificationsEnabled,    // Ensure this exists in domain.User
+        EnableEmail: user.SubscribedToNewsletter, 
+    }, nil
+}
+
+func (h *UserHandler) UpdateUserProfile(ctx context.Context, req *pb.UpdateUserProfileRequest) (*pb.UpdateUserProfileResponse, error) {
+    user, err := h.repo.FindByID(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "User not found")
+    }
+
+    // Update fields
+    user.Name = req.Name
+    user.Bio = req.Bio
+    user.Gender = req.Gender
+    
+    // Only update picture if a new URL is provided
+    if req.ProfilePictureUrl != "" {
+        user.ProfilePictureURL = req.ProfilePictureUrl
+    }
+
+    err = h.repo.UpdateUser(user)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update profile")
+    }
+
+    return &pb.UpdateUserProfileResponse{
+        User: &pb.UserProfile{
+            UserId:            user.ID.String(),
+            Username:          user.Username,
+            Name:              user.Name,
+            ProfilePictureUrl: user.ProfilePictureURL,
+        },
+    }, nil
+}
+
+func (h *UserHandler) UpdateNotificationSettings(ctx context.Context, req *pb.UpdateNotificationSettingsRequest) (*pb.UpdateNotificationSettingsResponse, error) {
+    user, err := h.repo.FindByID(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "User not found")
+    }
+
+    user.PushNotificationsEnabled = req.EnablePush
+    user.SubscribedToNewsletter = req.EnableEmail
+
+    err = h.repo.UpdateUser(user)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update notification settings")
+    }
+
+    return &pb.UpdateNotificationSettingsResponse{Success: true}, nil
+}
+
+func (h *UserHandler) UpdatePrivacySettings(ctx context.Context, req *pb.UpdatePrivacySettingsRequest) (*pb.UpdatePrivacySettingsResponse, error) {
+    user, err := h.repo.FindByID(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "User not found")
+    }
+
+    user.IsPrivate = req.IsPrivate
+
+    err = h.repo.UpdateUser(user)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update privacy settings")
+    }
+
+    return &pb.UpdatePrivacySettingsResponse{Success: true}, nil
+}
+
+func (h *UserHandler) GetCloseFriends(ctx context.Context, req *pb.GetListRequest) (*pb.GetListResponse, error) {
+	if req.UserId == "" {
+		return nil, status.Error(codes.InvalidArgument, "User ID required")
+	}
+
+    // Call the repo method (already exists in your gorm_repository.go)
+	users, err := h.repo.GetCloseFriends(utils.ParseUUID(req.UserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to fetch close friends")
+	}
+
+	var responseUsers []*pb.UserProfile
+	for _, u := range users {
+		responseUsers = append(responseUsers, &pb.UserProfile{
+			UserId:            u.ID.String(),
+			Username:          u.Username,
+			Name:              u.Name,
+			ProfilePictureUrl: u.ProfilePictureURL,
+		})
+	}
+
+	return &pb.GetListResponse{Users: responseUsers}, nil
+}
+
+func (h *UserHandler) AddCloseFriend(ctx context.Context, req *pb.ManageRelationRequest) (*pb.ManageRelationResponse, error) {
+	err := h.repo.AddCloseFriend(utils.ParseUUID(req.UserId), utils.ParseUUID(req.TargetUserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to add close friend")
+	}
+	return &pb.ManageRelationResponse{Success: true}, nil
+}
+
+func (h *UserHandler) RemoveCloseFriend(ctx context.Context, req *pb.ManageRelationRequest) (*pb.ManageRelationResponse, error) {
+	err := h.repo.RemoveCloseFriend(utils.ParseUUID(req.UserId), utils.ParseUUID(req.TargetUserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to remove close friend")
+	}
+	return &pb.ManageRelationResponse{Success: true}, nil
+}
+
+func (h *UserHandler) GetHiddenStoryUsers(ctx context.Context, req *pb.GetListRequest) (*pb.GetListResponse, error) {
+	users, err := h.repo.GetHiddenStoryUsers(utils.ParseUUID(req.UserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to fetch hidden story users")
+	}
+
+	var responseUsers []*pb.UserProfile
+	for _, u := range users {
+		responseUsers = append(responseUsers, &pb.UserProfile{
+			UserId:            u.ID.String(),
+			Username:          u.Username,
+			Name:              u.Name,
+			ProfilePictureUrl: u.ProfilePictureURL,
+		})
+	}
+
+	return &pb.GetListResponse{Users: responseUsers}, nil
+}
+
+func (h *UserHandler) HideStoryFromUser(ctx context.Context, req *pb.ManageRelationRequest) (*pb.ManageRelationResponse, error) {
+	err := h.repo.HideStoryFromUser(utils.ParseUUID(req.UserId), utils.ParseUUID(req.TargetUserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to hide story from user")
+	}
+	return &pb.ManageRelationResponse{Success: true}, nil
+}
+
+func (h *UserHandler) UnhideStoryFromUser(ctx context.Context, req *pb.ManageRelationRequest) (*pb.ManageRelationResponse, error) {
+	err := h.repo.UnhideStoryFromUser(utils.ParseUUID(req.UserId), utils.ParseUUID(req.TargetUserId))
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to unhide story from user")
+	}
+	return &pb.ManageRelationResponse{Success: true}, nil
+}
+
+// --- Verification ---
+
+func (h *UserHandler) RequestVerification(ctx context.Context, req *pb.RequestVerificationRequest) (*pb.RequestVerificationResponse, error) {
+	verificationReq := &domain.VerificationRequest{
+		UserID:           utils.ParseUUID(req.UserId),
+		NationalIDNumber: req.NationalIdNumber,
+		Reason:           req.Reason,
+		SelfieURL:        req.SelfieUrl,
+        Status:           "PENDING", // Default status
+	}
+
+	err := h.repo.CreateVerificationRequest(verificationReq)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "Failed to submit verification request")
+	}
+
+	return &pb.RequestVerificationResponse{Message: "Verification request submitted"}, nil
+}

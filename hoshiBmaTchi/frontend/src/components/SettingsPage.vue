@@ -80,12 +80,12 @@
 
         <h4>Your List</h4>
         <div class="user-list">
-          <div v-for="user in closeFriendsList" :key="user.id" class="user-item">
+          <div v-for="user in closeFriendsList" :key="user.user_id" class="user-item">
             <div class="user-info">
               <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
-            <button @click="removeFromCloseFriends(user.id)" class="btn-danger">Remove</button>
+            <button @click="removeFromCloseFriends(user.user_id)" class="btn-danger">Remove</button>
           </div>
         </div>
       </div>
@@ -93,12 +93,12 @@
       <div v-if="currentTab === 'blocked'" class="tab-content">
         <h3>Blocked Accounts</h3>
         <div class="user-list">
-          <div v-for="user in blockedList" :key="user.id" class="user-item">
-             <div class="user-info">
+          <div v-for="user in blockedList" :key="user.user_id" class="user-item">
+              <div class="user-info">
               <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
-            <button @click="unblockUser(user.id)" class="btn-secondary">Unblock</button>
+            <button @click="unblockUser(user.user_id)" class="btn-secondary">Unblock</button>
           </div>
         </div>
       </div>
@@ -119,12 +119,12 @@
 
         <h4>Hidden Users</h4>
         <div class="user-list">
-          <div v-for="user in hiddenStoryList" :key="user.id" class="user-item">
-             <div class="user-info">
+          <div v-for="user in hiddenStoryList" :key="user.user_id" class="user-item">
+              <div class="user-info">
               <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
               <span>{{ user.username }}</span>
             </div>
-            <button @click="unhideStory(user.id)" class="btn-secondary">Unhide</button>
+            <button @click="unhideStory(user.user_id)" class="btn-secondary">Unhide</button>
           </div>
         </div>
       </div>
@@ -236,7 +236,8 @@ const searchUsers = async () => {
 };
 const addToCloseFriends = async (user: any) => {
     try {
-      await settingsApi.addCloseFriend(user.id);
+      const id = user.user_id || user.id; 
+      await settingsApi.addCloseFriend(id);
       closeFriendsList.value.push(user);
       searchResults.value = [];
       searchQuery.value = '';
@@ -245,7 +246,7 @@ const addToCloseFriends = async (user: any) => {
 const removeFromCloseFriends = async (id: string) => {
     try {
       await settingsApi.removeCloseFriend(id);
-      closeFriendsList.value = closeFriendsList.value.filter(u => u.id !== id);
+      closeFriendsList.value = closeFriendsList.value.filter(u => u.user_id !== id);
     } catch(e) { alert("Failed to remove user"); }
 };
 
@@ -254,7 +255,7 @@ const blockedList = ref<any[]>([]);
 const unblockUser = async (id: string) => {
     try {
       await settingsApi.unblockUser(id);
-      blockedList.value = blockedList.value.filter(u => u.id !== id);
+      blockedList.value = blockedList.value.filter(u => u.user_id !== id);
     } catch(e) { alert("Failed to unblock user"); }
 };
 
@@ -281,7 +282,7 @@ const hideStory = async (user: any) => {
 const unhideStory = async (id: string) => {
     try {
       await settingsApi.unhideStoryFromUser(id);
-      hiddenStoryList.value = hiddenStoryList.value.filter(u => u.id !== id);
+      hiddenStoryList.value = hiddenStoryList.value.filter(u => u.user_id !== id);
     } catch(e) { alert("Failed to unhide story"); }
 };
 

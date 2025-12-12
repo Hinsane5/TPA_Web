@@ -6,7 +6,7 @@ import (
 )
 
 func SetupSettingsRoutes(router *gin.Engine, settingsHandler *handlers.SettingsHandler, authHandler *handlers.AuthHandler) {
-	settings := router.Group("/v1/settings")
+	settings := router.Group("api/v1/settings")
 	
 	// Ensure Auth Middleware is applied
 	// Assuming you have a middleware that extracts the token and sets "userID" in context
