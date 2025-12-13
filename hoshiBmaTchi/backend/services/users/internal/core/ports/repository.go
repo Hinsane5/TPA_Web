@@ -39,4 +39,12 @@ type UserRepository interface{
 
 	// Verification
 	CreateVerificationRequest(req *domain.VerificationRequest) error
+	GetSubscribedEmails() ([]string, error) 
+	GetPendingVerificationRequests() ([]*domain.VerificationRequest, error)
+	UpdateVerificationStatus(requestID string, status string) (*domain.VerificationRequest, error)
+	VerifyUser(userID uuid.UUID) error
+	GetPendingUserReports() ([]*domain.UserReport, error)
+	UpdateUserReportStatus(reportID string, status string) error
+	UpdateUserBanStatus(userID string, isBanned bool) error
+	GetAllUsers() ([]*domain.User, error)
 }

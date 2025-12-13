@@ -38,6 +38,8 @@ const (
 	PostsService_GetCollectionPosts_FullMethodName = "/posts.PostsService/GetCollectionPosts"
 	PostsService_UpdateCollection_FullMethodName   = "/posts.PostsService/UpdateCollection"
 	PostsService_DeleteCollection_FullMethodName   = "/posts.PostsService/DeleteCollection"
+	PostsService_GetPostReports_FullMethodName     = "/posts.PostsService/GetPostReports"
+	PostsService_ReviewPostReport_FullMethodName   = "/posts.PostsService/ReviewPostReport"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -63,6 +65,8 @@ type PostsServiceClient interface {
 	GetCollectionPosts(ctx context.Context, in *GetCollectionPostsRequest, opts ...grpc.CallOption) (*GetCollectionPostsResponse, error)
 	UpdateCollection(ctx context.Context, in *UpdateCollectionRequest, opts ...grpc.CallOption) (*CollectionResponse, error)
 	DeleteCollection(ctx context.Context, in *DeleteCollectionRequest, opts ...grpc.CallOption) (*DeleteCollectionResponse, error)
+	GetPostReports(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PostReportListResponse, error)
+	ReviewPostReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type postsServiceClient struct {
@@ -263,6 +267,26 @@ func (c *postsServiceClient) DeleteCollection(ctx context.Context, in *DeleteCol
 	return out, nil
 }
 
+func (c *postsServiceClient) GetPostReports(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*PostReportListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(PostReportListResponse)
+	err := c.cc.Invoke(ctx, PostsService_GetPostReports_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *postsServiceClient) ReviewPostReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, PostsService_ReviewPostReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -286,6 +310,8 @@ type PostsServiceServer interface {
 	GetCollectionPosts(context.Context, *GetCollectionPostsRequest) (*GetCollectionPostsResponse, error)
 	UpdateCollection(context.Context, *UpdateCollectionRequest) (*CollectionResponse, error)
 	DeleteCollection(context.Context, *DeleteCollectionRequest) (*DeleteCollectionResponse, error)
+	GetPostReports(context.Context, *Empty) (*PostReportListResponse, error)
+	ReviewPostReport(context.Context, *ReviewReportRequest) (*Response, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -352,6 +378,12 @@ func (UnimplementedPostsServiceServer) UpdateCollection(context.Context, *Update
 }
 func (UnimplementedPostsServiceServer) DeleteCollection(context.Context, *DeleteCollectionRequest) (*DeleteCollectionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteCollection not implemented")
+}
+func (UnimplementedPostsServiceServer) GetPostReports(context.Context, *Empty) (*PostReportListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPostReports not implemented")
+}
+func (UnimplementedPostsServiceServer) ReviewPostReport(context.Context, *ReviewReportRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviewPostReport not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -716,6 +748,42 @@ func _PostsService_DeleteCollection_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_GetPostReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).GetPostReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_GetPostReports_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).GetPostReports(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PostsService_ReviewPostReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).ReviewPostReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_ReviewPostReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).ReviewPostReport(ctx, req.(*ReviewReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -798,6 +866,14 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteCollection",
 			Handler:    _PostsService_DeleteCollection_Handler,
+		},
+		{
+			MethodName: "GetPostReports",
+			Handler:    _PostsService_GetPostReports_Handler,
+		},
+		{
+			MethodName: "ReviewPostReport",
+			Handler:    _PostsService_ReviewPostReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

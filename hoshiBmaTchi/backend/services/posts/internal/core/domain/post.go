@@ -55,3 +55,12 @@ type UserMention struct {
 	
 	Post Post `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"`
 }
+
+type PostReport struct {
+    ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+    ReporterID  uuid.UUID `gorm:"type:uuid;not null"`
+    PostID      uuid.UUID `gorm:"type:uuid;not null"`
+    Reason      string    `gorm:"type:text"`
+    Status      string    `gorm:"default:'PENDING'"`
+    CreatedAt   time.Time
+}

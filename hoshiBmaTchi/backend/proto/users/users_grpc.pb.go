@@ -49,6 +49,13 @@ const (
 	UserService_UnhideStoryFromUser_FullMethodName        = "/users.UserService/UnhideStoryFromUser"
 	UserService_GetHiddenStoryUsers_FullMethodName        = "/users.UserService/GetHiddenStoryUsers"
 	UserService_RequestVerification_FullMethodName        = "/users.UserService/RequestVerification"
+	UserService_GetAllUsers_FullMethodName                = "/users.UserService/GetAllUsers"
+	UserService_ToggleUserBan_FullMethodName              = "/users.UserService/ToggleUserBan"
+	UserService_GetSubscribedEmails_FullMethodName        = "/users.UserService/GetSubscribedEmails"
+	UserService_GetVerificationRequests_FullMethodName    = "/users.UserService/GetVerificationRequests"
+	UserService_ReviewVerification_FullMethodName         = "/users.UserService/ReviewVerification"
+	UserService_GetUserReports_FullMethodName             = "/users.UserService/GetUserReports"
+	UserService_ReviewUserReport_FullMethodName           = "/users.UserService/ReviewUserReport"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -85,6 +92,13 @@ type UserServiceClient interface {
 	UnhideStoryFromUser(ctx context.Context, in *ManageRelationRequest, opts ...grpc.CallOption) (*ManageRelationResponse, error)
 	GetHiddenStoryUsers(ctx context.Context, in *GetListRequest, opts ...grpc.CallOption) (*GetListResponse, error)
 	RequestVerification(ctx context.Context, in *RequestVerificationRequest, opts ...grpc.CallOption) (*RequestVerificationResponse, error)
+	GetAllUsers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserListResponse, error)
+	ToggleUserBan(ctx context.Context, in *ToggleUserBanRequest, opts ...grpc.CallOption) (*Response, error)
+	GetSubscribedEmails(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*EmailListResponse, error)
+	GetVerificationRequests(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*VerificationListResponse, error)
+	ReviewVerification(ctx context.Context, in *ReviewVerificationRequest, opts ...grpc.CallOption) (*Response, error)
+	GetUserReports(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserReportListResponse, error)
+	ReviewUserReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error)
 }
 
 type userServiceClient struct {
@@ -395,6 +409,76 @@ func (c *userServiceClient) RequestVerification(ctx context.Context, in *Request
 	return out, nil
 }
 
+func (c *userServiceClient) GetAllUsers(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetAllUsers_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ToggleUserBan(ctx context.Context, in *ToggleUserBanRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, UserService_ToggleUserBan_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetSubscribedEmails(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*EmailListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EmailListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetSubscribedEmails_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetVerificationRequests(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*VerificationListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VerificationListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetVerificationRequests_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReviewVerification(ctx context.Context, in *ReviewVerificationRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, UserService_ReviewVerification_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserReports(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserReportListResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UserReportListResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserReports_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) ReviewUserReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, UserService_ReviewUserReport_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -429,6 +513,13 @@ type UserServiceServer interface {
 	UnhideStoryFromUser(context.Context, *ManageRelationRequest) (*ManageRelationResponse, error)
 	GetHiddenStoryUsers(context.Context, *GetListRequest) (*GetListResponse, error)
 	RequestVerification(context.Context, *RequestVerificationRequest) (*RequestVerificationResponse, error)
+	GetAllUsers(context.Context, *Empty) (*UserListResponse, error)
+	ToggleUserBan(context.Context, *ToggleUserBanRequest) (*Response, error)
+	GetSubscribedEmails(context.Context, *Empty) (*EmailListResponse, error)
+	GetVerificationRequests(context.Context, *Empty) (*VerificationListResponse, error)
+	ReviewVerification(context.Context, *ReviewVerificationRequest) (*Response, error)
+	GetUserReports(context.Context, *Empty) (*UserReportListResponse, error)
+	ReviewUserReport(context.Context, *ReviewReportRequest) (*Response, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -528,6 +619,27 @@ func (UnimplementedUserServiceServer) GetHiddenStoryUsers(context.Context, *GetL
 }
 func (UnimplementedUserServiceServer) RequestVerification(context.Context, *RequestVerificationRequest) (*RequestVerificationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RequestVerification not implemented")
+}
+func (UnimplementedUserServiceServer) GetAllUsers(context.Context, *Empty) (*UserListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAllUsers not implemented")
+}
+func (UnimplementedUserServiceServer) ToggleUserBan(context.Context, *ToggleUserBanRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ToggleUserBan not implemented")
+}
+func (UnimplementedUserServiceServer) GetSubscribedEmails(context.Context, *Empty) (*EmailListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSubscribedEmails not implemented")
+}
+func (UnimplementedUserServiceServer) GetVerificationRequests(context.Context, *Empty) (*VerificationListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetVerificationRequests not implemented")
+}
+func (UnimplementedUserServiceServer) ReviewVerification(context.Context, *ReviewVerificationRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviewVerification not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserReports(context.Context, *Empty) (*UserReportListResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserReports not implemented")
+}
+func (UnimplementedUserServiceServer) ReviewUserReport(context.Context, *ReviewReportRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReviewUserReport not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -1090,6 +1202,132 @@ func _UserService_RequestVerification_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_GetAllUsers_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetAllUsers(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetAllUsers_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetAllUsers(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ToggleUserBan_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ToggleUserBanRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ToggleUserBan(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ToggleUserBan_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ToggleUserBan(ctx, req.(*ToggleUserBanRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetSubscribedEmails_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetSubscribedEmails(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetSubscribedEmails_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetSubscribedEmails(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetVerificationRequests_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetVerificationRequests(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetVerificationRequests_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetVerificationRequests(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReviewVerification_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewVerificationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReviewVerification(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReviewVerification_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReviewVerification(ctx, req.(*ReviewVerificationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserReports_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserReports(ctx, req.(*Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_ReviewUserReport_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReviewReportRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReviewUserReport(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReviewUserReport_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReviewUserReport(ctx, req.(*ReviewReportRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1216,6 +1454,34 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RequestVerification",
 			Handler:    _UserService_RequestVerification_Handler,
+		},
+		{
+			MethodName: "GetAllUsers",
+			Handler:    _UserService_GetAllUsers_Handler,
+		},
+		{
+			MethodName: "ToggleUserBan",
+			Handler:    _UserService_ToggleUserBan_Handler,
+		},
+		{
+			MethodName: "GetSubscribedEmails",
+			Handler:    _UserService_GetSubscribedEmails_Handler,
+		},
+		{
+			MethodName: "GetVerificationRequests",
+			Handler:    _UserService_GetVerificationRequests_Handler,
+		},
+		{
+			MethodName: "ReviewVerification",
+			Handler:    _UserService_ReviewVerification_Handler,
+		},
+		{
+			MethodName: "GetUserReports",
+			Handler:    _UserService_GetUserReports_Handler,
+		},
+		{
+			MethodName: "ReviewUserReport",
+			Handler:    _UserService_ReviewUserReport_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -21,6 +21,7 @@ func NewGormUserRepository(db *gorm.DB) *gormUserRepository{
 		&domain.CloseFriend{},
 		&domain.HiddenStoryViewer{},
 		&domain.VerificationRequest{},
+		&domain.UserReport{},
 	)
     if err != nil {
     
@@ -282,5 +283,55 @@ func (r *gormUserRepository) CreateVerificationRequest(req *domain.VerificationR
 
 func (r *gormUserRepository) UpdateUser(user *domain.User) error {
 	return r.db.Save(user).Error
+}
+
+func (r *gormUserRepository) GetAllUsers() ([]*domain.User, error) {
+    var users []*domain.User
+    err := r.db.Order("created_at desc").Find(&users).Error
+    return users, err
+}
+
+func (r *gormUserRepository) UpdateUserBanStatus(userID string, isBanned bool) error {
+    return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("is_banned", isBanned).Error
+}
+
+func (r *gormUserRepository) GetSubscribedEmails() ([]string, error) {
+    var emails []string
+    err := r.db.Model(&domain.User{}).Where("subscribed_to_newsletter = ?", true).Pluck("email", &emails).Error
+    return emails, err
+}
+
+func (r *gormUserRepository) GetPendingVerificationRequests() ([]*domain.VerificationRequest, error) {
+    var reqs []*domain.VerificationRequest
+    // Preload user to get username/profile pic for the UI
+    err := r.db.Preload("User").Where("status = ?", "PENDING").Find(&reqs).Error
+    return reqs, err
+}
+
+func (r *gormUserRepository) UpdateVerificationStatus(requestID string, status string) (*domain.VerificationRequest, error) {
+    var req domain.VerificationRequest
+    if err := r.db.First(&req, "id = ?", requestID).Error; err != nil {
+        return nil, err
+    }
+    
+    req.Status = status
+    if err := r.db.Save(&req).Error; err != nil {
+        return nil, err
+    }
+    return &req, nil
+}
+
+func (r *gormUserRepository) VerifyUser(userID uuid.UUID) error {
+    return r.db.Model(&domain.User{}).Where("id = ?", userID).Update("is_verified", true).Error
+}
+
+func (r *gormUserRepository) GetPendingUserReports() ([]*domain.UserReport, error) {
+    var reports []*domain.UserReport
+    err := r.db.Where("status = ?", "PENDING").Find(&reports).Error
+    return reports, err
+}
+
+func (r *gormUserRepository) UpdateUserReportStatus(reportID string, status string) error {
+    return r.db.Model(&domain.UserReport{}).Where("id = ?", reportID).Update("status", status).Error
 }
 

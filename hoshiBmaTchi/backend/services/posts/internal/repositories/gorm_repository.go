@@ -461,3 +461,17 @@ func (r *GormPostRepository) IsPostLikedByUser(ctx context.Context, postID, user
     return count > 0, err
 }
 
+func (r *GormPostRepository) GetPendingPostReports(ctx context.Context) ([]*domain.PostReport, error) {
+    var reports []*domain.PostReport
+    err := r.db.WithContext(ctx).Where("status = ?", "PENDING").Find(&reports).Error
+    return reports, err
+}
+
+func (r *GormPostRepository) UpdatePostReportStatus(ctx context.Context, reportID string, status string) error {
+    return r.db.WithContext(ctx).Model(&domain.PostReport{}).Where("id = ?", reportID).Update("status", status).Error
+}
+
+func (r *GormPostRepository) DeletePost(ctx context.Context, postID string) error {
+    // Delete Post and associated data (Cascade usually handles this if configured, else manual)
+    return r.db.WithContext(ctx).Where("id = ?", postID).Delete(&domain.Post{}).Error
+}

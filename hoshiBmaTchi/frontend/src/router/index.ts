@@ -13,6 +13,7 @@ import DashboardLayout from "../components/DashboardLayout.vue";
 import CollectionDetailPage from "../components/CollectionDetailPage.vue";
 import PostDetailPage from "../components/PostDetailPage.vue";
 import SettingsPage from "../components/SettingsPage.vue";
+import AdminPage from "../components/AdminPage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +51,11 @@ const router = createRouter({
       path: "/verify-2fa",
       name: "verify-2fa",
       component: TwoFAVerificationPage,
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: AdminPage,
     },
     {
       path: "/dashboard",

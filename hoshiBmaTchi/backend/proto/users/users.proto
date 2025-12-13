@@ -39,6 +39,14 @@ service UserService {
   rpc UnhideStoryFromUser(ManageRelationRequest) returns (ManageRelationResponse);
   rpc GetHiddenStoryUsers(GetListRequest) returns (GetListResponse);
   rpc RequestVerification(RequestVerificationRequest) returns (RequestVerificationResponse);
+
+  rpc GetAllUsers(Empty) returns (UserListResponse);
+  rpc ToggleUserBan(ToggleUserBanRequest) returns (Response);
+  rpc GetSubscribedEmails(Empty) returns (EmailListResponse);
+  rpc GetVerificationRequests(Empty) returns (VerificationListResponse);
+  rpc ReviewVerification(ReviewVerificationRequest) returns (Response);
+  rpc GetUserReports(Empty) returns (UserReportListResponse);
+  rpc ReviewUserReport(ReviewReportRequest) returns (Response);
 }
 
 message LoginWithGoogleRequest{
@@ -116,6 +124,7 @@ message ValidateTokenRequest{
 message ValidateTokenResponse{
   bool valid = 1;
   string user_id = 2;
+  string role = 3;
 }
 
 message GetUserProfileRequest {
@@ -166,6 +175,9 @@ message UserProfile {
   string name = 3;
   string profile_picture_url = 4;
   bool is_following = 5;
+  
+  string email = 6;
+  bool is_banned = 7;
 }
 
 message SearchUsersRequest {
@@ -287,4 +299,65 @@ message RequestVerificationRequest {
 
 message RequestVerificationResponse {
   string message = 1; 
+}
+
+message Empty {}
+
+message UserListResponse {
+  repeated UserProfile users = 1;
+}
+
+message ToggleUserBanRequest {
+  string user_id = 1;
+  bool is_banned = 2;
+}
+
+message EmailListResponse {
+  repeated string emails = 1;
+}
+
+message VerificationRequestItem {
+  string id = 1;
+  string user_id = 2;
+  string username = 3;
+  string profile_picture_url = 4;
+  string national_id_number = 5;
+  string reason = 6;
+  string selfie_url = 7;
+  string status = 8; // PENDING, ACCEPTED, REJECTED
+  string created_at = 9;
+}
+
+message VerificationListResponse {
+  repeated VerificationRequestItem requests = 1;
+}
+
+message ReviewVerificationRequest {
+  string request_id = 1;
+  string action = 2;
+}
+
+message Response {
+  string message = 1;
+  bool success = 2;
+}
+
+message UserReportItem {
+  string id = 1;
+  string reporter_id = 2;
+  string reporter_name = 3;
+  string reported_user_id = 4;
+  string reported_user_name = 5;
+  string reason = 6;
+  string status = 7;
+  string created_at = 8;
+}
+
+message UserReportListResponse {
+  repeated UserReportItem reports = 1;
+}
+
+message ReviewReportRequest {
+  string report_id = 1;
+  string action = 2;
 }

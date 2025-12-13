@@ -24,6 +24,8 @@ service PostsService {
     rpc GetCollectionPosts(GetCollectionPostsRequest) returns (GetCollectionPostsResponse);
     rpc UpdateCollection(UpdateCollectionRequest) returns (CollectionResponse);
     rpc DeleteCollection(DeleteCollectionRequest) returns (DeleteCollectionResponse);
+    rpc GetPostReports(Empty) returns (PostReportListResponse);
+    rpc ReviewPostReport(ReviewReportRequest) returns (Response);
 }
 
 message GenerateUploadURLRequest {
@@ -223,4 +225,29 @@ message DeleteCollectionRequest {
 message DeleteCollectionResponse {
     bool success = 1;
     string message = 2;
+}
+
+message Empty {}
+
+message Response {
+    string message = 1;
+    bool success = 2;
+}
+
+message PostReportItem {
+    string id = 1;
+    string reporter_id = 2;
+    string post_id = 3;
+    string reason = 4;
+    string status = 5;
+    string created_at = 6;
+}
+
+message PostReportListResponse {
+    repeated PostReportItem reports = 1;
+}
+
+message ReviewReportRequest {
+    string report_id = 1;
+    string action = 2;
 }

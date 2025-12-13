@@ -66,6 +66,7 @@ import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
 import { authApi, setAuthHeader } from "../services/apiService";
 import { useAuth } from "../composables/useAuth";
+import { jwtDecode } from "jwt-decode";
 
 // const { login } = useAuth();
 // import { useGoogleSignIn } from 'vue3-google-signin'
@@ -76,58 +77,6 @@ const emailOrUsername = ref("");
 const password = ref("");
 const isLoading = ref(false);
 const error = ref("");
-
-
-// const handleLogin = async () => {
-//   try {
-//     // Call the login function we just wrote
-//     const result = await login({
-//         email_or_username: emailOrUsername.value.trim(), // Adjust based on your form data structure
-//         password: password.value,
-//     });
-
-//     if (result.requires2FA) {
-//       router.push("/verify-2fa");
-//     } else {
-//       router.push("/");
-//     }
-//   } catch (error) {
-  
-//   }
-// };
-
-// const handleLogin = async () => {
-//   error.value = "";
-//   isLoading.value = true;
-
-//   try {
-//     // 3. Use the composable's login function
-//     const result = await login({
-//       email_or_username: emailOrUsername.value.trim(),
-//       password: password.value,
-//     });
-
-//     // 4. Handle navigation based on the result
-//     if (result.requires2FA) {
-//       router.push({
-//         name: "verify-2fa",
-//         query: { email: emailOrUsername.value.trim() },
-//       });
-//     } else {
-//       // Login successful, redirect to dashboard
-//       router.push("/dashboard"); // Ensure this route exists in your router/index.ts
-//     }
-//   } catch (err: any) {
-//     console.error("Login failed:", err);
-//     if (err.response && err.response.data.error) {
-//       error.value = err.response.data.error;
-//     } else {
-//       error.value = "Invalid credentials or server error";
-//     }
-//   } finally {
-//     isLoading.value = false;
-//   }
-// };
 
 const handleLogin = async () => {
   error.value = "";
@@ -148,14 +97,29 @@ const handleLogin = async () => {
     } else {
       console.log("Login successful, tokens:", response.data);
 
+      const accessToken = response.data.tokens.access_token;
+
       if (response.data.tokens) {
-        localStorage.setItem('accessToken', response.data.tokens.access_token)
-        localStorage.setItem('refreshToken', response.data.tokens.refresh_token)
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', response.data.tokens.refresh_token);
       }
       
-      setAuthHeader(response.data.access_token);
+      setAuthHeader(accessToken);
 
-      router.push("/dashboard");
+      // --- ROLE CHECK LOGIC ---
+      try {
+        const decoded: any = jwtDecode(accessToken);
+        // Check if the role claim exists and equals 'admin'
+        if (decoded.role === 'admin') {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
+      } catch (e) {
+        // If decoding fails, default to dashboard
+        router.push("/dashboard");
+      }
+      // ------------------------
     }
   } catch (err: any) {
     console.error("Login failed:", err);

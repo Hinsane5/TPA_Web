@@ -323,7 +323,8 @@ func (h *AuthHandler) AuthMiddleware() gin.HandlerFunc {
 		}
 
 		c.Set("userID", res.UserId)
-
+		c.Set("role", res.Role)
+		
 		c.Next()
 	}
 }

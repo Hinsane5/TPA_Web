@@ -237,7 +237,7 @@ func (h *UserHandler) LoginWithGoogle(ctx context.Context, req *pb.LoginWithGoog
 		user = newUser
 	}
 
-	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email, user.Role)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
@@ -300,7 +300,7 @@ func (h *UserHandler) LoginUser(ctx context.Context, req *pb.LoginUserRequest) (
 		}, nil
 	}
 
-	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email, user.Role)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
@@ -339,7 +339,7 @@ func (h *UserHandler) VerifyLogin2FA(ctx context.Context, req *pb.VerifyLogin2FA
 
 	h.redis.Del(ctx, otpKey)
 
-	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email)
+	accessToken, refreshToken, err := utils.GenerateTokens(user.ID.String(), user.Email, user.Role)
 	if err != nil {
 		return nil, status.Error(codes.Internal, "failed to generate tokens")
 	}
@@ -559,9 +559,11 @@ func (h *UserHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 		return nil, status.Errorf(codes.Internal, "Token claims tidak valid")
 	}
 
+	role, _ := claims["role"].(string)
 	return &pb.ValidateTokenResponse{
 		Valid:  true,
 		UserId: userID,
+		Role: role,
 	}, nil
 }
 
@@ -919,11 +921,6 @@ func (h *UserHandler) GetSettings(ctx context.Context, req *pb.GetSettingsReques
         return nil, status.Error(codes.Internal, "Failed to fetch user settings")
     }
 
-    // Map your domain model fields to the proto response
-    // Note: Ensure your domain.User struct actually has these fields. 
-    // based on your Register function, you have SubscribedToNewsletter (Email) and 2FA.
-    // You might need to add IsPrivate and PushEnabled to your User model if they aren't there.
-    
     return &pb.GetSettingsResponse{
         IsPrivate:   user.IsPrivate,            // Ensure this exists in domain.User
         EnablePush:  user.PushNotificationsEnabled,    // Ensure this exists in domain.User
@@ -1087,4 +1084,130 @@ func (h *UserHandler) RequestVerification(ctx context.Context, req *pb.RequestVe
 	}
 
 	return &pb.RequestVerificationResponse{Message: "Verification request submitted"}, nil
+}
+
+func (h *UserHandler) GetAllUsers(ctx context.Context, req *pb.Empty) (*pb.UserListResponse, error) {
+    users, err := h.repo.GetAllUsers()
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch users")
+    }
+
+    var pbUsers []*pb.UserProfile
+    for _, u := range users {
+        pbUsers = append(pbUsers, &pb.UserProfile{
+            UserId:            u.ID.String(),
+            Username:          u.Username,
+            Name:              u.Name,
+            Email:             u.Email, 
+            IsBanned:          u.IsBanned, 
+            ProfilePictureUrl: u.ProfilePictureURL,
+        })
+    }
+    return &pb.UserListResponse{Users: pbUsers}, nil
+}
+
+func (h *UserHandler) ToggleUserBan(ctx context.Context, req *pb.ToggleUserBanRequest) (*pb.Response, error) {
+	if req.UserId == "" {
+        return nil, status.Error(codes.InvalidArgument, "User ID is required")
+    }
+
+    err := h.repo.UpdateUserBanStatus(req.UserId, req.IsBanned)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update ban status")
+    }
+    
+    // Optional: Send Email Notification about Ban/Unban
+    
+    return &pb.Response{Success: true, Message: "User status updated"}, nil
+}
+
+func (h *UserHandler) GetSubscribedEmails(ctx context.Context, req *pb.Empty) (*pb.EmailListResponse, error) {
+    emails, err := h.repo.GetSubscribedEmails()
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch emails")
+    }
+    return &pb.EmailListResponse{Emails: emails}, nil
+}
+
+func (h *UserHandler) GetVerificationRequests(ctx context.Context, req *pb.Empty) (*pb.VerificationListResponse, error) {
+    reqs, err := h.repo.GetPendingVerificationRequests()
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to fetch requests")
+    }
+
+    var pbReqs []*pb.VerificationRequestItem
+    for _, r := range reqs {
+        // You might need to fetch User details here if not preloaded
+        // user, _ := h.repo.FindByID(r.UserID.String())
+        
+        pbReqs = append(pbReqs, &pb.VerificationRequestItem{
+            Id:               r.ID.String(),
+            UserId:           r.UserID.String(),
+            NationalIdNumber: r.NationalIDNumber,
+            Reason:           r.Reason,
+            SelfieUrl:        r.SelfieURL,
+            Status:           r.Status,
+            CreatedAt:        r.CreatedAt.Format(time.RFC3339),
+        })
+    }
+    return &pb.VerificationListResponse{Requests: pbReqs}, nil
+}
+
+func (h *UserHandler) ReviewVerification(ctx context.Context, req *pb.ReviewVerificationRequest) (*pb.Response, error) {
+    // 1. Update Request Status
+    verificationReq, err := h.repo.UpdateVerificationStatus(req.RequestId, req.Action)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update status")
+    }
+
+    // 2. If Accepted, Verify User and Send Email
+    if req.Action == "ACCEPTED" {
+        h.repo.VerifyUser(verificationReq.UserID)
+
+        // Fetch User to get Email
+        user, _ := h.repo.FindByID(verificationReq.UserID.String())
+        
+        // Send Email
+        emailBody := "Congratulations! Your account has been verified."
+        task := EmailTask{Email: user.Email, Subject: "Verification Approved", Body: emailBody}
+        taskBody, _ := json.Marshal(task)
+        
+        h.amqpChan.PublishWithContext(ctx, "email_exchange", "send_email", false, false, 
+            amqp.Publishing{ContentType: "application/json", Body: taskBody})
+    }
+
+    return &pb.Response{Success: true, Message: "Review processed"}, nil
+}
+
+func (h *UserHandler) GetUserReports(ctx context.Context, req *pb.Empty) (*pb.UserReportListResponse, error) {
+    reports, err := h.repo.GetPendingUserReports()
+    if err != nil { return nil, err }
+    
+    var pbReports []*pb.UserReportItem
+    for _, r := range reports {
+        pbReports = append(pbReports, &pb.UserReportItem{
+            Id:             r.ID.String(),
+            ReporterId:     r.ReporterID.String(),
+            ReportedUserId: r.ReportedUserID.String(),
+            Reason:         r.Reason,
+            Status:         r.Status,
+        })
+    }
+    return &pb.UserReportListResponse{Reports: pbReports}, nil
+}
+
+func (h *UserHandler) ReviewUserReport(ctx context.Context, req *pb.ReviewReportRequest) (*pb.Response, error) {
+    // req.Action: "BAN_USER" or "IGNORE"
+    
+    statusStr := "REJECTED"
+    if req.Action == "BAN_USER" {
+        statusStr = "RESOLVED"
+        
+        // Fetch Report to get Reported User ID
+        // (Assuming you add a method FindUserReportByID to repo)
+        // Then call h.repo.UpdateUserBanStatus(reportedUserID, true)
+    }
+
+    h.repo.UpdateUserReportStatus(req.ReportId, statusStr)
+    return &pb.Response{Success: true}, nil
 }

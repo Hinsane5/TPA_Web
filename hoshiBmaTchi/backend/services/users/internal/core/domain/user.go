@@ -53,6 +53,9 @@ type User struct{
 	CloseFriends []CloseFriend `gorm:"foreignKey:UserID"`
     HiddenStoryViewers []HiddenStoryViewer `gorm:"foreignKey:UserID"`
     VerificationRequests []VerificationRequest `gorm:"foreignKey:UserID"`
+
+	Role       string `gorm:"default:'user'"`
+    IsVerified bool   `gorm:"default:false"`
 }
 
 type CloseFriend struct {
@@ -78,6 +81,24 @@ type VerificationRequest struct {
     Status          string    `gorm:"default:'PENDING'"`
     CreatedAt       time.Time
     UpdatedAt       time.Time
+}
+
+type UserReport struct {
+    ID             uuid.UUID `gorm:"type:uuid;primary_key;"`
+    ReporterID     uuid.UUID `gorm:"type:uuid;not null"`
+    ReportedUserID uuid.UUID `gorm:"type:uuid;not null"`
+    Reason         string
+    Status         string    `gorm:"default:'PENDING'"`
+    CreatedAt      time.Time
+}
+
+type PostReport struct {
+    ID             uuid.UUID `gorm:"type:uuid;primary_key;"`
+    ReporterID     uuid.UUID `gorm:"type:uuid;not null"`
+    PostID         uuid.UUID `gorm:"type:uuid;not null"`
+    Reason         string
+    Status         string    `gorm:"default:'PENDING'"`
+    CreatedAt      time.Time
 }
 
 func (user *User) BeforeCreate(tx *gorm.DB) (err error) {

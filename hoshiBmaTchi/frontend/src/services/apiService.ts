@@ -440,3 +440,21 @@ export const settingsApi = {
     return apiClient.post("/v1/settings/verification-request", data);
   },
 };
+
+export const adminApi = {
+  getAllUsers: () => apiClient.get("/admin/users"),
+  banUser: (userId: string, ban: boolean) =>
+    apiClient.post(`/admin/users/${userId}/ban`, { ban }),
+
+  sendNewsletter: (subject: string, body: string) =>
+    apiClient.post("/admin/newsletter", { subject, body }),
+
+  getVerificationRequests: () => apiClient.get("/admin/verifications"),
+  reviewVerification: (reqId: string, action: "ACCEPT" | "REJECT") =>
+    apiClient.post(`/admin/verifications/${reqId}/review`, { action }),
+
+  getReports: (type: "post" | "user") =>
+    apiClient.get(`/admin/reports`, { params: { type } }),
+  reviewReport: (reportId: string, type: "post" | "user", action: string) =>
+    apiClient.post(`/admin/reports/${reportId}/review`, { type, action }),
+};

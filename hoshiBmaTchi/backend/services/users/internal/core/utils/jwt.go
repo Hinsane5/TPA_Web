@@ -11,7 +11,7 @@ import (
 
 var jwtSecret = []byte(os.Getenv("JWT_SECRET_KEY"))
 
-func GenerateTokens(userID string, email string) (string, string, error){
+func GenerateTokens(userID string, email string, role string) (string, string, error){
 
 	if len(jwtSecret) == 0 {
 		log.Fatal("FATAL: JWT_SECRET_KEY environment variable is not set.")
@@ -20,6 +20,7 @@ func GenerateTokens(userID string, email string) (string, string, error){
 	accessTokenClaims := jwt.MapClaims{
 		"user_id": userID,
 		"email": email,
+		"role":    role,
 		"exp": time.Now().Add(time.Minute * 15).Unix(),
 	}
 
