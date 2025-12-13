@@ -653,7 +653,6 @@ func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
         
         mediaURLString := ""
         if err == nil {
-            // Fix for local docker networking if needed
             mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
             mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
         }
@@ -664,7 +663,6 @@ func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
         })
     }
 
-    // 3. Return Response
     return &pb.PostResponse{
         Id:            post.ID.String(),
         UserId:        post.UserID.String(),
@@ -679,3 +677,51 @@ func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
     }, nil
 }
 
+func (s *Server) GetPostReports(ctx context.Context, req *pb.Empty) (*pb.PostReportListResponse, error) {
+    reports, err := s.repo.GetPendingPostReports(ctx)
+    if err != nil {
+        log.Printf("Failed to fetch reports: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to fetch reports")
+    }
+
+    var pbReports []*pb.PostReportItem
+    for _, r := range reports {
+        pbReports = append(pbReports, &pb.PostReportItem{
+            Id:             r.ID.String(),
+            ReporterId:     r.ReporterID.String(),
+            PostId:         r.PostID.String(),
+            Reason:         r.Reason,
+            Status:         r.Status,
+            CreatedAt:      r.CreatedAt.Format(time.RFC3339),
+        })
+    }
+
+    return &pb.PostReportListResponse{Reports: pbReports}, nil
+}
+
+func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportRequest) (*pb.Response, error) {
+    // 1. Fetch Report to get PostID
+    report, err := s.repo.GetPostReportByID(ctx, req.ReportId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "Report not found")
+    }
+
+    statusStr := "REJECTED"
+    
+    // 2. Handle Actions
+    if req.Action == "DELETE_POST" {
+        statusStr = "RESOLVED"
+        // Delete the post content
+        if err := s.repo.DeletePost(ctx, report.PostID.String()); err != nil {
+            log.Printf("Failed to delete post %s: %v", report.PostID, err)
+            return nil, status.Error(codes.Internal, "Failed to delete post")
+        }
+    }
+
+    // 3. Update Report Status
+    if err := s.repo.UpdatePostReportStatus(ctx, req.ReportId, statusStr); err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update report status")
+    }
+
+    return &pb.Response{Success: true, Message: "Report processed"}, nil
+}

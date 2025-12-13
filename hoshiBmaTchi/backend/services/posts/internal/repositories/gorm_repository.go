@@ -472,6 +472,13 @@ func (r *GormPostRepository) UpdatePostReportStatus(ctx context.Context, reportI
 }
 
 func (r *GormPostRepository) DeletePost(ctx context.Context, postID string) error {
-    // Delete Post and associated data (Cascade usually handles this if configured, else manual)
     return r.db.WithContext(ctx).Where("id = ?", postID).Delete(&domain.Post{}).Error
+}
+
+func (r *GormPostRepository) GetPostReportByID(ctx context.Context, reportID string) (*domain.PostReport, error) {
+    var report domain.PostReport
+    if err := r.db.WithContext(ctx).Where("id = ?", reportID).First(&report).Error; err != nil {
+        return nil, err
+    }
+    return &report, nil
 }
