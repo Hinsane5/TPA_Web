@@ -444,13 +444,13 @@ export const settingsApi = {
 export const adminApi = {
   getAllUsers: () => apiClient.get("/admin/users"),
   banUser: (userId: string, ban: boolean) =>
-    apiClient.post(`/admin/users/${userId}/ban`, { ban }),
+    apiClient.post(`/admin/users/${userId}/ban`, { is_banned: ban }),
 
   sendNewsletter: (subject: string, body: string) =>
     apiClient.post("/admin/newsletter", { subject, body }),
 
   getVerificationRequests: () => apiClient.get("/admin/verifications"),
-  reviewVerification: (reqId: string, action: "ACCEPT" | "REJECT") =>
+  reviewVerification: (reqId: string, action: "ACCEPTED" | "REJECTED") =>
     apiClient.post(`/admin/verifications/${reqId}/review`, { action }),
 
   getReports: (type: "post" | "user") =>

@@ -75,6 +75,7 @@ type HiddenStoryViewer struct {
 type VerificationRequest struct {
     ID              uuid.UUID `gorm:"type:uuid;primary_key;"`
     UserID          uuid.UUID `gorm:"type:uuid;not null"`
+    User            User      `gorm:"foreignKey:UserID"`
     NationalIDNumber string   `gorm:"not null"`
     Reason          string    `gorm:"type:text"`
     SelfieURL       string

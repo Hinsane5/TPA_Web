@@ -335,3 +335,11 @@ func (r *gormUserRepository) UpdateUserReportStatus(reportID string, status stri
     return r.db.Model(&domain.UserReport{}).Where("id = ?", reportID).Update("status", status).Error
 }
 
+
+func (r *gormUserRepository) FindUserReportByID(reportID string) (*domain.UserReport, error) {
+    var report domain.UserReport
+    if err := r.db.Where("id = ?", reportID).First(&report).Error; err != nil {
+        return nil, err
+    }
+    return &report, nil
+}

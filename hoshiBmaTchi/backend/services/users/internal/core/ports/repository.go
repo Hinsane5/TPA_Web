@@ -47,4 +47,6 @@ type UserRepository interface{
 	UpdateUserReportStatus(reportID string, status string) error
 	UpdateUserBanStatus(userID string, isBanned bool) error
 	GetAllUsers() ([]*domain.User, error)
+
+	FindUserReportByID(reportID string) (*domain.UserReport, error)
 }

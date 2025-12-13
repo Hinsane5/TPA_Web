@@ -1143,6 +1143,8 @@ func (h *UserHandler) GetVerificationRequests(ctx context.Context, req *pb.Empty
         pbReqs = append(pbReqs, &pb.VerificationRequestItem{
             Id:               r.ID.String(),
             UserId:           r.UserID.String(),
+			Username:          r.User.Username,          
+            ProfilePictureUrl: r.User.ProfilePictureURL,
             NationalIdNumber: r.NationalIDNumber,
             Reason:           r.Reason,
             SelfieUrl:        r.SelfieURL,
@@ -1197,17 +1199,26 @@ func (h *UserHandler) GetUserReports(ctx context.Context, req *pb.Empty) (*pb.Us
 }
 
 func (h *UserHandler) ReviewUserReport(ctx context.Context, req *pb.ReviewReportRequest) (*pb.Response, error) {
-    // req.Action: "BAN_USER" or "IGNORE"
-    
     statusStr := "REJECTED"
+    
     if req.Action == "BAN_USER" {
         statusStr = "RESOLVED"
         
-        // Fetch Report to get Reported User ID
-        // (Assuming you add a method FindUserReportByID to repo)
-        // Then call h.repo.UpdateUserBanStatus(reportedUserID, true)
+        report, err := h.repo.FindUserReportByID(req.ReportId)
+        if err != nil {
+            return nil, status.Error(codes.NotFound, "Report not found")
+        }
+
+        err = h.repo.UpdateUserBanStatus(report.ReportedUserID.String(), true)
+        if err != nil {
+            return nil, status.Error(codes.Internal, "Failed to ban user")
+        }
     }
 
-    h.repo.UpdateUserReportStatus(req.ReportId, statusStr)
+    err := h.repo.UpdateUserReportStatus(req.ReportId, statusStr)
+    if err != nil {
+         return nil, status.Error(codes.Internal, "Failed to update report status")
+    }
+
     return &pb.Response{Success: true}, nil
 }

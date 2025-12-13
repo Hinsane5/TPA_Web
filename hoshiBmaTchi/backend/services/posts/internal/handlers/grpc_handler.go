@@ -678,3 +678,4 @@ func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
         IsReel:        post.IsReel,
     }, nil
 }
+

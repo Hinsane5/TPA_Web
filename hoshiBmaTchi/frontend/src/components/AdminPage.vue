@@ -45,7 +45,7 @@
         <div class="cards-grid">
           <div v-for="req in verificationRequests" :key="req.id" class="request-card">
             <div class="req-header">
-              <img :src="req.user_profile_pic" alt="User" class="avatar">
+              <img :src="req.profile_picture_url" alt="User" class="avatar">
               <strong>{{ req.username }}</strong>
             </div>
             <p><strong>Reason:</strong> {{ req.reason }}</p>
@@ -53,8 +53,8 @@
               <img :src="req.selfie_url" alt="ID Selfie" class="id-photo">
             </div>
             <div class="card-actions">
-              <button @click="handleVerification(req.id, 'ACCEPT')" class="btn-success">Accept</button>
-              <button @click="handleVerification(req.id, 'REJECT')" class="btn-danger">Reject</button>
+              <button @click="handleVerification(req.id, 'ACCEPTED')" class="btn-success">Accept</button>
+              <button @click="handleVerification(req.id, 'REJECTED')" class="btn-danger">Reject</button>
             </div>
           </div>
         </div>
@@ -138,10 +138,10 @@ const toggleBan = async (user: any, ban: boolean) => {
   user.is_banned = ban;
 };
 
-const handleVerification = async (reqId: string, action: 'ACCEPT' | 'REJECT') => {
+const handleVerification = async (reqId: string, action: 'ACCEPTED' | 'REJECTED') => {
   await adminApi.reviewVerification(reqId, action);
   verificationRequests.value = verificationRequests.value.filter(r => r.id !== reqId);
-  alert(`Request ${action.toLowerCase()}ed`);
+  alert(`Request ${action.toLowerCase()} successfully`);
 };
 
 const handleReport = async (reportId: string, action: 'ACCEPT' | 'REJECT') => {
