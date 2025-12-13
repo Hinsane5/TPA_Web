@@ -1,12 +1,10 @@
 <template>
   <aside class="sidebar">
     <div class="sidebar-content">
-      <!-- Logo -->
       <div class="logo">
         <span class="logo-text">Instagram</span>
       </div>
 
-      <!-- Navigation Links -->
       <nav class="nav-menu">
         <a
           v-for="item in navItems"
@@ -19,7 +17,6 @@
           <span class="nav-label">{{ item.label }}</span>
         </a>
 
-        <!-- Search Button -->
         <button 
           class="nav-item search-btn"
           @click="$emit('openSearch')"
@@ -28,7 +25,6 @@
           <span class="nav-label">Search</span>
         </button>
 
-        <!-- Notifications Button -->
         <button 
           class="nav-item notifications-btn"
           @click="$emit('openNotifications')"
@@ -38,7 +34,6 @@
           <span v-if="notificationCount > 0" class="notification-badge">{{ notificationCount }}</span>
         </button>
 
-        <!-- Create Button -->
         <button 
           class="nav-item create-btn"
           @click="$emit('openCreate')"
@@ -48,18 +43,24 @@
         </button>
       </nav>
 
-      <!-- Bottom Actions -->
       <div class="sidebar-bottom">
         <button class="nav-item more-button" @click="toggleMoreMenu">
-          <!-- Replaced emoji with hamburger icon image -->
           <img src="/icons/hamburger-more-icon.png" alt="More" class="nav-icon more-icon" />
           <span class="nav-label">More</span>
         </button>
 
-        <!-- More Menu Dropdown -->
         <div v-if="isMoreMenuOpen" class="more-menu">
+          <a 
+            v-if="user && user.role === 'admin'" 
+            href="#" 
+            class="more-menu-item" 
+            @click.prevent="navigateTo('admin')"
+          >
+            <img src="/icons/lock-icon.png" alt="Admin" class="menu-icon" />
+            <span>Admin Page</span>
+          </a>
+
           <a href="#" class="more-menu-item" @click.prevent="navigateTo('settings')">
-            <!-- Replaced all emoji icons in more menu with icon images -->
             <img src="/icons/setting-icon.png" alt="Settings" class="menu-icon" />
             <span>Settings</span>
           </a>
@@ -77,18 +78,20 @@
         </div>
       </div>
 
-      <!-- Also from Meta -->
       <div class="meta-section">
         <a href="#" class="meta-link">Also from Meta</a>
       </div>
     </div>
 
-    <!-- User Profile Section -->
-    <div class="user-profile">
-      <img v-if="currentUser" :src="currentUser.profileImage" :alt="currentUser.username" class="user-avatar" />
-      <div v-if="currentUser" class="user-info">
-        <div class="user-name">{{ currentUser.username }}</div>
-        <div class="user-fullname">{{ currentUser.fullName }}</div>
+    <div class="user-profile" v-if="userProfile">
+      <img 
+        :src="userProfile.profile_picture_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" 
+        :alt="userProfile.username" 
+        class="user-avatar" 
+      />
+      <div class="user-info">
+        <div class="user-name">{{ userProfile.username }}</div>
+        <div class="user-fullname">{{ userProfile.name }}</div>
       </div>
     </div>
   </aside>
@@ -96,8 +99,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { DashboardPage, User } from '../types'
+import type { DashboardPage } from '../types'
 import { useAuth } from '../composables/useAuth'
+import { usersApi } from '../services/apiService' // Import API to fetch profile
 
 interface NavItem {
   id: DashboardPage
@@ -121,8 +125,10 @@ const emit = defineEmits<{
 }>()
 
 const isMoreMenuOpen = ref(false)
-const currentUser = ref<User | null>(null)
-const { logout } = useAuth()
+const userProfile = ref<any>(null) // To store full profile data
+
+// Get the auth user (contains ID, Role) from the composable
+const { user, logout } = useAuth()
 
 const navItems: NavItem[] = [
   { id: 'home', label: 'Home', iconPath: '/icons/home-icon.png' },
@@ -132,11 +138,13 @@ const navItems: NavItem[] = [
   { id: 'profile', label: 'Profile', iconPath: '/icons/profile-icon.png' },
 ]
 
-const navigateTo = (page: DashboardPage | 'settings' | 'saved') => {
+const navigateTo = (page: DashboardPage | 'settings' | 'saved' | 'admin') => {
   if (page === 'settings') {
-    console.log('Navigate to settings - will implement settings page')
+    emit('navigate', 'settings' as any) // Assuming settings page handling exists or is future work
   } else if (page === 'saved') {
-    emit('navigate', 'profile')
+    emit('navigate', 'profile') // Redirect to profile to see saved
+  } else if (page === 'admin') {
+    emit('navigate', 'admin' as any)
   } else {
     emit('navigate', page)
   }
@@ -155,9 +163,18 @@ const handleLogout = () => {
   logout()
 }
 
+// Fetch the full user profile (username, picture) when component mounts
+const fetchUserProfile = async () => {
+  try {
+    const res = await usersApi.getMe();
+    userProfile.value = res.data;
+  } catch (error) {
+    console.error("Failed to load user profile for sidebar", error);
+  }
+}
 
 onMounted(() => {
-
+  fetchUserProfile();
 })
 </script>
 
@@ -233,7 +250,6 @@ onMounted(() => {
   color: var(--primary-color);
 }
 
-/* Added icon image styling */
 .nav-icon {
   width: 24px;
   height: 24px;
@@ -252,7 +268,6 @@ onMounted(() => {
   border: none;
 }
 
-/* Added notification badge */
 .notification-badge {
   position: absolute;
   top: 8px;

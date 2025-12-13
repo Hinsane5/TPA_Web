@@ -3,13 +3,14 @@ import { useRouter } from "vue-router";
 import { setAuthHeader } from "../services/apiService"; 
 import { jwtDecode } from "jwt-decode";
 
-const token = ref<string | null>(localStorage.getItem("token"));
+const token = ref<string | null>(localStorage.getItem("accessToken"));
 const user = ref<any>(null);
 const isLoggedIn = ref(false);
 
 interface JWTPayload {
-  user_id: string; 
+  user_id: string;
   email: string;
+  role: string;
   exp: number;
 }
 
@@ -33,6 +34,7 @@ export function useAuth(){
           user.value = {
             id: decoded.user_id,
             email: decoded.email,
+            role: decoded.role,
           };
         } catch (error) {
           console.error("Invalid token:", error);

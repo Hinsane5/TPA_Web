@@ -53,11 +53,6 @@ const router = createRouter({
       component: TwoFAVerificationPage,
     },
     {
-      path: "/admin",
-      name: "admin",
-      component: AdminPage,
-    },
-    {
       path: "/dashboard",
       component: DashboardLayout,
       redirect: "/dashboard/home",
@@ -107,6 +102,12 @@ const router = createRouter({
           name: "post-detail",
           component: PostDetailPage,
           props: true,
+        },
+
+        {
+          path: "/admin",
+          name: "admin",
+          component: AdminPage,
         },
       ],
     },

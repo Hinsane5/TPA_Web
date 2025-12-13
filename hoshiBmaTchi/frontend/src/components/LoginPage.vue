@@ -106,20 +106,10 @@ const handleLogin = async () => {
       
       setAuthHeader(accessToken);
 
-      // --- ROLE CHECK LOGIC ---
-      try {
-        const decoded: any = jwtDecode(accessToken);
-        // Check if the role claim exists and equals 'admin'
-        if (decoded.role === 'admin') {
-          router.push("/admin");
-        } else {
-          router.push("/dashboard");
-        }
-      } catch (e) {
-        // If decoding fails, default to dashboard
-        router.push("/dashboard");
-      }
-      // ------------------------
+      const { checkLoginState } = useAuth();
+      checkLoginState();
+
+      router.push("/dashboard");
     }
   } catch (err: any) {
     console.error("Login failed:", err);
@@ -132,43 +122,6 @@ const handleLogin = async () => {
     isLoading.value = false;
   }
 };
-
-// const Vue3GoogleOauth: any = inject('Vue3GoogleOauth');
-
-// Vue3GoogleOauth.onSignInSuccess(async (googleUser: any) => {
-//   try {
-//     const id_token = googleUser.getAuthResponse().id_token;
-//     isLoading.value = true;
-//     error.value = "";
-
-//     if (id_token) {
-//       const apiResponse = await authApi.loginWithGoogle(id_token);
-
-//       console.log("Google Login successful, tokens:", apiResponse.data);
-
-//       router.push("/home");
-//     } else {
-//       error.value = "Failed to retrieve Google ID token. Please try again.";
-//     }
-//   } catch (err: any) {
-//     console.error("Google Login failed:", err);
-//     if (err.response && err.response.data.error) {
-//       error.value = err.response.data.error;
-//     } else {
-//       error.value = "An unknown error occurred during Google Sign-In.";
-//     }
-//   } finally {
-//     isLoading.value = false;
-//   }
-// });
-
-// Vue3GoogleOauth.onSignInError(() => {
-//   error.value = "Google Sign-In process was cancelled or failed.";
-// });
-
-// const loginWithGoogle = () => {
-//   Vue3GoogleOauth.signIn();
-// };
 
 const navigateToRegister = () => {
   router.push("/register");
