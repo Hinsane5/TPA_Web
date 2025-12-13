@@ -128,7 +128,7 @@ func main() {
 
 	postRepo := repositories.NewGormPostRepository(db)
 	postService := services.NewPostService(postRepo, amqpChan, userClient)
-	grpcServer := handlers.NewGRPCServer(postRepo, postService, minioClient, presignClient, bucketName, publicEndpoint, userClient)
+	grpcServer := handlers.NewGRPCServer(postRepo, postService, minioClient, presignClient, bucketName, publicEndpoint, userClient, amqpChan)
 
 	grpcPort := os.Getenv("GRPC_PORT")
 	if grpcPort == "" {

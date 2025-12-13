@@ -75,7 +75,15 @@
               </p>
             </div>
           </div>
-          <button class="close-button" @click="$emit('close')">✕</button>
+          
+          <div class="header-actions">
+            <button class="icon-button menu-btn" @click="showMenu = !showMenu">•••</button>
+            <button class="close-button" @click="$emit('close')">✕</button>
+            
+            <div v-if="showMenu" class="dropdown-menu">
+                <button @click="handleReport" class="dropdown-item danger">Report Post</button>
+            </div>
+          </div>
         </div>
 
         <div class="comments-section">
@@ -248,6 +256,17 @@
       </div>
     </div>
 
+    <div v-if="showReportModal" class="report-modal-backdrop" @click.self="showReportModal = false">
+        <div class="report-modal">
+            <h3>Report Post</h3>
+            <textarea v-model="reportReason" placeholder="Why are you reporting this post?" rows="4"></textarea>
+            <div class="modal-buttons">
+                <button @click="submitReport" class="btn-submit">Submit Report</button>
+                <button @click="showReportModal = false" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <ShareModal 
       v-if="showShareModal"
       :contentId="post.id"
@@ -292,6 +311,11 @@ const currentUsername = localStorage.getItem("username") || "me";
 const currentUserPic = localStorage.getItem("profilePicture") || "";
 const isOwnPost = props.post.user_id === currentUserId;
 const showShareModal = ref(false);
+
+// Report Logic State
+const showMenu = ref(false);
+const showReportModal = ref(false);
+const reportReason = ref("");
 
 watch(
   () => props.post.id,
@@ -539,6 +563,24 @@ const formatFullDate = (d: string | number | Date) => {
     return "";
   }
 };
+
+// Report Logic
+const handleReport = () => {
+    showMenu.value = false;
+    showReportModal.value = true;
+};
+
+const submitReport = async () => {
+    try {
+        await postsApi.reportPost(props.post.id, reportReason.value);
+        alert("Post reported successfully. Our team will review it.");
+        showReportModal.value = false;
+        reportReason.value = "";
+    } catch (e) {
+        alert("Failed to report post.");
+        console.error(e);
+    }
+};
 </script>
 
 <style scoped>
@@ -608,14 +650,14 @@ const formatFullDate = (d: string | number | Date) => {
   background: rgba(26, 26, 26, 0.8);
   color: white;
   border: none;
-  width: 32px; /* Was 30px in previous code, restored to 32px */
-  height: 32px; /* Was 30px, restored to 32px */
+  width: 32px; 
+  height: 32px;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px; /* Larger arrow */
+  font-size: 18px; 
   z-index: 10;
   transition: background 0.2s;
 }
@@ -626,10 +668,10 @@ const formatFullDate = (d: string | number | Date) => {
 
 .left {
   left: 12px;
-} /* Was 10px, restored to 12px */
+} 
 .right {
   right: 12px;
-} /* Was 10px, restored to 12px */
+} 
 
 .dots-container {
   position: absolute;
@@ -677,6 +719,13 @@ const formatFullDate = (d: string | number | Date) => {
   gap: 12px;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
 .author-avatar {
   width: 32px;
   height: 32px;
@@ -716,6 +765,44 @@ const formatFullDate = (d: string | number | Date) => {
   cursor: pointer;
 }
 
+.menu-btn {
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    background: #262626;
+    border: 1px solid #363636;
+    border-radius: 4px;
+    z-index: 100;
+    width: 150px;
+}
+
+.dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+}
+
+.dropdown-item:hover {
+    background: #363636;
+}
+
+.dropdown-item.danger {
+    color: #ed4956;
+    font-weight: bold;
+}
+
 .comments-section {
   flex: 1;
   overflow-y: auto;
@@ -748,7 +835,6 @@ const formatFullDate = (d: string | number | Date) => {
 .icon {
   width: 24px;
   height: 24px;
-  /* filter: invert(1); */
 }
 .icon.active {
   filter: none;
@@ -945,6 +1031,69 @@ const formatFullDate = (d: string | number | Date) => {
 
 .mini-btn:hover {
   background: #007bb5;
+}
+
+/* Report Modal Styles */
+.report-modal-backdrop {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.report-modal {
+    background: #262626;
+    padding: 20px;
+    border-radius: 12px;
+    width: 400px;
+    color: white;
+    text-align: center;
+}
+
+.report-modal h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+
+.report-modal textarea {
+    width: 100%;
+    background: #121212;
+    border: 1px solid #363636;
+    color: white;
+    border-radius: 4px;
+    padding: 10px;
+    resize: none;
+    font-family: inherit;
+    margin-bottom: 20px;
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-submit {
+    background: #ed4956;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: transparent;
+    color: #e0e0e0;
+    border: 1px solid #363636;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 .fade-enter-active,

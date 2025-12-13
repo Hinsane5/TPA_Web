@@ -56,6 +56,8 @@ const (
 	UserService_ReviewVerification_FullMethodName         = "/users.UserService/ReviewVerification"
 	UserService_GetUserReports_FullMethodName             = "/users.UserService/GetUserReports"
 	UserService_ReviewUserReport_FullMethodName           = "/users.UserService/ReviewUserReport"
+	UserService_ReportUser_FullMethodName                 = "/users.UserService/ReportUser"
+	UserService_GetUserEmail_FullMethodName               = "/users.UserService/GetUserEmail"
 )
 
 // UserServiceClient is the client API for UserService service.
@@ -99,6 +101,8 @@ type UserServiceClient interface {
 	ReviewVerification(ctx context.Context, in *ReviewVerificationRequest, opts ...grpc.CallOption) (*Response, error)
 	GetUserReports(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*UserReportListResponse, error)
 	ReviewUserReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error)
+	ReportUser(ctx context.Context, in *ReportUserRequest, opts ...grpc.CallOption) (*Response, error)
+	GetUserEmail(ctx context.Context, in *GetUserEmailRequest, opts ...grpc.CallOption) (*GetUserEmailResponse, error)
 }
 
 type userServiceClient struct {
@@ -479,6 +483,26 @@ func (c *userServiceClient) ReviewUserReport(ctx context.Context, in *ReviewRepo
 	return out, nil
 }
 
+func (c *userServiceClient) ReportUser(ctx context.Context, in *ReportUserRequest, opts ...grpc.CallOption) (*Response, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Response)
+	err := c.cc.Invoke(ctx, UserService_ReportUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userServiceClient) GetUserEmail(ctx context.Context, in *GetUserEmailRequest, opts ...grpc.CallOption) (*GetUserEmailResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetUserEmailResponse)
+	err := c.cc.Invoke(ctx, UserService_GetUserEmail_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServiceServer is the server API for UserService service.
 // All implementations must embed UnimplementedUserServiceServer
 // for forward compatibility.
@@ -520,6 +544,8 @@ type UserServiceServer interface {
 	ReviewVerification(context.Context, *ReviewVerificationRequest) (*Response, error)
 	GetUserReports(context.Context, *Empty) (*UserReportListResponse, error)
 	ReviewUserReport(context.Context, *ReviewReportRequest) (*Response, error)
+	ReportUser(context.Context, *ReportUserRequest) (*Response, error)
+	GetUserEmail(context.Context, *GetUserEmailRequest) (*GetUserEmailResponse, error)
 	mustEmbedUnimplementedUserServiceServer()
 }
 
@@ -640,6 +666,12 @@ func (UnimplementedUserServiceServer) GetUserReports(context.Context, *Empty) (*
 }
 func (UnimplementedUserServiceServer) ReviewUserReport(context.Context, *ReviewReportRequest) (*Response, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReviewUserReport not implemented")
+}
+func (UnimplementedUserServiceServer) ReportUser(context.Context, *ReportUserRequest) (*Response, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReportUser not implemented")
+}
+func (UnimplementedUserServiceServer) GetUserEmail(context.Context, *GetUserEmailRequest) (*GetUserEmailResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetUserEmail not implemented")
 }
 func (UnimplementedUserServiceServer) mustEmbedUnimplementedUserServiceServer() {}
 func (UnimplementedUserServiceServer) testEmbeddedByValue()                     {}
@@ -1328,6 +1360,42 @@ func _UserService_ReviewUserReport_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UserService_ReportUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReportUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).ReportUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_ReportUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).ReportUser(ctx, req.(*ReportUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _UserService_GetUserEmail_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetUserEmailRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServiceServer).GetUserEmail(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: UserService_GetUserEmail_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServiceServer).GetUserEmail(ctx, req.(*GetUserEmailRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // UserService_ServiceDesc is the grpc.ServiceDesc for UserService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -1482,6 +1550,14 @@ var UserService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReviewUserReport",
 			Handler:    _UserService_ReviewUserReport_Handler,
+		},
+		{
+			MethodName: "ReportUser",
+			Handler:    _UserService_ReportUser_Handler,
+		},
+		{
+			MethodName: "GetUserEmail",
+			Handler:    _UserService_GetUserEmail_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

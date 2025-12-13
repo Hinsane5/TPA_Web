@@ -39,4 +39,6 @@ type PostRepository interface {
     GetPostReportByID(ctx context.Context, reportID string) (*domain.PostReport, error) // <--- Added
     UpdatePostReportStatus(ctx context.Context, reportID string, status string) error
     DeletePost(ctx context.Context, postID string) error
+
+	CreatePostReport(report *domain.PostReport) error
 }

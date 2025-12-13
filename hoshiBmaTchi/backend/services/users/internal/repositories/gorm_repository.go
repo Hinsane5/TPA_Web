@@ -343,3 +343,22 @@ func (r *gormUserRepository) FindUserReportByID(reportID string) (*domain.UserRe
     }
     return &report, nil
 }
+
+func (r *gormUserRepository) CreateUserReport(report *domain.UserReport) error {
+    if report.ID == uuid.Nil {
+        report.ID = uuid.New()
+    }
+    report.CreatedAt = time.Now()
+    report.Status = "PENDING"
+    return r.db.Create(report).Error
+}
+
+// Add this method
+func (r *gormUserRepository) CreatePostReport(report *domain.PostReport) error {
+    if report.ID == uuid.Nil {
+        report.ID = uuid.New()
+    }
+    report.CreatedAt = time.Now()
+    report.Status = "PENDING"
+    return r.db.Create(report).Error
+}

@@ -709,3 +709,26 @@ func (h *PostsHandler) GetPostByID(c *gin.Context) {
         "is_reel":         res.IsReel,
     })
 }
+
+func (h *PostsHandler) ReportPost(c *gin.Context) {
+    postID := c.Param("id")
+    var req struct {
+        Reason string `json:"reason" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Reason is required"})
+        return
+    }
+    userID := c.GetString("userID")
+
+    _, err := h.postsClient.ReportPost(context.Background(), &postsProto.ReportPostRequest{
+        PostId: postID,
+        UserId: userID,
+        Reason: req.Reason,
+    })
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Post reported"})
+}

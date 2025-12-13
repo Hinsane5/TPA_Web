@@ -47,6 +47,9 @@ service UserService {
   rpc ReviewVerification(ReviewVerificationRequest) returns (Response);
   rpc GetUserReports(Empty) returns (UserReportListResponse);
   rpc ReviewUserReport(ReviewReportRequest) returns (Response);
+
+  rpc ReportUser(ReportUserRequest) returns (Response);
+  rpc GetUserEmail(GetUserEmailRequest) returns (GetUserEmailResponse);
 }
 
 message LoginWithGoogleRequest{
@@ -360,4 +363,18 @@ message UserReportListResponse {
 message ReviewReportRequest {
   string report_id = 1;
   string action = 2;
+}
+
+message ReportUserRequest {
+    string reported_user_id = 1;
+    string reporter_id = 2;
+    string reason = 3;
+}
+
+message GetUserEmailRequest {
+    string user_id = 1;
+}
+
+message GetUserEmailResponse {
+    string email = 1;
 }

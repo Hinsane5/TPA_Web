@@ -3226,6 +3226,154 @@ func (x *ReviewReportRequest) GetAction() string {
 	return ""
 }
 
+type ReportUserRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ReportedUserId string                 `protobuf:"bytes,1,opt,name=reported_user_id,json=reportedUserId,proto3" json:"reported_user_id,omitempty"`
+	ReporterId     string                 `protobuf:"bytes,2,opt,name=reporter_id,json=reporterId,proto3" json:"reporter_id,omitempty"`
+	Reason         string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *ReportUserRequest) Reset() {
+	*x = ReportUserRequest{}
+	mi := &file_users_users_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportUserRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportUserRequest) ProtoMessage() {}
+
+func (x *ReportUserRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportUserRequest.ProtoReflect.Descriptor instead.
+func (*ReportUserRequest) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *ReportUserRequest) GetReportedUserId() string {
+	if x != nil {
+		return x.ReportedUserId
+	}
+	return ""
+}
+
+func (x *ReportUserRequest) GetReporterId() string {
+	if x != nil {
+		return x.ReporterId
+	}
+	return ""
+}
+
+func (x *ReportUserRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
+type GetUserEmailRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserEmailRequest) Reset() {
+	*x = GetUserEmailRequest{}
+	mi := &file_users_users_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserEmailRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserEmailRequest) ProtoMessage() {}
+
+func (x *GetUserEmailRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserEmailRequest.ProtoReflect.Descriptor instead.
+func (*GetUserEmailRequest) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *GetUserEmailRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetUserEmailResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetUserEmailResponse) Reset() {
+	*x = GetUserEmailResponse{}
+	mi := &file_users_users_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetUserEmailResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetUserEmailResponse) ProtoMessage() {}
+
+func (x *GetUserEmailResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_users_users_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetUserEmailResponse.ProtoReflect.Descriptor instead.
+func (*GetUserEmailResponse) Descriptor() ([]byte, []int) {
+	return file_users_users_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *GetUserEmailResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
 var File_users_users_proto protoreflect.FileDescriptor
 
 const file_users_users_proto_rawDesc = "" +
@@ -3444,7 +3592,16 @@ const file_users_users_proto_rawDesc = "" +
 	"\areports\x18\x01 \x03(\v2\x15.users.UserReportItemR\areports\"J\n" +
 	"\x13ReviewReportRequest\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action2\x90\x16\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"v\n" +
+	"\x11ReportUserRequest\x12(\n" +
+	"\x10reported_user_id\x18\x01 \x01(\tR\x0ereportedUserId\x12\x1f\n" +
+	"\vreporter_id\x18\x02 \x01(\tR\n" +
+	"reporterId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason\".\n" +
+	"\x13GetUserEmailRequest\x12\x17\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\",\n" +
+	"\x14GetUserEmailResponse\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email2\x92\x17\n" +
 	"\vUserService\x12G\n" +
 	"\fRegisterUser\x12\x1a.users.RegisterUserRequest\x1a\x1b.users.RegisterUserResponse\x128\n" +
 	"\aSendOtp\x12\x15.users.SendOtpRequest\x1a\x16.users.SendOtpResponse\x12F\n" +
@@ -3483,7 +3640,10 @@ const file_users_users_proto_rawDesc = "" +
 	"\x17GetVerificationRequests\x12\f.users.Empty\x1a\x1f.users.VerificationListResponse\x12G\n" +
 	"\x12ReviewVerification\x12 .users.ReviewVerificationRequest\x1a\x0f.users.Response\x12=\n" +
 	"\x0eGetUserReports\x12\f.users.Empty\x1a\x1d.users.UserReportListResponse\x12?\n" +
-	"\x10ReviewUserReport\x12\x1a.users.ReviewReportRequest\x1a\x0f.users.ResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
+	"\x10ReviewUserReport\x12\x1a.users.ReviewReportRequest\x1a\x0f.users.Response\x127\n" +
+	"\n" +
+	"ReportUser\x12\x18.users.ReportUserRequest\x1a\x0f.users.Response\x12G\n" +
+	"\fGetUserEmail\x12\x1a.users.GetUserEmailRequest\x1a\x1b.users.GetUserEmailResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/usersb\x06proto3"
 
 var (
 	file_users_users_proto_rawDescOnce sync.Once
@@ -3497,7 +3657,7 @@ func file_users_users_proto_rawDescGZIP() []byte {
 	return file_users_users_proto_rawDescData
 }
 
-var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 59)
+var file_users_users_proto_msgTypes = make([]protoimpl.MessageInfo, 62)
 var file_users_users_proto_goTypes = []any{
 	(*LoginWithGoogleRequest)(nil),             // 0: users.LoginWithGoogleRequest
 	(*TokenResponse)(nil),                      // 1: users.TokenResponse
@@ -3558,12 +3718,15 @@ var file_users_users_proto_goTypes = []any{
 	(*UserReportItem)(nil),                     // 56: users.UserReportItem
 	(*UserReportListResponse)(nil),             // 57: users.UserReportListResponse
 	(*ReviewReportRequest)(nil),                // 58: users.ReviewReportRequest
-	(*timestamppb.Timestamp)(nil),              // 59: google.protobuf.Timestamp
+	(*ReportUserRequest)(nil),                  // 59: users.ReportUserRequest
+	(*GetUserEmailRequest)(nil),                // 60: users.GetUserEmailRequest
+	(*GetUserEmailResponse)(nil),               // 61: users.GetUserEmailResponse
+	(*timestamppb.Timestamp)(nil),              // 62: google.protobuf.Timestamp
 }
 var file_users_users_proto_depIdxs = []int32{
 	1,  // 0: users.LoginUserResponse.tokens:type_name -> users.TokenResponse
-	59, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
-	59, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
+	62, // 1: users.RegisterUserRequest.date_of_birth:type_name -> google.protobuf.Timestamp
+	62, // 2: users.RegisterUserResponse.date_of_birth:type_name -> google.protobuf.Timestamp
 	21, // 3: users.SearchUsersResponse.users:type_name -> users.UserProfile
 	21, // 4: users.GetSuggestedUsersResponse.users:type_name -> users.UserProfile
 	21, // 5: users.GetFollowingProfilesResponse.users:type_name -> users.UserProfile
@@ -3610,45 +3773,49 @@ var file_users_users_proto_depIdxs = []int32{
 	54, // 46: users.UserService.ReviewVerification:input_type -> users.ReviewVerificationRequest
 	48, // 47: users.UserService.GetUserReports:input_type -> users.Empty
 	58, // 48: users.UserService.ReviewUserReport:input_type -> users.ReviewReportRequest
-	10, // 49: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
-	6,  // 50: users.UserService.SendOtp:output_type -> users.SendOtpResponse
-	1,  // 51: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
-	3,  // 52: users.UserService.LoginUser:output_type -> users.LoginUserResponse
-	1,  // 53: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
-	6,  // 54: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
-	6,  // 55: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
-	12, // 56: users.UserService.ValidateToken:output_type -> users.ValidateTokenResponse
-	14, // 57: users.UserService.GetUserProfile:output_type -> users.GetUserProfileResponse
-	16, // 58: users.UserService.FollowUser:output_type -> users.FollowUserResponse
-	18, // 59: users.UserService.UnfollowUser:output_type -> users.UnfollowUserResponse
-	20, // 60: users.UserService.GetFollowingList:output_type -> users.GetFollowingListResponse
-	23, // 61: users.UserService.SearchUsers:output_type -> users.SearchUsersResponse
-	14, // 62: users.UserService.GetUserByUsername:output_type -> users.GetUserProfileResponse
-	26, // 63: users.UserService.GetSuggestedUsers:output_type -> users.GetSuggestedUsersResponse
-	27, // 64: users.UserService.GetFollowingProfiles:output_type -> users.GetFollowingProfilesResponse
-	29, // 65: users.UserService.BlockUser:output_type -> users.BlockUserResponse
-	31, // 66: users.UserService.UnblockUser:output_type -> users.UnblockUserResponse
-	33, // 67: users.UserService.GetBlockedList:output_type -> users.GetBlockedListResponse
-	35, // 68: users.UserService.UpdateUserProfile:output_type -> users.UpdateUserProfileResponse
-	37, // 69: users.UserService.UpdateNotificationSettings:output_type -> users.UpdateNotificationSettingsResponse
-	39, // 70: users.UserService.UpdatePrivacySettings:output_type -> users.UpdatePrivacySettingsResponse
-	41, // 71: users.UserService.GetSettings:output_type -> users.GetSettingsResponse
-	43, // 72: users.UserService.AddCloseFriend:output_type -> users.ManageRelationResponse
-	43, // 73: users.UserService.RemoveCloseFriend:output_type -> users.ManageRelationResponse
-	45, // 74: users.UserService.GetCloseFriends:output_type -> users.GetListResponse
-	43, // 75: users.UserService.HideStoryFromUser:output_type -> users.ManageRelationResponse
-	43, // 76: users.UserService.UnhideStoryFromUser:output_type -> users.ManageRelationResponse
-	45, // 77: users.UserService.GetHiddenStoryUsers:output_type -> users.GetListResponse
-	47, // 78: users.UserService.RequestVerification:output_type -> users.RequestVerificationResponse
-	49, // 79: users.UserService.GetAllUsers:output_type -> users.UserListResponse
-	55, // 80: users.UserService.ToggleUserBan:output_type -> users.Response
-	51, // 81: users.UserService.GetSubscribedEmails:output_type -> users.EmailListResponse
-	53, // 82: users.UserService.GetVerificationRequests:output_type -> users.VerificationListResponse
-	55, // 83: users.UserService.ReviewVerification:output_type -> users.Response
-	57, // 84: users.UserService.GetUserReports:output_type -> users.UserReportListResponse
-	55, // 85: users.UserService.ReviewUserReport:output_type -> users.Response
-	49, // [49:86] is the sub-list for method output_type
-	12, // [12:49] is the sub-list for method input_type
+	59, // 49: users.UserService.ReportUser:input_type -> users.ReportUserRequest
+	60, // 50: users.UserService.GetUserEmail:input_type -> users.GetUserEmailRequest
+	10, // 51: users.UserService.RegisterUser:output_type -> users.RegisterUserResponse
+	6,  // 52: users.UserService.SendOtp:output_type -> users.SendOtpResponse
+	1,  // 53: users.UserService.LoginWithGoogle:output_type -> users.TokenResponse
+	3,  // 54: users.UserService.LoginUser:output_type -> users.LoginUserResponse
+	1,  // 55: users.UserService.VerifyLogin2FA:output_type -> users.TokenResponse
+	6,  // 56: users.UserService.RequestPasswordReset:output_type -> users.SendOtpResponse
+	6,  // 57: users.UserService.PerformPasswordReset:output_type -> users.SendOtpResponse
+	12, // 58: users.UserService.ValidateToken:output_type -> users.ValidateTokenResponse
+	14, // 59: users.UserService.GetUserProfile:output_type -> users.GetUserProfileResponse
+	16, // 60: users.UserService.FollowUser:output_type -> users.FollowUserResponse
+	18, // 61: users.UserService.UnfollowUser:output_type -> users.UnfollowUserResponse
+	20, // 62: users.UserService.GetFollowingList:output_type -> users.GetFollowingListResponse
+	23, // 63: users.UserService.SearchUsers:output_type -> users.SearchUsersResponse
+	14, // 64: users.UserService.GetUserByUsername:output_type -> users.GetUserProfileResponse
+	26, // 65: users.UserService.GetSuggestedUsers:output_type -> users.GetSuggestedUsersResponse
+	27, // 66: users.UserService.GetFollowingProfiles:output_type -> users.GetFollowingProfilesResponse
+	29, // 67: users.UserService.BlockUser:output_type -> users.BlockUserResponse
+	31, // 68: users.UserService.UnblockUser:output_type -> users.UnblockUserResponse
+	33, // 69: users.UserService.GetBlockedList:output_type -> users.GetBlockedListResponse
+	35, // 70: users.UserService.UpdateUserProfile:output_type -> users.UpdateUserProfileResponse
+	37, // 71: users.UserService.UpdateNotificationSettings:output_type -> users.UpdateNotificationSettingsResponse
+	39, // 72: users.UserService.UpdatePrivacySettings:output_type -> users.UpdatePrivacySettingsResponse
+	41, // 73: users.UserService.GetSettings:output_type -> users.GetSettingsResponse
+	43, // 74: users.UserService.AddCloseFriend:output_type -> users.ManageRelationResponse
+	43, // 75: users.UserService.RemoveCloseFriend:output_type -> users.ManageRelationResponse
+	45, // 76: users.UserService.GetCloseFriends:output_type -> users.GetListResponse
+	43, // 77: users.UserService.HideStoryFromUser:output_type -> users.ManageRelationResponse
+	43, // 78: users.UserService.UnhideStoryFromUser:output_type -> users.ManageRelationResponse
+	45, // 79: users.UserService.GetHiddenStoryUsers:output_type -> users.GetListResponse
+	47, // 80: users.UserService.RequestVerification:output_type -> users.RequestVerificationResponse
+	49, // 81: users.UserService.GetAllUsers:output_type -> users.UserListResponse
+	55, // 82: users.UserService.ToggleUserBan:output_type -> users.Response
+	51, // 83: users.UserService.GetSubscribedEmails:output_type -> users.EmailListResponse
+	53, // 84: users.UserService.GetVerificationRequests:output_type -> users.VerificationListResponse
+	55, // 85: users.UserService.ReviewVerification:output_type -> users.Response
+	57, // 86: users.UserService.GetUserReports:output_type -> users.UserReportListResponse
+	55, // 87: users.UserService.ReviewUserReport:output_type -> users.Response
+	55, // 88: users.UserService.ReportUser:output_type -> users.Response
+	61, // 89: users.UserService.GetUserEmail:output_type -> users.GetUserEmailResponse
+	51, // [51:90] is the sub-list for method output_type
+	12, // [12:51] is the sub-list for method input_type
 	12, // [12:12] is the sub-list for extension type_name
 	12, // [12:12] is the sub-list for extension extendee
 	0,  // [0:12] is the sub-list for field type_name
@@ -3665,7 +3832,7 @@ func file_users_users_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_users_users_proto_rawDesc), len(file_users_users_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   59,
+			NumMessages:   62,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

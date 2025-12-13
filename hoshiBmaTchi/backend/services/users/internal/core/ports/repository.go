@@ -49,4 +49,5 @@ type UserRepository interface{
 	GetAllUsers() ([]*domain.User, error)
 
 	FindUserReportByID(reportID string) (*domain.UserReport, error)
+	CreateUserReport(report *domain.UserReport) error
 }

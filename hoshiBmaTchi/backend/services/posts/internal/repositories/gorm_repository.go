@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/google/uuid"
@@ -481,4 +482,14 @@ func (r *GormPostRepository) GetPostReportByID(ctx context.Context, reportID str
         return nil, err
     }
     return &report, nil
+}
+
+// Add this method
+func (r *GormPostRepository) CreatePostReport(report *domain.PostReport) error {
+    if report.ID == uuid.Nil {
+        report.ID = uuid.New()
+    }
+    report.CreatedAt = time.Now()
+    report.Status = "PENDING"
+    return r.db.Create(report).Error
 }

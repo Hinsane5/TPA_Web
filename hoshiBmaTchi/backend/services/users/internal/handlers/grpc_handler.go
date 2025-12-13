@@ -1199,26 +1199,70 @@ func (h *UserHandler) GetUserReports(ctx context.Context, req *pb.Empty) (*pb.Us
 }
 
 func (h *UserHandler) ReviewUserReport(ctx context.Context, req *pb.ReviewReportRequest) (*pb.Response, error) {
+    report, err := h.repo.FindUserReportByID(req.ReportId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "Report not found")
+    }
+
     statusStr := "REJECTED"
     
     if req.Action == "BAN_USER" {
         statusStr = "RESOLVED"
         
-        report, err := h.repo.FindUserReportByID(req.ReportId)
-        if err != nil {
-            return nil, status.Error(codes.NotFound, "Report not found")
+        if err := h.repo.UpdateUserBanStatus(report.ReportedUserID.String(), true); err != nil {
+            return nil, status.Error(codes.Internal, "Failed to ban user")
         }
 
-        err = h.repo.UpdateUserBanStatus(report.ReportedUserID.String(), true)
-        if err != nil {
-            return nil, status.Error(codes.Internal, "Failed to ban user")
+        reporter, err := h.repo.FindByID(report.ReporterID.String())
+        if err == nil {
+            emailBody := fmt.Sprintf("We have reviewed your report against user %s and have taken action.", report.ReportedUserID)
+            task := EmailTask{Email: reporter.Email, Subject: "Report Update", Body: emailBody}
+            
+            taskBody, _ := json.Marshal(task)
+            
+            h.amqpChan.PublishWithContext(ctx, 
+                "email_exchange", 
+                "send_email", 
+                false, 
+                false, 
+                amqp.Publishing{
+                    ContentType: "application/json", 
+                    Body: taskBody, 
+                })
         }
     }
 
-    err := h.repo.UpdateUserReportStatus(req.ReportId, statusStr)
-    if err != nil {
+    if err := h.repo.UpdateUserReportStatus(req.ReportId, statusStr); err != nil {
          return nil, status.Error(codes.Internal, "Failed to update report status")
     }
 
     return &pb.Response{Success: true}, nil
+}
+
+func (h *UserHandler) ReportUser(ctx context.Context, req *pb.ReportUserRequest) (*pb.Response, error) {
+    if req.ReporterId == req.ReportedUserId {
+        return nil, status.Error(codes.InvalidArgument, "Cannot report yourself")
+    }
+
+    report := &domain.UserReport{
+        ReporterID:     utils.ParseUUID(req.ReporterId),
+        ReportedUserID: utils.ParseUUID(req.ReportedUserId),
+        Reason:         req.Reason,
+        Status:         "PENDING",
+    }
+
+    if err := h.repo.CreateUserReport(report); err != nil {
+        return nil, status.Error(codes.Internal, "Failed to submit report")
+    }
+
+    return &pb.Response{Success: true, Message: "User reported successfully"}, nil
+}
+
+// Implement GetUserEmail (Internal)
+func (h *UserHandler) GetUserEmail(ctx context.Context, req *pb.GetUserEmailRequest) (*pb.GetUserEmailResponse, error) {
+    user, err := h.repo.FindByID(req.UserId)
+    if err != nil {
+        return nil, status.Error(codes.NotFound, "User not found")
+    }
+    return &pb.GetUserEmailResponse{Email: user.Email}, nil
 }

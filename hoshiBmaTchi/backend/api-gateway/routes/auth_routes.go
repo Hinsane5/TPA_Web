@@ -37,5 +37,7 @@ func SetupAuthRoutes(router *gin.Engine, userClient pb.UserServiceClient){
 
 		usersGroup.GET("/:id", authHandler.GetUserProfile)
 		usersGroup.POST("/:id/follow", authHandler.FollowUser)
+
+		usersGroup.POST("/api/v1/users/:userID/report", authHandler.ReportUser)
 	}
 }

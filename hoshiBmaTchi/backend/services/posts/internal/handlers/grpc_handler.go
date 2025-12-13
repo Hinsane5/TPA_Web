@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	// "errors"
 	"log"
 	"net/http"
@@ -15,10 +16,12 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 	"github.com/google/uuid"
+
 	// "github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Server struct {
@@ -30,17 +33,28 @@ type Server struct {
 	bucketName     string  
 	publicEndPoint string    
 	userClient     userPb.UserServiceClient     
+	amqpChan       *amqp.Channel
 }
 
-func NewGRPCServer(repo ports.PostRepository, service *services.PostService, minio *minio.Client, presignClient *minio.Client, bucketName string, publicEndPoint string, userClient userPb.UserServiceClient) *Server {
+func NewGRPCServer(
+    repo ports.PostRepository, 
+    service *services.PostService, 
+    minio *minio.Client, 
+    presignClient *minio.Client, 
+    bucketName string, 
+    publicEndPoint string, 
+    userClient userPb.UserServiceClient,
+    amqpChan *amqp.Channel, 
+) *Server {
 	return &Server{
 		repo:           repo,
-		service: service,
+		service:        service,
 		minio:          minio,
 		presignClient:  presignClient,
 		bucketName:     bucketName,
 		publicEndPoint: publicEndPoint,
 		userClient:     userClient,
+        amqpChan:       amqpChan, 
 	}
 }
 
@@ -711,7 +725,6 @@ func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportReque
     // 2. Handle Actions
     if req.Action == "DELETE_POST" {
         statusStr = "RESOLVED"
-        // Delete the post content
         if err := s.repo.DeletePost(ctx, report.PostID.String()); err != nil {
             log.Printf("Failed to delete post %s: %v", report.PostID, err)
             return nil, status.Error(codes.Internal, "Failed to delete post")
@@ -723,5 +736,54 @@ func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportReque
         return nil, status.Error(codes.Internal, "Failed to update report status")
     }
 
+	if req.Action == "DELETE_POST" {
+        // 1. Get Reporter Email
+        emailRes, err := s.userClient.GetUserEmail(ctx, &userPb.GetUserEmailRequest{UserId: report.ReporterID.String()})
+        if err == nil && emailRes.Email != "" {
+            // 2. Publish Email Task
+            type EmailTask struct {
+                Email   string `json:"email"`
+                Subject string `json:"subject"`
+                Body    string `json:"body"`
+            }
+            emailBody := "We have reviewed your report and removed the content that violated our guidelines."
+            task := EmailTask{Email: emailRes.Email, Subject: "Report Action Taken", Body: emailBody}
+            taskBody, _ := json.Marshal(task)
+
+			err = s.amqpChan.PublishWithContext(ctx, 
+                "email_exchange", 
+                "send_email", 
+                false, 
+                false, 
+                amqp.Publishing{
+                    ContentType: "application/json", 
+                    Body: taskBody,
+                })
+            
+            if err != nil {
+                log.Printf("Failed to publish email task: %v", err)
+            }
+        }
+    }
+
+	if err := s.repo.UpdatePostReportStatus(ctx, req.ReportId, statusStr); err != nil {
+        return nil, status.Error(codes.Internal, "Failed to update report status")
+    }
+	
     return &pb.Response{Success: true, Message: "Report processed"}, nil
 }
+
+func (s *Server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb.Response, error) {
+    report := &domain.PostReport{
+        PostID:     uuid.MustParse(req.PostId),
+        ReporterID: uuid.MustParse(req.UserId),
+        Reason:     req.Reason,
+        Status:     "PENDING",
+    }
+
+    if err := s.repo.CreatePostReport(report); err != nil {
+        return nil, status.Error(codes.Internal, "Failed to report post")
+    }
+    return &pb.Response{Success: true, Message: "Post reported"}, nil
+}
+

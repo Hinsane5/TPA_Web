@@ -2309,6 +2309,66 @@ func (x *ReviewReportRequest) GetAction() string {
 	return ""
 }
 
+type ReportPostRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PostId        string                 `protobuf:"bytes,1,opt,name=post_id,json=postId,proto3" json:"post_id,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"` // Reporter
+	Reason        string                 `protobuf:"bytes,3,opt,name=reason,proto3" json:"reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReportPostRequest) Reset() {
+	*x = ReportPostRequest{}
+	mi := &file_posts_posts_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReportPostRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReportPostRequest) ProtoMessage() {}
+
+func (x *ReportPostRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReportPostRequest.ProtoReflect.Descriptor instead.
+func (*ReportPostRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *ReportPostRequest) GetPostId() string {
+	if x != nil {
+		return x.PostId
+	}
+	return ""
+}
+
+func (x *ReportPostRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ReportPostRequest) GetReason() string {
+	if x != nil {
+		return x.Reason
+	}
+	return ""
+}
+
 var File_posts_posts_proto protoreflect.FileDescriptor
 
 const file_posts_posts_proto_rawDesc = "" +
@@ -2462,7 +2522,11 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\areports\x18\x01 \x03(\v2\x15.posts.PostReportItemR\areports\"J\n" +
 	"\x13ReviewReportRequest\x12\x1b\n" +
 	"\treport_id\x18\x01 \x01(\tR\breportId\x12\x16\n" +
-	"\x06action\x18\x02 \x01(\tR\x06action2\xb3\f\n" +
+	"\x06action\x18\x02 \x01(\tR\x06action\"]\n" +
+	"\x11ReportPostRequest\x12\x17\n" +
+	"\apost_id\x18\x01 \x01(\tR\x06postId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x16\n" +
+	"\x06reason\x18\x03 \x01(\tR\x06reason2\xec\f\n" +
 	"\fPostsService\x12V\n" +
 	"\x11GenerateUploadURL\x12\x1f.posts.GenerateUploadURLRequest\x1a .posts.GenerateUploadURLResponse\x12A\n" +
 	"\n" +
@@ -2486,7 +2550,9 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\x10UpdateCollection\x12\x1e.posts.UpdateCollectionRequest\x1a\x19.posts.CollectionResponse\x12S\n" +
 	"\x10DeleteCollection\x12\x1e.posts.DeleteCollectionRequest\x1a\x1f.posts.DeleteCollectionResponse\x12=\n" +
 	"\x0eGetPostReports\x12\f.posts.Empty\x1a\x1d.posts.PostReportListResponse\x12?\n" +
-	"\x10ReviewPostReport\x12\x1a.posts.ReviewReportRequest\x1a\x0f.posts.ResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
+	"\x10ReviewPostReport\x12\x1a.posts.ReviewReportRequest\x1a\x0f.posts.Response\x127\n" +
+	"\n" +
+	"ReportPost\x12\x18.posts.ReportPostRequest\x1a\x0f.posts.ResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
 
 var (
 	file_posts_posts_proto_rawDescOnce sync.Once
@@ -2500,7 +2566,7 @@ func file_posts_posts_proto_rawDescGZIP() []byte {
 	return file_posts_posts_proto_rawDescData
 }
 
-var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_posts_posts_proto_goTypes = []any{
 	(*GenerateUploadURLRequest)(nil),   // 0: posts.GenerateUploadURLRequest
 	(*GenerateUploadURLResponse)(nil),  // 1: posts.GenerateUploadURLResponse
@@ -2544,6 +2610,7 @@ var file_posts_posts_proto_goTypes = []any{
 	(*PostReportItem)(nil),             // 39: posts.PostReportItem
 	(*PostReportListResponse)(nil),     // 40: posts.PostReportListResponse
 	(*ReviewReportRequest)(nil),        // 41: posts.ReviewReportRequest
+	(*ReportPostRequest)(nil),          // 42: posts.ReportPostRequest
 }
 var file_posts_posts_proto_depIdxs = []int32{
 	3,  // 0: posts.CreatePostRequest.media:type_name -> posts.PostMediaItem
@@ -2578,29 +2645,31 @@ var file_posts_posts_proto_depIdxs = []int32{
 	35, // 29: posts.PostsService.DeleteCollection:input_type -> posts.DeleteCollectionRequest
 	37, // 30: posts.PostsService.GetPostReports:input_type -> posts.Empty
 	41, // 31: posts.PostsService.ReviewPostReport:input_type -> posts.ReviewReportRequest
-	1,  // 32: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
-	4,  // 33: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
-	6,  // 34: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
-	8,  // 35: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
-	11, // 36: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
-	13, // 37: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
-	17, // 38: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
-	16, // 39: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
-	19, // 40: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
-	21, // 41: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
-	23, // 42: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
-	25, // 43: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
-	6,  // 44: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
-	28, // 45: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
-	30, // 46: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
-	6,  // 47: posts.PostsService.GetUserReels:output_type -> posts.GetPostsResponse
-	33, // 48: posts.PostsService.GetCollectionPosts:output_type -> posts.GetCollectionPostsResponse
-	23, // 49: posts.PostsService.UpdateCollection:output_type -> posts.CollectionResponse
-	36, // 50: posts.PostsService.DeleteCollection:output_type -> posts.DeleteCollectionResponse
-	40, // 51: posts.PostsService.GetPostReports:output_type -> posts.PostReportListResponse
-	38, // 52: posts.PostsService.ReviewPostReport:output_type -> posts.Response
-	32, // [32:53] is the sub-list for method output_type
-	11, // [11:32] is the sub-list for method input_type
+	42, // 32: posts.PostsService.ReportPost:input_type -> posts.ReportPostRequest
+	1,  // 33: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
+	4,  // 34: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
+	6,  // 35: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
+	8,  // 36: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
+	11, // 37: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
+	13, // 38: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
+	17, // 39: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
+	16, // 40: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
+	19, // 41: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
+	21, // 42: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
+	23, // 43: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
+	25, // 44: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
+	6,  // 45: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
+	28, // 46: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
+	30, // 47: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
+	6,  // 48: posts.PostsService.GetUserReels:output_type -> posts.GetPostsResponse
+	33, // 49: posts.PostsService.GetCollectionPosts:output_type -> posts.GetCollectionPostsResponse
+	23, // 50: posts.PostsService.UpdateCollection:output_type -> posts.CollectionResponse
+	36, // 51: posts.PostsService.DeleteCollection:output_type -> posts.DeleteCollectionResponse
+	40, // 52: posts.PostsService.GetPostReports:output_type -> posts.PostReportListResponse
+	38, // 53: posts.PostsService.ReviewPostReport:output_type -> posts.Response
+	38, // 54: posts.PostsService.ReportPost:output_type -> posts.Response
+	33, // [33:55] is the sub-list for method output_type
+	11, // [11:33] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
 	11, // [11:11] is the sub-list for extension extendee
 	0,  // [0:11] is the sub-list for field type_name
@@ -2617,7 +2686,7 @@ func file_posts_posts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_posts_posts_proto_rawDesc), len(file_posts_posts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

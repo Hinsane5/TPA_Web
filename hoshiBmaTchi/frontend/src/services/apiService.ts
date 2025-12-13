@@ -180,6 +180,10 @@ export const postsApi = {
   deleteCollection: (collectionId: string) => {
     return apiClient.delete(`/v1/posts/collections/${collectionId}`);
   },
+
+  reportPost: (postId: string, reason: string) => {
+    return apiClient.post(`/v1/posts/${postId}/report`, { reason });
+  },
 };
 
 export const usersApi = {
@@ -239,6 +243,10 @@ export const usersApi = {
 
   getBlockedUsers: () => {
     return apiClient.get(`/v1/users/blocked`);
+  },
+
+  reportUser: (userId: string, reason: string) => {
+    return apiClient.post(`/v1/users/${userId}/report`, { reason });
   },
 };
 

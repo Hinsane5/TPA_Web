@@ -514,3 +514,26 @@ func (h *AuthHandler) GetBlockedUsers(c *gin.Context) {
 
     c.JSON(http.StatusOK, res)
 }
+
+func (h *AuthHandler) ReportUser(c *gin.Context) {
+    targetID := c.Param("id")
+    var req struct {
+        Reason string `json:"reason" binding:"required"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Reason is required"})
+        return
+    }
+    userID := c.GetString("userID")
+
+    _, err := h.UserClient.ReportUser(context.Background(), &pb.ReportUserRequest{
+        ReportedUserId: targetID,
+        ReporterId:     userID,
+        Reason:         req.Reason,
+    })
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "User reported"})
+}

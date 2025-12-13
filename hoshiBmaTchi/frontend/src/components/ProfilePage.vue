@@ -58,6 +58,9 @@
                     <button @click="handleBlockUser" class="dropdown-item danger">
                       Block User
                     </button>
+                    <button @click="openReportUserModal" class="dropdown-item danger">
+                      Report User
+                    </button>
                     <button @click="showMoreOptions = false" class="dropdown-item">
                       Cancel
                     </button>
@@ -216,6 +219,21 @@
       </div>
     </div>
 
+    <div v-if="showReportModal" class="modal-overlay" @click.self="showReportModal = false">
+      <div class="report-box" @click.stop>
+         <h3>Report User</h3>
+         <textarea 
+            v-model="reportReason" 
+            placeholder="Reason for reporting this user..."
+            rows="4"
+         ></textarea>
+         <div class="modal-actions">
+            <button @click="submitReport" class="btn-submit">Submit</button>
+            <button @click="showReportModal = false" class="btn-cancel">Cancel</button>
+         </div>
+      </div>
+    </div>
+
     <PostDetailOverlay
       v-if="showPostOverlay"
       :is-open="showPostOverlay"
@@ -247,6 +265,10 @@ const isFollowing = ref(false);
 const showPostOverlay = ref(false);
 const selectedPost = ref<any>(null);
 const showMoreOptions = ref(false);
+
+// Report State
+const showReportModal = ref(false);
+const reportReason = ref("");
 
 const profileUser = ref({
   id: "",
@@ -418,6 +440,25 @@ const handleBlockUser = async () => {
     console.error("Failed to block user:", error);
     alert("Failed to block user.");
   }
+};
+
+// Report Logic Functions
+const openReportUserModal = () => {
+    showMoreOptions.value = false;
+    showReportModal.value = true;
+};
+
+const submitReport = async () => {
+    if (!profileUser.value.id) return;
+    try {
+        await usersApi.reportUser(profileUser.value.id, reportReason.value);
+        alert("User reported successfully.");
+        showReportModal.value = false;
+        reportReason.value = "";
+    } catch(e) {
+        console.error("Failed to report user:", e);
+        alert("Failed to report user.");
+    }
 };
 
 const loadMentions = async () => {
@@ -711,25 +752,15 @@ watch(activeTab, (newTab) => {
   font-size: 16px;
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px; 
 }
 
 .hover-icon {
   width: 20px;
   height: 20px;
   object-fit: contain;
-  filter: invert(1); /* This turns the black icons into white */
+  filter: invert(1);
   display: block;
-}
-
-/* Update .hover-stat to align items properly */
-.hover-stat {
-  color: white;
-  font-weight: bold;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Add some space between icon and number */
 }
 
 .empty-state {
@@ -814,6 +845,59 @@ watch(activeTab, (newTab) => {
 }
 .dropdown-item.danger {
   color: #ff4d4d;
+}
+
+/* Report Modal Styles */
+.report-box {
+    background: #262626;
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    width: 350px;
+    text-align: center;
+    border: 1px solid #363636;
+}
+
+.report-box h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.report-box textarea {
+    width: 100%;
+    background: #121212;
+    border: 1px solid #363636;
+    color: white;
+    border-radius: 4px;
+    padding: 10px;
+    resize: none;
+    font-family: inherit;
+    margin-bottom: 20px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.btn-submit {
+    background: #ed4956;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-cancel {
+    background: transparent;
+    color: #e0e0e0;
+    border: 1px solid #363636;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
 /* Responsive Design */
