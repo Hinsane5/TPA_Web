@@ -711,7 +711,7 @@ func (h *PostsHandler) GetPostByID(c *gin.Context) {
 }
 
 func (h *PostsHandler) ReportPost(c *gin.Context) {
-    postID := c.Param("id")
+    postID := c.Param("postID")
     var req struct {
         Reason string `json:"reason" binding:"required"`
     }

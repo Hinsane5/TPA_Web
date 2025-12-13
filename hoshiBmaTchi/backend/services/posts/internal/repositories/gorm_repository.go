@@ -473,7 +473,39 @@ func (r *GormPostRepository) UpdatePostReportStatus(ctx context.Context, reportI
 }
 
 func (r *GormPostRepository) DeletePost(ctx context.Context, postID string) error {
-    return r.db.WithContext(ctx).Where("id = ?", postID).Delete(&domain.Post{}).Error
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        // 1. Delete associated SavedPosts
+        if err := tx.Where("post_id = ?", postID).Delete(&domain.SavedPost{}).Error; err != nil {
+            return err
+        }
+        
+        // 2. Delete associated Likes
+        if err := tx.Where("post_id = ?", postID).Delete(&domain.PostLike{}).Error; err != nil {
+            return err
+        }
+
+        // 3. Delete associated Comments
+        if err := tx.Where("post_id = ?", postID).Delete(&domain.PostComment{}).Error; err != nil {
+            return err
+        }
+
+        // 4. Delete associated Mentions (if any)
+        if err := tx.Where("post_id = ?", postID).Delete(&domain.UserMention{}).Error; err != nil {
+            return err
+        }
+
+        // 5. Delete associated Reports (since the post is gone, reports should be cleaned or resolved)
+        if err := tx.Where("post_id = ?", postID).Delete(&domain.PostReport{}).Error; err != nil {
+            return err
+        }
+        
+        // 6. Delete the Post itself
+        if err := tx.Where("id = ?", postID).Delete(&domain.Post{}).Error; err != nil {
+            return err
+        }
+
+        return nil
+    })
 }
 
 func (r *GormPostRepository) GetPostReportByID(ctx context.Context, reportID string) (*domain.PostReport, error) {
