@@ -14,6 +14,7 @@ import CollectionDetailPage from "../components/CollectionDetailPage.vue";
 import PostDetailPage from "../components/PostDetailPage.vue";
 import SettingsPage from "../components/SettingsPage.vue";
 import AdminPage from "../components/AdminPage.vue";
+import ArchivePage from "../components/ArchivePage.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -108,6 +109,12 @@ const router = createRouter({
           path: "/admin",
           name: "admin",
           component: AdminPage,
+        },
+
+        {
+          path: "archive",
+          name: "archive",
+          component: ArchivePage,
         },
       ],
     },

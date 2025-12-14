@@ -28,7 +28,7 @@
             <div class="profile-actions">
               <template v-if="isOwnProfile">
                 <button class="action-btn">Edit profile</button>
-                <button class="action-btn">View archive</button>
+                <button class="action-btn" @click="goToArchive">View archive</button>
                 <button class="action-btn settings-btn" title="Settings" @click="goToSettings">
                   <img
                     src="/icons/setting-icon.png"
@@ -442,7 +442,6 @@ const handleBlockUser = async () => {
   }
 };
 
-// Report Logic Functions
 const openReportUserModal = () => {
     showMoreOptions.value = false;
     showReportModal.value = true;
@@ -473,6 +472,10 @@ const loadMentions = async () => {
 
 const goToSettings = () => {
   router.push({ name: "settings" });
+};
+
+const goToArchive = () => {
+  router.push({ name: "archive" });
 };
 
 onMounted(() => {

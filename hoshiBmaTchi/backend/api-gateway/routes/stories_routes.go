@@ -14,6 +14,8 @@ func SetupStoriesRoutes(router *gin.Engine, storiesHandler *handlers.StoriesHand
         
         stories.GET("/upload-url", storiesHandler.GenerateUploadURL) 
 
+        stories.GET("/archive", storiesHandler.GetArchivedStories)
+
         stories.GET("", storiesHandler.GetStory) 
         stories.DELETE("", storiesHandler.DeleteStory) 
 

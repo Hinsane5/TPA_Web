@@ -501,3 +501,35 @@ func (h *StoriesHandler) GetFollowingStories(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"user_stories": enrichedStories})
 }
+
+func (h *StoriesHandler) GetArchivedStories(c *gin.Context) {
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// Parse pagination
+	var limit int32 = 15
+	var offset int32 = 0
+	// You can add parsing logic here if needed, e.g., strconv.Atoi(c.Query("limit"))
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Call gRPC with IsArchive: true
+	resp, err := h.client.GetUserStories(ctx, &pb.GetUserStoriesRequest{
+		UserId:    userID.(string),
+		ViewerId:  userID.(string),
+		IsArchive: true, // This fetches expired stories too
+		Limit:     limit,
+		Offset:    offset,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get archived stories"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"stories": resp.Stories})
+}

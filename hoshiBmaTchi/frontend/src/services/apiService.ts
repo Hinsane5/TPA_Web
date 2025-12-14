@@ -341,6 +341,12 @@ export const storiesApi = {
       params: { story_id: storyId },
     });
   },
+
+  getArchivedStories: (limit: number, offset: number) => {
+    return apiClient.get("/stories/archive", {
+      params: { limit, offset },
+    });
+  },
 };
 
 export const reelsApi = {
