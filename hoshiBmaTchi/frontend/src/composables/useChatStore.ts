@@ -63,6 +63,7 @@ export function useChatStore() {
 
         const mappedConversations = data.map((c: any) => ({
           ...c,
+          isGroup: c.is_group,
           participants: c.participants || [],
           updatedAt:
             c.last_message?.created_at ||
@@ -179,7 +180,12 @@ export function useChatStore() {
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        handleIncomingMessage(data);
+
+        if (data.type === "group_created") {
+          fetchConversations();
+        } else if (data.type === "new_message") {
+          handleIncomingMessage(data);
+        }
       } catch (e) {
         console.error("WS Parse Error", e);
       }

@@ -19,7 +19,7 @@ import (
 )
 
 type CreateGroupRequest struct {
-	Name   string   `json:"name" binding:"required"`
+	Name   string   `json:"name"`
 	UserIDs []string `json:"user_ids" binding:"required"`
 }
 

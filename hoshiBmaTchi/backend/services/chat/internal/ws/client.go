@@ -51,22 +51,29 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
-        // [Updated] Handle media type defaults
         mediaType := wsMsg.MediaType
         if mediaType == "" {
             mediaType = "text"
         }
 
+		newID := uuid.New()
+        now := time.Now()
+
 		msg := &domain.Message{
+            ID:             newID,
 			ConversationID: uuid.MustParse(wsMsg.ConversationID),
 			SenderID:       uuid.MustParse(c.UserID),
 			Content:        wsMsg.Content,
 			MediaURL:       wsMsg.MediaURL,
-            MediaType:      mediaType, // [Updated] Pass the type to domain model
-			CreatedAt:      time.Now(),
+            MediaType:      mediaType, 
+			CreatedAt:      now,  
 		}
 		
 		if err := c.Repo.SaveMessage(context.Background(), msg); err == nil {
+            wsMsg.Type = "new_message"
+            wsMsg.ID = newID.String()
+            wsMsg.CreatedAt = now
+            
 			broadcastBytes, _ := json.Marshal(wsMsg)
 			c.Hub.broadcast <- broadcastBytes
 		}

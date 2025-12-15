@@ -19,7 +19,7 @@
     <div class="conversation-info">
       <div class="info-header">
         <h4 class="conversation-name">
-          {{ participant?.fullName || 'Unknown' }}
+          {{ conversationTitle }}
         </h4>
         <span class="message-time">{{
           formatTime(conversation.updatedAt)
@@ -104,6 +104,16 @@ const getMessagePreview = () => {
 
   return prefix + (content.substring(0, 50) || "Sent a message");
 };
+
+const conversationTitle = computed(() => {
+  if (props.conversation.isGroup && props.conversation.name) {
+    return props.conversation.name;
+  }
+  return participant.value?.fullName || 'Unknown';
+});
+
+
+
 </script>
 
 <style scoped>

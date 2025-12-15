@@ -3,12 +3,15 @@ package ws
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 )
 
 type WSMessage struct {
 	Type           string `json:"type"`
+	ID             string    `json:"id,omitempty"`         
+	CreatedAt      time.Time `json:"created_at,omitempty"`
 	SenderID       string `json:"sender_id"`
 	ConversationID string `json:"conversation_id"`
 	Content        string `json:"content"`

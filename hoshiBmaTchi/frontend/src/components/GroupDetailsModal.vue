@@ -32,7 +32,7 @@
                 <input v-model="addQuery" placeholder="Search user to add..."/>
              </div>
              <div v-if="searchResults.length" class="mini-results">
-                 <div v-for="user in searchResults" :key="user.id" class="result-item" @click="addMember(user.id)">
+                 <div v-for="user in searchResults" :key="user.user_id" class="result-item" @click="addMember(user.user_id)">
                      <span>{{ user.username }}</span>
                      <span class="plus">+</span>
                  </div>
@@ -64,15 +64,6 @@ const emit = defineEmits(['close', 'leave', 'refresh']);
 const { value: addQuery, debouncedValue: debouncedAddQuery } = useDebounce('', 300);
 const searchResults = ref<any[]>([]);
 
-const handleSearch = useDebounce(async () => {
-  if (!addQuery.value) return;
-  const res = await usersApi.searchUsers(addQuery.value);
-  // Filter out existing members
-  searchResults.value = res.data.filter((u: any) => 
-    !props.conversation.participants.some(p => p.id === u.id)
-  );
-}, 300);
-
 const token = localStorage.getItem('accessToken');
 
 const addMember = async (userId: string) => {
@@ -100,19 +91,27 @@ const removeMember = async (userId: string) => {
 };
 
 watch(debouncedAddQuery, async (newQuery) => {
-  if (!newQuery.trim()) return;
+  if (!newQuery.trim()) {
+      searchResults.value = [];
+      return;
+  }
   
   try {
       const res = await usersApi.searchUsers(newQuery);
-      searchResults.value = res.data.filter((u: any) => 
-        !props.conversation.participants.some(p => p.id === u.id)
+      
+      const users = res.data.users || [];
+
+      searchResults.value = users.filter((u: any) => 
+        !props.conversation.participants.some(p => p.id === u.user_id)
       );
-  } catch (e) { console.error(e); }
+  } catch (e) { 
+      console.error(e);
+      searchResults.value = [];
+  }
 });
 </script>
 
 <style scoped>
-/* Reuse styles from CreateChatModal or similar */
 .modal-overlay { 
     position: fixed; 
     inset: 0; 

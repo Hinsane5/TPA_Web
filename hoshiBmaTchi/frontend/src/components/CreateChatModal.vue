@@ -18,7 +18,7 @@
         <div class="search-section">
           <div class="to-label">To:</div>
           <div class="selected-tags">
-            <span v-for="user in selectedUsers" :key="user.id" class="user-tag">
+            <span v-for="user in selectedUsers" :key="user.user_id" class="user-tag">
               {{ user.username }}
               <button @click="toggleUser(user)">✕</button>
             </span>
@@ -34,7 +34,7 @@
           <div v-if="loading" class="loading">Loading...</div>
           <div 
             v-for="user in searchResults" 
-            :key="user.id" 
+            :key="user.user_id" 
             class="user-item"
             @click="toggleUser(user)"
           >
@@ -44,7 +44,7 @@
               <span class="fullname">{{ user.name }}</span>
             </div>
             <div class="checkbox">
-              <div v-if="isSelected(user.id)" class="checked-indicator">✓</div>
+              <div v-if="isSelected(user.user_id)" class="checked-indicator">✓</div>
             </div>
           </div>
         </div>
@@ -75,25 +75,25 @@ const loading = ref(false);
 
 const { value: searchQuery, debouncedValue: debouncedSearchQuery } = useDebounce('', 300);
 
-const handleSearch = useDebounce(async () => {
-  if (!searchQuery.value) return;
-  loading.value = true;
-  try {
-    const res = await usersApi.searchUsers(searchQuery.value);
-    // Filter out already selected users from results if desired, or keep them
-    searchResults.value = res.data; 
-  } catch (err) {
-    console.error(err);
-  } finally {
-    loading.value = false;
-  }
-}, 300);
+// const handleSearch = useDebounce(async () => {
+//   if (!searchQuery.value) return;
+//   loading.value = true;
+//   try {
+//     const res = await usersApi.searchUsers(searchQuery.value);
+//     // Filter out already selected users from results if desired, or keep them
+//     searchResults.value = res.data.users || [];
+//   } catch (err) {
+//     console.error(err);
+//   } finally {
+//     loading.value = false;
+//   }
+// }, 300);
 
-const isSelected = (id: string) => selectedUsers.value.some(u => u.id === id);
+const isSelected = (id: string) => selectedUsers.value.some(u => u.user_id === id);
 
 const toggleUser = (user: any) => {
-  if (isSelected(user.id)) {
-    selectedUsers.value = selectedUsers.value.filter(u => u.id !== user.id);
+  if (isSelected(user.user_id)) {
+    selectedUsers.value = selectedUsers.value.filter(u => u.id !== user.user_id);
   } else {
     selectedUsers.value.push(user);
   }
@@ -104,7 +104,7 @@ const toggleUser = (user: any) => {
 const createChat = async () => {
   const payload = {
     name: groupName.value,
-    user_ids: selectedUsers.value.map(u => u.id)
+    user_ids: selectedUsers.value.map(u => u.user_id)
   };
   
   // Call API to create chat
@@ -138,9 +138,12 @@ watch(debouncedSearchQuery, async (newQuery) => {
   loading.value = true;
   try {
     const res = await usersApi.searchUsers(newQuery);
-    searchResults.value = res.data; 
+
+    searchResults.value = res.data.users || []; 
+    
   } catch (err) {
     console.error(err);
+    searchResults.value = [];
   } finally {
     loading.value = false;
   }
