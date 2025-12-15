@@ -84,6 +84,23 @@ services:
       retries: 5
       start_period: 10s
 
+  ai-service:
+    build:
+      context: .
+      dockerfile: ./backend/services/ai/Dockerfile
+    container_name: ${PROJECT_NAME}-ai-service
+    volumes:
+      - .:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    working_dir: /app/backend/services/ai
+    networks:
+      - ${NETWORK_NAME}
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    environment:
+      - MODEL_REPO=Maungvee/baption-summarizer
+
   rabbitmq:
     image: rabbitmq:4.2.0-management
     container_name: ${PROJECT_NAME}-rabbitmq
