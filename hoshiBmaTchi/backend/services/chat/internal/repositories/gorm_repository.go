@@ -141,3 +141,21 @@ func (r *ChatRepository) FindDirectConversation(ctx context.Context, user1ID, us
 	}
 	return &conversation, nil
 }
+
+func (r *ChatRepository) DeleteConversation(ctx context.Context, conversationID string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("conversation_id = ?", conversationID).Delete(&domain.Message{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("conversation_id = ?", conversationID).Delete(&domain.Participant{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("id = ?", conversationID).Delete(&domain.Conversation{}).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
+}

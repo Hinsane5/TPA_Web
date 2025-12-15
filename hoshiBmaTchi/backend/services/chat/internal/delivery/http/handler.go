@@ -264,6 +264,21 @@ func (h *ChatHandler) DeleteConversation(c *gin.Context) {
 		return
 	}
 
+	if err := h.Repo.DeleteConversation(c, conversationID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete conversation"})
+		return
+	}
+
+	wsMsg := map[string]interface{}{
+		"type":            "conversation_deleted",
+		"conversation_id": conversationID,
+		"deleted_by":      userID,
+	}
+
+	if msgBytes, err := json.Marshal(wsMsg); err == nil {
+		h.Hub.Broadcast(msgBytes)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Conversation deleted"})
 }
 
@@ -339,3 +354,4 @@ func (h *ChatHandler) ShareContent(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Content shared successfully", "conversation_id": conversationID})
 }
+
