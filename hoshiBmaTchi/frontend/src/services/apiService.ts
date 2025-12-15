@@ -472,3 +472,9 @@ export const adminApi = {
   reviewReport: (reportId: string, type: "post" | "user", action: string) =>
     apiClient.post(`/admin/reports/${reportId}/review`, { type, action }),
 };
+
+export const aiApi = {
+  summarizeText: (text: string) => {
+    return apiClient.post("/v1/summarize", { text });
+  },
+};

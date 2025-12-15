@@ -187,14 +187,29 @@
       </p>
 
       <div class="caption-section">
-        <p class="caption-text" @click="handleCaptionClick">
-          <span class="caption-username">
-            {{ post.username }}
+        <p class="caption-text">
+          <span class="caption-username">{{ post.username }}</span>
+          
+          <span v-if="isSummarized" class="ai-summary-text">
+            ✨ {{ summaryText }}
+            <button class="toggle-btn" @click="toggleOriginal">
+              (Show Original)
+            </button>
           </span>
-          <span
-            class="caption-content"
-            v-html="parseCaption(post.caption)"
-          ></span>
+
+          <span v-else>
+            <span v-html="parseCaption(post.caption)"></span>
+            
+            <button 
+              v-if="post.caption.length > 100" 
+              class="summarize-btn" 
+              @click="handleSummarize"
+              :disabled="isLoadingSummary"
+            >
+              <span v-if="isLoadingSummary">✨ Summarizing...</span>
+              <span v-else>✨ Summarize with AI</span>
+            </button>
+          </span>
         </p>
       </div>
 
@@ -223,6 +238,7 @@ import { formatDistanceToNow } from "date-fns";
 import { postsApi, usersApi } from "../services/apiService";
 import { useRouter } from 'vue-router';
 import ShareModal from "./ShareModal.vue";
+import { aiApi } from "../services/apiService";
 
 const router = useRouter();
 
@@ -240,6 +256,10 @@ const newCollectionName = ref("");
 const createInputRef = ref<HTMLInputElement | null>(null);
 const currentIndex = ref(0);
 const showShareModal = ref(false);
+
+const isSummarized = ref(false);
+const summaryText = ref("");
+const isLoadingSummary = ref(false);
 
 onMounted(() => {
   if (props.post.is_saved !== undefined) {
@@ -381,6 +401,31 @@ const parseCaption = (text: string) => {
     /(@[a-zA-Z0-9._]+)/g,
     '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer; font-weight: 600;">$1</span>'
   );
+};
+
+const handleSummarize = async () => {
+  // If we already have the summary, just toggle it ON
+  if (summaryText.value) {
+    isSummarized.value = true;
+    return;
+  }
+
+  // Otherwise, fetch it from API
+  try {
+    isLoadingSummary.value = true;
+    const response = await aiApi.summarizeText(props.post.caption);
+    summaryText.value = response.data.summary;
+    isSummarized.value = true;
+  } catch (error) {
+    console.error("Failed to summarize caption:", error);
+    alert("Could not generate summary at this time.");
+  } finally {
+    isLoadingSummary.value = false;
+  }
+};
+
+const toggleOriginal = () => {
+  isSummarized.value = false;
 };
 </script>
 
@@ -762,6 +807,35 @@ const parseCaption = (text: string) => {
   padding: 4px 8px;
   font-size: 13px;
   outline: none;
+}
+
+.summarize-btn {
+  background: none;
+  border: none;
+  color: #a78bfa; /* Light purple for AI feel */
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 0;
+}
+
+.summarize-btn:hover {
+  text-decoration: underline;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.ai-summary-text {
+  color: #e0e0e0;
+  font-style: italic;
 }
 
 .mini-input:focus {
