@@ -1,8 +1,10 @@
 <template>
   <div class="messages-list">
     <div class="list-header">
-      <h2>Messages</h2>
-      <button class="compose-btn" title="New message">✎</button>
+      <h2>{{ currentUser?.username }}</h2>
+      <button class="compose-btn" title="New message" @click="showCreateModal = true">
+        <img src="/icons/create-icon.jpg" style="filter: invert(1); width: 24px;" />
+      </button>
     </div>
 
     <div class="search-wrapper">
@@ -15,34 +17,34 @@
     </div>
 
     <div class="conversations-container">
-      <div v-if="filteredConversations.length === 0" class="empty-state">
-        <p>
-          {{ searchInput ? "No conversations found" : "No conversations yet" }}
-        </p>
-      </div>
-
-      <ConversationItem
-        v-for="conversation in filteredConversations"
-        :key="conversation.id"
-        :conversation="conversation"
-        :current-user-id="currentUserId" 
-        :is-active="selectedConversationId === conversation.id"
-        @select="selectConversation(conversation.id)"
-        @delete="deleteConversation(conversation.id)"
-      />
+       <ConversationItem 
+         v-for="conversation in filteredConversations"
+         :key="conversation.id"
+         :conversation="conversation"
+         :current-user-id="currentUserId"
+         :is-active="selectedConversationId === conversation.id"
+         @select="selectConversation(conversation.id)"
+       />
     </div>
+    <CreateChatModal 
+      v-if="showCreateModal" 
+      @close="showCreateModal = false"
+      @create="handleChatCreated"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
-import type { Conversation } from "../types/chat";
+import type { Conversation, User } from "../types/chat";
 import ConversationItem from "./ConversationItem.vue";
+import CreateChatModal from './CreateChatModal.vue';
 
 interface Props {
   conversations: Conversation[];
   selectedConversationId: string | null;
   currentUserId: string;
+  currentUser: User | null;
 }
 
 const props = defineProps<Props>();
@@ -52,6 +54,7 @@ const emit = defineEmits<{
 }>();
 
 const searchInput = ref("");
+const showCreateModal = ref(false);
 
 const filteredConversations = computed(() => {
   if (!searchInput.value) {
@@ -67,6 +70,10 @@ const filteredConversations = computed(() => {
     );
   });
 });
+
+const handleChatCreated = (conversationId: string) => {
+    emit('select-conversation', conversationId);
+};
 
 const selectConversation = (conversationId: string) => {
   emit("select-conversation", conversationId);

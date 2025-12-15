@@ -4,16 +4,21 @@
       <div class="chat-header-left">
         <div class="header-avatar">
           <img
-            :src="chatPartner.avatar"
-            :alt="chatPartner.username"
+            v-if="!selectedConversation.isGroup"
+            :src="chatPartner?.avatar || '/placeholder.svg'"
             class="avatar"
           />
-          <div v-if="chatPartner.isOnline" class="online-indicator"></div>
+          <div v-else class="group-avatar-placeholder">👥</div>
         </div>
         <div class="header-info">
-          <h3 class="chat-title">{{ chatPartner.fullName }}</h3>
-          <p class="chat-subtitle">
-            {{ chatPartner.isOnline ? 'Active now' : 'Offline' }}
+          <h3 class="chat-title">
+            {{ selectedConversation.isGroup ? selectedConversation.name : chatPartner?.fullName }}
+          </h3>
+          <p class="chat-subtitle" v-if="!selectedConversation.isGroup">
+             {{ chatPartner?.isOnline ? 'Active now' : '' }}
+          </p>
+          <p class="chat-subtitle" v-else>
+             {{ selectedConversation.participants.length }} members
           </p>
         </div>
       </div>
@@ -28,8 +33,8 @@
         <button class="header-action-btn icon-btn" @click="handleDeleteConversation" title="Delete conversation">
           <img src="/icons/trashbin-icon.png" alt="Delete" class="action-icon" />
         </button>
-        <button class="header-action-btn" title="Info">
-          ⓘ
+        <button class="header-action-btn" title="Info" @click="showDetails = true">
+          ℹ️
         </button>
       </div>
     </div>
@@ -105,6 +110,16 @@
         ➤
       </button>
     </div>
+
+    <GroupDetailsModal
+        v-if="showDetails"
+        :conversation="selectedConversation"
+        :current-user-id="currentUserId"
+        @close="showDetails = false"
+        @leave="handleLeave"
+        @refresh="emit('refresh-data')" 
+    />
+
   </div>
 
   <div v-else class="chat-empty-state">
@@ -116,6 +131,7 @@
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Conversation, Message } from '../types/chat'
 import MessageItem from './MessageItem.vue'
+import GroupDetailsModal from './GroupDetailsModal.vue';
 
 interface Props {
   selectedConversation: Conversation | null
@@ -126,9 +142,10 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'send-message': [content: string, type?: string, mediaUrl?: string]
+  'send-message': [content: string, type?: "text" | "image" | "gif", mediaUrl?: string]
   'unsend-message': [messageId: string]
   'delete-conversation': []
+  'refresh-data': [] 
 }>()
 
 // --- Refs ---
@@ -138,6 +155,7 @@ const gifResults = ref<any[]>([])
 const isLoadingGifs = ref(false)
 const messagesContainer = ref<HTMLElement | null>(null) // For auto-scroll
 const messageInput = ref('')
+const showDetails = ref(false);
 
 const chatPartner = computed(() => {
   if (!props.selectedConversation || !props.selectedConversation.participants?.length) {
@@ -237,6 +255,12 @@ const handleUnsend = (messageId: string) => {
 const handleDeleteConversation = () => {
   emit('delete-conversation')
 }
+
+const handleLeave = () => {
+    emit('delete-conversation'); 
+    showDetails.value = false;
+}
+
 </script>
 
 <style scoped>
@@ -514,4 +538,18 @@ const handleDeleteConversation = () => {
 .send-btn:hover {
   transform: scale(1.1);
 }
+
+.group-avatar-placeholder {
+  width: 48px;
+  height: 48px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #333;
+  border-radius: 50%;
+  font-size: 24px;
+}
+
 </style>

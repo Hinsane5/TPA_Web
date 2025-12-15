@@ -108,9 +108,9 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
+	// Logic for Direct Message (1-on-1) reuse
 	if len(req.UserIDs) == 1 {
 		targetUserID := req.UserIDs[0]
-		
 		existingConv, err := h.Repo.FindDirectConversation(c, userID, targetUserID)
 		if err == nil && existingConv != nil {
 			c.JSON(http.StatusOK, gin.H{
@@ -122,17 +122,41 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		}
 	}
 
-	userIDs := append(req.UserIDs, userID)
+	// Combine Creator + Selected Users
+	allUserIDs := append(req.UserIDs, userID)
+    
+    // Default name if empty for groups
+    groupName := req.Name
+    if groupName == "" && len(req.UserIDs) > 1 {
+        groupName = "New Group"
+    }
 
 	conv := &domain.Conversation{
-		Name:      req.Name,
-		IsGroup:   true,
+		ID:        uuid.New(),
+		Name:      groupName,
+		IsGroup:   len(req.UserIDs) > 1, // Logic: >1 target user means group
 		CreatedAt: time.Now(),
 	}
 
-	if err := h.Repo.CreateConversation(c, conv, userIDs); err != nil {
+	if err := h.Repo.CreateConversation(c, conv, allUserIDs); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create group"})
 		return
+	}
+
+	// Broadcast "group_created" event to notify participants to refresh their lists
+	// Note: In a production app, you would target specific users. 
+    // Here we broadcast, and the frontend store handles the "fetch if unknown" logic.
+	wsMsg := map[string]interface{}{
+		"type":            "group_created",
+		"conversation_id": conv.ID.String(),
+		"name":            conv.Name,
+		"participants":    allUserIDs,
+		"created_by":      userID,
+		"created_at":      conv.CreatedAt,
+	}
+
+	if msgBytes, err := json.Marshal(wsMsg); err == nil {
+		h.Hub.Broadcast(msgBytes)
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -190,6 +214,15 @@ func (h *ChatHandler) AddParticipant(c *gin.Context) {
 		return
 	}
 
+	wsMsg := map[string]interface{}{
+		"type":            "participant_added",
+		"conversation_id": conversationID,
+		"user_id":         req.UserID,
+	}
+	if msgBytes, err := json.Marshal(wsMsg); err == nil {
+		h.Hub.Broadcast(msgBytes)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Participant added"})
 }
 
@@ -204,6 +237,16 @@ func (h *ChatHandler) RemoveParticipant(c *gin.Context) {
 	if err := h.Repo.RemoveParticipant(c, conversationID, req.UserID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove participant"})
 		return
+	}
+
+    // Broadcast update
+	wsMsg := map[string]interface{}{
+		"type":            "participant_removed",
+		"conversation_id": conversationID,
+		"user_id":         req.UserID,
+	}
+	if msgBytes, err := json.Marshal(wsMsg); err == nil {
+		h.Hub.Broadcast(msgBytes)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Participant removed"})

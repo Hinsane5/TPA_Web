@@ -5,6 +5,7 @@
       :conversations="conversations"
       :selected-conversation-id="selectedConversationId"
       :current-user-id="currentUser.id" 
+      :current-user="currentUser" 
       @select-conversation="selectConversation"
       @delete-conversation="deleteConversation"
     />
@@ -17,6 +18,7 @@
       @send-message="sendMessage"
       @unsend-message="unsendMessage"
       @delete-conversation="deleteConversationFromChat"
+      @refresh-data="initialize(currentUser)" 
     />
   </div>
 </template>
