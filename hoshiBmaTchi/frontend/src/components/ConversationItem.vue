@@ -90,11 +90,19 @@ const formatTime = (date: Date | string) => {
 
 const getMessagePreview = () => {
   const lastMessage = props.conversation.lastMessage;
+  
   if (!lastMessage) return "No messages yet";
 
-  const isOwn = lastMessage.senderId === "user-1";
+  const isOwn = lastMessage.senderId === props.currentUserId;
   const prefix = isOwn ? "You: " : "";
-  return prefix + (lastMessage.content.substring(0, 50) || "[Media]");
+
+  const content = lastMessage.content || ""; 
+
+  if (!content && lastMessage.mediaUrl) {
+      return prefix + "[Media]";
+  }
+
+  return prefix + (content.substring(0, 50) || "Sent a message");
 };
 </script>
 

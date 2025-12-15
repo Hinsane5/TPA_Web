@@ -13,6 +13,7 @@ type WSMessage struct {
 	ConversationID string `json:"conversation_id"`
 	Content        string `json:"content"`
 	MediaURL       string `json:"media_url,omitempty"`
+	MediaType      string `json:"media_type,omitempty"`
 }
 
 type Hub struct {

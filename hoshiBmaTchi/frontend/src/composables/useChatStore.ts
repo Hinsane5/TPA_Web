@@ -248,7 +248,11 @@ export function useChatStore() {
     }
   };
 
-  const sendMessage = (content: string) => {
+  const sendMessage = (
+    content: string,
+    type: "text" | "gif" | "image" = "text",
+    mediaUrl?: string
+  ) => {
     if (!socket || !selectedConversationId.value || !currentUser.value) return;
 
     const payload = {
@@ -256,6 +260,8 @@ export function useChatStore() {
       conversation_id: selectedConversationId.value,
       sender_id: currentUser.value.id,
       content: content,
+      media_type: type, 
+      media_url: mediaUrl, 
     };
 
     socket.send(JSON.stringify(payload));

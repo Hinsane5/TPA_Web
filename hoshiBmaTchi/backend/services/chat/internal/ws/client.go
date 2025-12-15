@@ -51,11 +51,18 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
+        // [Updated] Handle media type defaults
+        mediaType := wsMsg.MediaType
+        if mediaType == "" {
+            mediaType = "text"
+        }
+
 		msg := &domain.Message{
 			ConversationID: uuid.MustParse(wsMsg.ConversationID),
 			SenderID:       uuid.MustParse(c.UserID),
 			Content:        wsMsg.Content,
 			MediaURL:       wsMsg.MediaURL,
+            MediaType:      mediaType, // [Updated] Pass the type to domain model
 			CreatedAt:      time.Now(),
 		}
 		

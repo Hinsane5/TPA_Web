@@ -16,6 +16,7 @@
           @click="handleMessageClick"
           v-html="parseMessage(message.content)"
         ></p>
+
         <div v-else-if="message.messageType === 'image'" class="message-media">
           <img
             :src="getDisplayUrl(message.content)"
@@ -128,10 +129,28 @@ const formatTime = (date: string | Date) => {
 
 const parseMessage = (text: string) => {
   if (!text) return "";
-  return text.replace(
+  
+  let parsed = text;
+
+  // 1. Sanitize HTML (Basic XSS prevention)
+  parsed = parsed.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  // 2. **Bold**
+  parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  
+  // 3. *Italic*
+  parsed = parsed.replace(/\*(.*?)\*/g, '<i>$1</i>');
+  
+  // 4. ~~Strikethrough~~
+  parsed = parsed.replace(/~~(.*?)~~/g, '<s>$1</s>');
+
+  // 5. Mentions (@username)
+  parsed = parsed.replace(
     /(@[a-zA-Z0-9._]+)/g,
     '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
   );
+
+  return parsed;
 };
 
 const isSharedContent = computed(() => {
