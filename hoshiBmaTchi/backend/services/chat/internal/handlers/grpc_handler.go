@@ -113,3 +113,4 @@ func (s *ChatGRPCServer) GetCallToken(ctx context.Context, req *pb.GetCallTokenR
 		AppId:       appID,
 	}, nil
 }
+

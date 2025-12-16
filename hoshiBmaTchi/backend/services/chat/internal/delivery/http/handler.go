@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
+	"github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src/rtctokenbuilder2"
 )
 
 type CreateGroupRequest struct {
@@ -56,6 +58,8 @@ func (h *ChatHandler) RegisterRoutes(r *gin.Engine){
 
 		chatGroup.GET("/:id/messages", h.GetMessageHistory)
 		chatGroup.GET("/search", h.SearchMessages) 
+
+		chatGroup.GET("/:id/call-token", h.GenerateCallToken)
 
 		chatGroup.POST("/:id/participants", h.AddParticipant)
 		chatGroup.DELETE("/:id/participants", h.RemoveParticipant)
@@ -416,3 +420,58 @@ func (h *ChatHandler) GetCallToken(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+func (h *ChatHandler) GenerateCallToken(c *gin.Context) {
+	conversationID := c.Param("id")
+	userID := c.GetHeader("X-User-ID")
+
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// 1. Get Agora Config from Env
+	appID := os.Getenv("AGORA_APP_ID")
+	appCertificate := os.Getenv("AGORA_APP_CERTIFICATE")
+
+	if appID == "" || appCertificate == "" {
+		// Log error for debugging, but return generic error to user
+		fmt.Println("Error: AGORA_APP_ID or AGORA_APP_CERTIFICATE not set")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Voice service configuration error"})
+		return
+	}
+
+	// 2. Define Channel Name (Use conversation ID) and UID
+	channelName := conversationID
+	
+	// UID 0 allows Agora to assign a UID or allows the client to join with any numeric UID
+	tokenUID := uint32(0) 
+	
+	// 3. Set Expiration (e.g., 24 hours)
+	tokenExpirationInSeconds := uint32(86400) 
+	privilegeExpirationInSeconds := uint32(86400)
+
+	// 4. Generate Token
+	token, err := rtctokenbuilder2.BuildTokenWithUid(
+		appID,
+		appCertificate,
+		channelName,
+		tokenUID,
+		rtctokenbuilder2.RolePublisher,
+		tokenExpirationInSeconds,
+		privilegeExpirationInSeconds,
+	)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to generate token: %v", err)})
+		return
+	}
+
+	// 5. Return success response
+	c.JSON(http.StatusOK, gin.H{
+		"token":        token,
+		"app_id":       appID,
+		"channel_name": channelName,
+	})
+}
+

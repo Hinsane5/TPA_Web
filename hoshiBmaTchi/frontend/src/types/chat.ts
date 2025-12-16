@@ -40,6 +40,7 @@ export interface Conversation {
   lastMessage?: Message;
   unreadCount: number;
   updatedAt: string;
+  avatar?: string;
 }
 
 export interface GroupParticipant extends User {

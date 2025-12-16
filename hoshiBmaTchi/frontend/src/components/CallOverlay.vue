@@ -10,7 +10,7 @@
       </div>
       <div class="actions">
         <button @click="$emit('reject')" class="btn-reject">
-          <img src="" alt="Decline" width="24"/>
+          <img src="/icons/call-icon.png" alt="Decline" width="24" style="transform: rotate(135deg); filter: invert(1);"/>
         </button>
         <button @click="$emit('accept')" class="btn-accept">
           <img src="/icons/call-icon.png" alt="Accept" width="24"/>
@@ -23,8 +23,11 @@
         <div id="local-player" class="video-container local">
            <p class="user-label">You</p>
         </div>
-        <div v-for="user in remoteUsers" :key="user.uid" :id="'remote-player-' + user.uid" class="video-container">
-           <p class="user-label">User {{ user.uid }}</p>
+        
+        <div v-for="(user, index) in remoteUsers" :key="user.uid" :id="'remote-player-' + user.uid" class="video-container">
+           <p class="user-label">
+             {{ remoteUsers.length === 1 ? remoteDisplayName : `User ${user.uid}` }}
+           </p>
         </div>
       </div>
 
@@ -47,6 +50,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useChatStore } from '../composables/useChatStore'; // Import the store
 
 interface Props {
   active: boolean;
@@ -60,8 +64,27 @@ interface Props {
 }
 
 const props = defineProps<Props>();
-// Emits are defined here, so usage in template must be $emit('event-name')
 defineEmits(['accept', 'reject', 'end', 'toggle-audio', 'toggle-video']);
+
+const chatStore = useChatStore();
+
+// FIX: Compute the display name for the remote user
+const remoteDisplayName = computed(() => {
+  if (chatStore.incomingCaller.value) {
+      return chatStore.incomingCaller.value.name;
+  }
+  
+  if (chatStore.outgoingCallInfo.value) {
+      return chatStore.outgoingCallInfo.value.name;
+  }
+
+  if (chatStore.selectedConversation.value) {
+    return chatStore.selectedConversation.value.name;
+  }
+  
+  // 4. Last resort
+  return "Unknown User";
+});
 
 const gridClass = computed(() => {
   const count = props.remoteUsers.length + 1;
@@ -129,7 +152,9 @@ const gridClass = computed(() => {
 .btn-accept {
   width: 60px;
   height: 60px;
-
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 50%;
   cursor: pointer;
@@ -173,6 +198,9 @@ const gridClass = computed(() => {
   overflow: hidden;
   position: relative;
   min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .user-label {
   position: absolute; 
@@ -182,6 +210,8 @@ const gridClass = computed(() => {
   color: white; 
   padding: 4px 8px; 
   border-radius: 4px;
+  font-size: 0.9rem;
+  z-index: 10;
 }
 
 .controls-bar {
@@ -199,6 +229,11 @@ const gridClass = computed(() => {
   background: #404040;
   color: white;
   cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.control-btn:hover {
+    background: #505050;
 }
 .control-btn.off { 
     background: #ff4444; 
@@ -206,7 +241,6 @@ const gridClass = computed(() => {
 
 .control-btn.end-call { 
     background: #cc0000; 
-font-weight: bold; 
+    font-weight: bold; 
 }
-
 </style>

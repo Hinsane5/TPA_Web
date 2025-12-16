@@ -189,9 +189,6 @@ services:
       - MINIO_USE_SSL=false
       - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
 
-      - AGORA_APP_ID=${AGORA_APP_ID}
-      - AGORA_APP_CERTIFICATE=${AGORA_APP_CERTIFICATE}
-
   notification-service:
     build:
       context: .
@@ -258,6 +255,9 @@ services:
       - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
       - MINIO_USE_SSL=false
       - MINIO_BUCKET_NAME=chat-media
+
+      - AGORA_APP_ID=${AGORA_APP_ID}
+      - AGORA_APP_CERTIFICATE=${AGORA_APP_CERTIFICATE}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.chat-ws.rule=Host(`api.hoshi.localhost`) && PathPrefix(`/ws`)"

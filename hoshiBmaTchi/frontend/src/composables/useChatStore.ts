@@ -23,6 +23,8 @@ const incomingCaller = ref<{ id: string; name: string; avatar: string } | null>(
   null
 );
 
+const outgoingCallInfo = ref<{ name: string; avatar: string } | null>(null);
+
 // Agora State (Use shallowRef + markRaw to avoid Vue Proxy issues)
 const agoraClient = shallowRef<IAgoraRTCClient | null>(null);
 const localTracks = shallowRef<{
@@ -126,6 +128,17 @@ export function useChatStore() {
                 }
               })
             );
+
+            if (!conv.isGroup) {
+              const otherUser = conv.participants.find(
+                (p: any) => p.id !== myId
+              );
+              if (otherUser) {
+                conv.name = otherUser.fullName; 
+                conv.avatar = otherUser.avatar;
+              }
+            }
+
             return conv;
           })
         );
@@ -179,6 +192,8 @@ export function useChatStore() {
       console.error("Failed to fetch history:", error);
     }
   };
+
+
 
   // --- WebSocket Logic ---
   const connectWebSocket = () => {
@@ -346,14 +361,36 @@ export function useChatStore() {
     activeCallType.value = type;
     callState.value = "dialing";
 
+    // 1. NEW: Identify exactly who we are calling
+    const conversation = conversations.value.find(
+      (c) => c.id === selectedConversationId.value
+    );
+    if (conversation) {
+      // Find the "other" participant
+      const other = conversation.participants.find(
+        (p) => p.id !== currentUser.value!.id
+      );
+
+      if (other) {
+        // It's a 1-on-1 call, use their specific name
+        outgoingCallInfo.value = {
+          name: other.fullName || other.username || "Unknown User",
+          avatar: other.avatar || "/placeholder.svg",
+        };
+      } else {
+        // Fallback for groups or self
+        outgoingCallInfo.value = {
+          name: conversation.name || "Unknown Group",
+          avatar: conversation.avatar || "/placeholder.svg",
+        };
+      }
+    }
+
     try {
       const token = getToken();
-      const res = await axios.post(
-        `${API_URL}/rpc/chat/GetCallToken`,
-        {
-          conversation_id: selectedConversationId.value,
-          user_id: currentUser.value.id,
-        },
+      // Use the GET endpoint we fixed previously
+      const res = await axios.get(
+        `${API_URL}/chats/${selectedConversationId.value}/call-token`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -374,6 +411,7 @@ export function useChatStore() {
     } catch (e) {
       console.error("Call failed", e);
       callState.value = "idle";
+      outgoingCallInfo.value = null; 
     }
   };
 
@@ -382,12 +420,8 @@ export function useChatStore() {
 
     try {
       const token = getToken();
-      const res = await axios.post(
-        `${API_URL}/rpc/chat/GetCallToken`,
-        {
-          conversation_id: selectedConversationId.value,
-          user_id: currentUser.value.id,
-        },
+      const res = await axios.get(
+        `${API_URL}/chats/${selectedConversationId.value}/call-token`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -514,10 +548,10 @@ export function useChatStore() {
     unsendMessage,
     fetchConversations,
 
-    // Call Exports (activeCallType was missing here)
     callState,
     activeCallType,
     incomingCaller,
+    outgoingCallInfo,
     remoteUsers,
     isAudioEnabled,
     isVideoEnabled,
