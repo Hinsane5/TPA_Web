@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/repositories"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/ws"
@@ -30,6 +31,7 @@ type ParticipantRequest struct {
 type ChatHandler struct {
 	Repo *repositories.ChatRepository
 	Hub  *ws.Hub
+	client pb.ChatServiceClient
 }
 
 type ShareContentRequest struct {
@@ -398,3 +400,19 @@ func (h *ChatHandler) ShareContent(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Content shared successfully", "conversation_id": conversationID})
 }
 
+func (h *ChatHandler) GetCallToken(c *gin.Context) {
+	var req pb.GetCallTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	// Call the gRPC service
+	resp, err := h.client.GetCallToken(c.Request.Context(), &req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

@@ -5,15 +5,13 @@ package chat;
 option go_package = "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat";
 
 service ChatService {
-  // Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
   rpc CreateGroupChat(CreateGroupRequest) returns (CreateGroupResponse);
   rpc SendMessage(SendMessageRequest) returns (SendMessageResponse);
-  // Fetches the list of conversations for a specific user.
   rpc GetConversations(GetConversationsRequest) returns (GetConversationsResponse);
   rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
   rpc DeleteMessage(DeleteMessageRequest) returns (DeleteMessageResponse);
-  // Fetches paginated message history for a specific conversation.
   rpc GetMessageHistory(GetHistoryRequest) returns (GetHistoryResponse);
+  rpc GetCallToken(GetCallTokenRequest) returns (GetCallTokenResponse);
 }
 
 enum MessageType {
@@ -103,4 +101,15 @@ message DeleteMessageRequest {
 
 message DeleteMessageResponse {
   bool success = 1;
+}
+
+message GetCallTokenRequest {
+  string conversation_id = 1;
+  string user_id = 2;
+}
+
+message GetCallTokenResponse {
+  string token = 1;
+  string channel_name = 2;
+  string app_id = 3;
 }

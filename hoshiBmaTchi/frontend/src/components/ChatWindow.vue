@@ -1,4 +1,20 @@
 <template>
+  <CallOverlay 
+    :active="callState !== 'idle'"
+    :status="callState"
+    :call-type="activeCallType"
+    :caller-name="incomingCaller?.name"
+    :caller-avatar="incomingCaller?.avatar"
+    :remote-users="remoteUsers"
+    :audio-enabled="isAudioEnabled"
+    :video-enabled="isVideoEnabled"
+    @accept="acceptCall"
+    @reject="leaveCall"
+    @end="leaveCall"
+    @toggle-audio="toggleAudio"
+    @toggle-video="toggleVideo"
+  />
+
   <div v-if="selectedConversation && chatPartner" class="chat-window">
     <div class="chat-header">
       <div class="chat-header-left">
@@ -24,12 +40,13 @@
       </div>
 
       <div class="chat-header-actions">
-        <button class="header-action-btn icon-btn" title="Call">
+        <button class="header-action-btn icon-btn" title="Call" @click="startCall('audio')">
           <img src="/icons/call-icon.png" alt="Call" class="action-icon" />
         </button>
-        <button class="header-action-btn icon-btn" title="Video call">
+        <button class="header-action-btn icon-btn" title="Video call" @click="startCall('video')">
           <img src="/icons/video-call-icon.png" alt="Video Call" class="action-icon" />
         </button>
+        
         <button class="header-action-btn icon-btn" @click="handleDeleteConversation" title="Delete conversation">
           <img src="/icons/trashbin-icon.png" alt="Delete" class="action-icon" />
         </button>
@@ -132,6 +149,25 @@ import { ref, computed, watch, nextTick } from 'vue'
 import type { Conversation, Message } from '../types/chat'
 import MessageItem from './MessageItem.vue'
 import GroupDetailsModal from './GroupDetailsModal.vue';
+// 3. ADD THIS: Import CallOverlay and Store
+import CallOverlay from './CallOverlay.vue';
+import { useChatStore } from '../composables/useChatStore';
+
+// 4. ADD THIS: Use Store logic
+const chatStore = useChatStore();
+const { 
+  callState, 
+  activeCallType, 
+  incomingCaller, 
+  remoteUsers,
+  isAudioEnabled,
+  isVideoEnabled,
+  startCall,
+  acceptCall,
+  leaveCall,
+  toggleAudio,
+  toggleVideo
+} = chatStore;
 
 interface Props {
   selectedConversation: Conversation | null
@@ -153,7 +189,7 @@ const showGifPicker = ref(false)
 const gifSearchQuery = ref('')
 const gifResults = ref<any[]>([])
 const isLoadingGifs = ref(false)
-const messagesContainer = ref<HTMLElement | null>(null) // For auto-scroll
+const messagesContainer = ref<HTMLElement | null>(null) 
 const messageInput = ref('')
 const showDetails = ref(false);
 
@@ -173,23 +209,20 @@ const scrollToBottom = async () => {
   }
 }
 
-// Watch for new messages to auto-scroll
 watch(() => props.messages, () => {
   scrollToBottom()
 }, { deep: true })
 
-// Scroll when switching conversations
 watch(() => props.selectedConversation, () => {
   scrollToBottom()
 })
 
 // --- GIF Logic ---
-const GIPHY_API_KEY = 'YiObN9bdRusPcIp6YFM5EhpxjZeFl5rA'; // Use your key
+const GIPHY_API_KEY = 'YiObN9bdRusPcIp6YFM5EhpxjZeFl5rA'; 
 
 const fetchTrendingGifs = async () => {
   if (isLoadingGifs.value) return;
   isLoadingGifs.value = true;
-
   try {
     const res = await fetch(`https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=20&rating=g`);
     const data = await res.json();
@@ -206,7 +239,6 @@ const searchGifs = async () => {
     fetchTrendingGifs();
     return;
   }
-
   isLoadingGifs.value = true;
   try {
     const res = await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${gifSearchQuery.value}&limit=20&rating=g`);
@@ -227,7 +259,6 @@ watch(gifSearchQuery, (newVal) => {
   }, 500);
 });
 
-// Initialize GIFs when picker opens
 watch(showGifPicker, (isOpen) => {
   if (isOpen && gifResults.value.length === 0) {
     fetchTrendingGifs();
@@ -260,10 +291,10 @@ const handleLeave = () => {
     emit('delete-conversation'); 
     showDetails.value = false;
 }
-
 </script>
 
 <style scoped>
+/* Keep existing styles */
 .chat-window {
   display: flex;
   flex-direction: column;
@@ -362,8 +393,6 @@ const handleLeave = () => {
   width: 24px;
   height: 24px;
   object-fit: contain;
-  /* Optional: Invert color for dark mode if icons are black */
-  /* filter: invert(1); */
 }
 
 .header-action-btn {
@@ -467,7 +496,7 @@ const handleLeave = () => {
     bottom: 80px;
     left: 20px;
     width: 320px;
-    height: 400px; /* Fixed height */
+    height: 400px;
     background: #262626;
     border: 1px solid #404040;
     border-radius: 12px;
@@ -551,5 +580,4 @@ const handleLeave = () => {
   border-radius: 50%;
   font-size: 24px;
 }
-
 </style>

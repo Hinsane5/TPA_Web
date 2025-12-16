@@ -8,6 +8,7 @@ import (
 	postsProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	storiesProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/stories"
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
+	chatProto "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
 	"google.golang.org/grpc"
@@ -41,6 +42,13 @@ func main(){
     storiesClient := storiesProto.NewStoriesServiceClient(storiesConn)
     log.Println("Connected to gRPC stories-service")
 
+	chatConn, err := grpc.NewClient("chat-service:50053", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("Failed to connect chat-service: %v", err)
+	}
+	defer chatConn.Close()
+	chatClient := chatProto.NewChatServiceClient(chatConn)
+
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -57,12 +65,13 @@ func main(){
 	storiesHandler := handlers.NewStoriesHandler(storiesClient, userClient)
 	adminHandler := handlers.NewAdminHandler(userClient, postsClient)
 	aiHandler := handlers.NewAIHandler()
+	chatHandler := handlers.NewChatHandler(chatClient)
 
 	routes.SetupAuthRoutes(router, userClient)
 
 	routes.SetupPostsRoutes(router, postsHandler, authHandler)
 
-	routes.SetupChatRoutes(router, authHandler)
+	routes.SetupChatRoutes(router, authHandler, chatHandler)
 
 	routes.SetupStoriesRoutes(router, storiesHandler, authHandler)
 

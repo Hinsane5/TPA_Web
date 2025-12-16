@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"context"
+	"hash/crc32"
+	"os"
 	"time"
 
+	"github.com/AgoraIO/Tools/DynamicKey/AgoraDynamicKey/go/src/rtctokenbuilder2"
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/chat"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/core/domain"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/chat/internal/repositories"
@@ -75,3 +78,38 @@ func (s *ChatGRPCServer) GetMessageHistory(ctx context.Context, req *pb.GetHisto
 	return &pb.GetHistoryResponse{Messages: pbMsgs}, nil
 }
 
+func (s *ChatGRPCServer) GetCallToken(ctx context.Context, req *pb.GetCallTokenRequest) (*pb.GetCallTokenResponse, error) {
+	appID := os.Getenv("AGORA_APP_ID")
+	appCertificate := os.Getenv("AGORA_APP_CERTIFICATE")
+
+	if appID == "" || appCertificate == "" {
+		return nil, status.Error(codes.Internal, "Agora credentials not configured on server")
+	}
+
+	uid := crc32.ChecksumIEEE([]byte(req.UserId))
+
+	tokenExpireTimeInSeconds := uint32(86400)
+	privilegeExpireTimeInSeconds := uint32(86400)
+
+	// 4. Generate Token
+	channelName := req.ConversationId
+	token, err := rtctokenbuilder2.BuildTokenWithUid(
+		appID,
+		appCertificate,
+		channelName,
+		uid,
+		rtctokenbuilder2.RolePublisher,
+		tokenExpireTimeInSeconds,
+		privilegeExpireTimeInSeconds,
+	)
+
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "Failed to generate token: %v", err)
+	}
+
+	return &pb.GetCallTokenResponse{
+		Token:       token,
+		ChannelName: channelName,
+		AppId:       appID,
+	}, nil
+}

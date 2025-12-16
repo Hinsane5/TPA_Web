@@ -882,6 +882,118 @@ func (x *DeleteMessageResponse) GetSuccess() bool {
 	return false
 }
 
+type GetCallTokenRequest struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ConversationId string                 `protobuf:"bytes,1,opt,name=conversation_id,json=conversationId,proto3" json:"conversation_id,omitempty"`
+	UserId         string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *GetCallTokenRequest) Reset() {
+	*x = GetCallTokenRequest{}
+	mi := &file_chat_chat_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCallTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCallTokenRequest) ProtoMessage() {}
+
+func (x *GetCallTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_chat_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCallTokenRequest.ProtoReflect.Descriptor instead.
+func (*GetCallTokenRequest) Descriptor() ([]byte, []int) {
+	return file_chat_chat_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *GetCallTokenRequest) GetConversationId() string {
+	if x != nil {
+		return x.ConversationId
+	}
+	return ""
+}
+
+func (x *GetCallTokenRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+type GetCallTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	ChannelName   string                 `protobuf:"bytes,2,opt,name=channel_name,json=channelName,proto3" json:"channel_name,omitempty"`
+	AppId         string                 `protobuf:"bytes,3,opt,name=app_id,json=appId,proto3" json:"app_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCallTokenResponse) Reset() {
+	*x = GetCallTokenResponse{}
+	mi := &file_chat_chat_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCallTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCallTokenResponse) ProtoMessage() {}
+
+func (x *GetCallTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_chat_chat_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCallTokenResponse.ProtoReflect.Descriptor instead.
+func (*GetCallTokenResponse) Descriptor() ([]byte, []int) {
+	return file_chat_chat_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetCallTokenResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *GetCallTokenResponse) GetChannelName() string {
+	if x != nil {
+		return x.ChannelName
+	}
+	return ""
+}
+
+func (x *GetCallTokenResponse) GetAppId() string {
+	if x != nil {
+		return x.AppId
+	}
+	return ""
+}
+
 var File_chat_chat_proto protoreflect.FileDescriptor
 
 const file_chat_chat_proto_rawDesc = "" +
@@ -940,7 +1052,14 @@ const file_chat_chat_proto_rawDesc = "" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"1\n" +
 	"\x15DeleteMessageResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess*c\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"W\n" +
+	"\x13GetCallTokenRequest\x12'\n" +
+	"\x0fconversation_id\x18\x01 \x01(\tR\x0econversationId\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\"f\n" +
+	"\x14GetCallTokenResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12!\n" +
+	"\fchannel_name\x18\x02 \x01(\tR\vchannelName\x12\x15\n" +
+	"\x06app_id\x18\x03 \x01(\tR\x05appId*c\n" +
 	"\vMessageType\x12\b\n" +
 	"\x04TEXT\x10\x00\x12\t\n" +
 	"\x05IMAGE\x10\x01\x12\t\n" +
@@ -949,14 +1068,15 @@ const file_chat_chat_proto_rawDesc = "" +
 	"\x04FILE\x10\x04\x12\x0f\n" +
 	"\vSTORY_SHARE\x10\x05\x12\x0e\n" +
 	"\n" +
-	"POST_SHARE\x10\x062\xc2\x03\n" +
+	"POST_SHARE\x10\x062\x89\x04\n" +
 	"\vChatService\x12F\n" +
 	"\x0fCreateGroupChat\x12\x18.chat.CreateGroupRequest\x1a\x19.chat.CreateGroupResponse\x12B\n" +
 	"\vSendMessage\x12\x18.chat.SendMessageRequest\x1a\x19.chat.SendMessageResponse\x12Q\n" +
 	"\x10GetConversations\x12\x1d.chat.GetConversationsRequest\x1a\x1e.chat.GetConversationsResponse\x12B\n" +
 	"\vGetMessages\x12\x18.chat.GetMessagesRequest\x1a\x19.chat.GetMessagesResponse\x12H\n" +
 	"\rDeleteMessage\x12\x1a.chat.DeleteMessageRequest\x1a\x1b.chat.DeleteMessageResponse\x12F\n" +
-	"\x11GetMessageHistory\x12\x17.chat.GetHistoryRequest\x1a\x18.chat.GetHistoryResponseB5Z3github.com/Hinsane5/hoshiBmaTchi/backend/proto/chatb\x06proto3"
+	"\x11GetMessageHistory\x12\x17.chat.GetHistoryRequest\x1a\x18.chat.GetHistoryResponse\x12E\n" +
+	"\fGetCallToken\x12\x19.chat.GetCallTokenRequest\x1a\x1a.chat.GetCallTokenResponseB5Z3github.com/Hinsane5/hoshiBmaTchi/backend/proto/chatb\x06proto3"
 
 var (
 	file_chat_chat_proto_rawDescOnce sync.Once
@@ -971,7 +1091,7 @@ func file_chat_chat_proto_rawDescGZIP() []byte {
 }
 
 var file_chat_chat_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_chat_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_chat_chat_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_chat_chat_proto_goTypes = []any{
 	(MessageType)(0),                 // 0: chat.MessageType
 	(*CreateGroupRequest)(nil),       // 1: chat.CreateGroupRequest
@@ -988,6 +1108,8 @@ var file_chat_chat_proto_goTypes = []any{
 	(*GetMessagesResponse)(nil),      // 12: chat.GetMessagesResponse
 	(*DeleteMessageRequest)(nil),     // 13: chat.DeleteMessageRequest
 	(*DeleteMessageResponse)(nil),    // 14: chat.DeleteMessageResponse
+	(*GetCallTokenRequest)(nil),      // 15: chat.GetCallTokenRequest
+	(*GetCallTokenResponse)(nil),     // 16: chat.GetCallTokenResponse
 }
 var file_chat_chat_proto_depIdxs = []int32{
 	5,  // 0: chat.GetConversationsResponse.conversations:type_name -> chat.Conversation
@@ -1001,14 +1123,16 @@ var file_chat_chat_proto_depIdxs = []int32{
 	11, // 8: chat.ChatService.GetMessages:input_type -> chat.GetMessagesRequest
 	13, // 9: chat.ChatService.DeleteMessage:input_type -> chat.DeleteMessageRequest
 	6,  // 10: chat.ChatService.GetMessageHistory:input_type -> chat.GetHistoryRequest
-	2,  // 11: chat.ChatService.CreateGroupChat:output_type -> chat.CreateGroupResponse
-	10, // 12: chat.ChatService.SendMessage:output_type -> chat.SendMessageResponse
-	4,  // 13: chat.ChatService.GetConversations:output_type -> chat.GetConversationsResponse
-	12, // 14: chat.ChatService.GetMessages:output_type -> chat.GetMessagesResponse
-	14, // 15: chat.ChatService.DeleteMessage:output_type -> chat.DeleteMessageResponse
-	7,  // 16: chat.ChatService.GetMessageHistory:output_type -> chat.GetHistoryResponse
-	11, // [11:17] is the sub-list for method output_type
-	5,  // [5:11] is the sub-list for method input_type
+	15, // 11: chat.ChatService.GetCallToken:input_type -> chat.GetCallTokenRequest
+	2,  // 12: chat.ChatService.CreateGroupChat:output_type -> chat.CreateGroupResponse
+	10, // 13: chat.ChatService.SendMessage:output_type -> chat.SendMessageResponse
+	4,  // 14: chat.ChatService.GetConversations:output_type -> chat.GetConversationsResponse
+	12, // 15: chat.ChatService.GetMessages:output_type -> chat.GetMessagesResponse
+	14, // 16: chat.ChatService.DeleteMessage:output_type -> chat.DeleteMessageResponse
+	7,  // 17: chat.ChatService.GetMessageHistory:output_type -> chat.GetHistoryResponse
+	16, // 18: chat.ChatService.GetCallToken:output_type -> chat.GetCallTokenResponse
+	12, // [12:19] is the sub-list for method output_type
+	5,  // [5:12] is the sub-list for method input_type
 	5,  // [5:5] is the sub-list for extension type_name
 	5,  // [5:5] is the sub-list for extension extendee
 	0,  // [0:5] is the sub-list for field type_name
@@ -1025,7 +1149,7 @@ func file_chat_chat_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_chat_chat_proto_rawDesc), len(file_chat_chat_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

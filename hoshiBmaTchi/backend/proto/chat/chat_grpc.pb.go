@@ -25,21 +25,20 @@ const (
 	ChatService_GetMessages_FullMethodName       = "/chat.ChatService/GetMessages"
 	ChatService_DeleteMessage_FullMethodName     = "/chat.ChatService/DeleteMessage"
 	ChatService_GetMessageHistory_FullMethodName = "/chat.ChatService/GetMessageHistory"
+	ChatService_GetCallToken_FullMethodName      = "/chat.ChatService/GetCallToken"
 )
 
 // ChatServiceClient is the client API for ChatService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ChatServiceClient interface {
-	// Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
 	CreateGroupChat(ctx context.Context, in *CreateGroupRequest, opts ...grpc.CallOption) (*CreateGroupResponse, error)
 	SendMessage(ctx context.Context, in *SendMessageRequest, opts ...grpc.CallOption) (*SendMessageResponse, error)
-	// Fetches the list of conversations for a specific user.
 	GetConversations(ctx context.Context, in *GetConversationsRequest, opts ...grpc.CallOption) (*GetConversationsResponse, error)
 	GetMessages(ctx context.Context, in *GetMessagesRequest, opts ...grpc.CallOption) (*GetMessagesResponse, error)
 	DeleteMessage(ctx context.Context, in *DeleteMessageRequest, opts ...grpc.CallOption) (*DeleteMessageResponse, error)
-	// Fetches paginated message history for a specific conversation.
 	GetMessageHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*GetHistoryResponse, error)
+	GetCallToken(ctx context.Context, in *GetCallTokenRequest, opts ...grpc.CallOption) (*GetCallTokenResponse, error)
 }
 
 type chatServiceClient struct {
@@ -110,19 +109,27 @@ func (c *chatServiceClient) GetMessageHistory(ctx context.Context, in *GetHistor
 	return out, nil
 }
 
+func (c *chatServiceClient) GetCallToken(ctx context.Context, in *GetCallTokenRequest, opts ...grpc.CallOption) (*GetCallTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetCallTokenResponse)
+	err := c.cc.Invoke(ctx, ChatService_GetCallToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChatServiceServer is the server API for ChatService service.
 // All implementations must embed UnimplementedChatServiceServer
 // for forward compatibility.
 type ChatServiceServer interface {
-	// Creates a group chat. Private 1-on-1 chats are created implicitly when sending a message.
 	CreateGroupChat(context.Context, *CreateGroupRequest) (*CreateGroupResponse, error)
 	SendMessage(context.Context, *SendMessageRequest) (*SendMessageResponse, error)
-	// Fetches the list of conversations for a specific user.
 	GetConversations(context.Context, *GetConversationsRequest) (*GetConversationsResponse, error)
 	GetMessages(context.Context, *GetMessagesRequest) (*GetMessagesResponse, error)
 	DeleteMessage(context.Context, *DeleteMessageRequest) (*DeleteMessageResponse, error)
-	// Fetches paginated message history for a specific conversation.
 	GetMessageHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error)
+	GetCallToken(context.Context, *GetCallTokenRequest) (*GetCallTokenResponse, error)
 	mustEmbedUnimplementedChatServiceServer()
 }
 
@@ -150,6 +157,9 @@ func (UnimplementedChatServiceServer) DeleteMessage(context.Context, *DeleteMess
 }
 func (UnimplementedChatServiceServer) GetMessageHistory(context.Context, *GetHistoryRequest) (*GetHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetMessageHistory not implemented")
+}
+func (UnimplementedChatServiceServer) GetCallToken(context.Context, *GetCallTokenRequest) (*GetCallTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetCallToken not implemented")
 }
 func (UnimplementedChatServiceServer) mustEmbedUnimplementedChatServiceServer() {}
 func (UnimplementedChatServiceServer) testEmbeddedByValue()                     {}
@@ -280,6 +290,24 @@ func _ChatService_GetMessageHistory_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChatService_GetCallToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetCallTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChatServiceServer).GetCallToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChatService_GetCallToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChatServiceServer).GetCallToken(ctx, req.(*GetCallTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChatService_ServiceDesc is the grpc.ServiceDesc for ChatService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -310,6 +338,10 @@ var ChatService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetMessageHistory",
 			Handler:    _ChatService_GetMessageHistory_Handler,
+		},
+		{
+			MethodName: "GetCallToken",
+			Handler:    _ChatService_GetCallToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -10,7 +10,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupChatRoutes(router *gin.Engine, authHandler *handlers.AuthHandler) {
+func SetupChatRoutes(router *gin.Engine, authHandler *handlers.AuthHandler, chatHandler *handlers.ChatHandler) {
+
+	rpcGroup := router.Group("/rpc/chat")
+	rpcGroup.Use(authHandler.AuthMiddleware())
+	{
+		rpcGroup.POST("/GetCallToken", chatHandler.GetCallToken)
+	}
+
 	targetStr := "http://chat-service:8080"
 	
 	target, _ := url.Parse(targetStr)

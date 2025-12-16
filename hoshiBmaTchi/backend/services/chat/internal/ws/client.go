@@ -51,6 +51,13 @@ func (c *Client) ReadPump() {
 			continue
 		}
 
+		if wsMsg.Type == "signal" {
+			wsMsg.SenderID = c.UserID
+			broadcastBytes, _ := json.Marshal(wsMsg)
+			c.Hub.Broadcast(broadcastBytes)
+			continue
+		}
+
         mediaType := wsMsg.MediaType
         if mediaType == "" {
             mediaType = "text"

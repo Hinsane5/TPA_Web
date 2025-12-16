@@ -1,8 +1,14 @@
-import { ref, computed } from "vue";
+import { ref, computed, shallowRef, markRaw } from "vue";
 import type { Conversation, Message, User } from "../types/chat";
+import AgoraRTC, {
+  type IAgoraRTCClient,
+  type ICameraVideoTrack,
+  type IMicrophoneAudioTrack,
+} from "agora-rtc-sdk-ng";
 import { usersApi } from "../services/apiService";
+import axios from "axios";
 
-
+// State
 const currentUser = ref<User | null>(null);
 const conversations = ref<Conversation[]>([]);
 const messages = ref<Message[]>([]);
@@ -10,12 +16,31 @@ const selectedConversationId = ref<string | null>(null);
 const isConnected = ref(false);
 let socket: WebSocket | null = null;
 
+// Call State
+const callState = ref<"idle" | "dialing" | "incoming" | "connected">("idle");
+const activeCallType = ref<"audio" | "video">("video"); // Defined here
+const incomingCaller = ref<{ id: string; name: string; avatar: string } | null>(
+  null
+);
+
+// Agora State (Use shallowRef + markRaw to avoid Vue Proxy issues)
+const agoraClient = shallowRef<IAgoraRTCClient | null>(null);
+const localTracks = shallowRef<{
+  video?: ICameraVideoTrack;
+  audio?: IMicrophoneAudioTrack;
+}>({});
+
+const remoteUsers = ref<any[]>([]);
+const isAudioEnabled = ref(true);
+const isVideoEnabled = ref(true);
+
 const API_URL = "/api";
 const WS_URL = "ws://localhost:8081/ws";
 
 export function useChatStore() {
   const getToken = () => localStorage.getItem("accessToken");
 
+  // --- Helper Functions ---
   const resolveSenderInfo = (senderId: string, conversationId: string) => {
     if (currentUser.value && senderId === currentUser.value.id) {
       return {
@@ -23,7 +48,6 @@ export function useChatStore() {
         avatar: currentUser.value.avatar || "/placeholder.svg",
       };
     }
-
     const conversation = conversations.value.find(
       (c) => c.id === conversationId
     );
@@ -38,11 +62,10 @@ export function useChatStore() {
         };
       }
     }
-
-
     return { name: "Unknown", avatar: "/placeholder.svg" };
   };
 
+  // --- Initialization & API ---
   const initialize = async (user: User) => {
     currentUser.value = user;
     await fetchConversations();
@@ -60,7 +83,6 @@ export function useChatStore() {
 
       if (res.ok) {
         const data = await res.json();
-
         const mappedConversations = data.map((c: any) => ({
           ...c,
           isGroup: c.is_group,
@@ -75,7 +97,6 @@ export function useChatStore() {
         const enrichedConversations = await Promise.all(
           mappedConversations.map(async (conv: any) => {
             const myId = currentUser.value?.id;
-
             conv.participants = await Promise.all(
               conv.participants.map(async (p: any) => {
                 if (myId && p.id === myId && currentUser.value) {
@@ -87,7 +108,6 @@ export function useChatStore() {
                     avatar: currentUser.value.avatar || "/placeholder.svg",
                   };
                 }
-
                 try {
                   const userRes = await usersApi.getUserProfile(p.id);
                   const userData = userRes.data;
@@ -98,7 +118,6 @@ export function useChatStore() {
                     avatar: userData.profile_picture_url || "/placeholder.svg",
                   };
                 } catch (err) {
-                  console.warn(`Failed to fetch user ${p.id}`, err);
                   return {
                     ...p,
                     fullName: "Unknown User",
@@ -107,11 +126,9 @@ export function useChatStore() {
                 }
               })
             );
-
             return conv;
           })
         );
-
         conversations.value = enrichedConversations;
       }
     } catch (error) {
@@ -129,34 +146,33 @@ export function useChatStore() {
 
       const res = await fetch(
         `${API_URL}/chats/${conversationId}/messages?limit=50`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       if (res.ok) {
         const rawData = await res.json();
-
         const mappedMessages = rawData.map((msg: any) => {
           const { name, avatar } = resolveSenderInfo(
             msg.sender_id,
             conversationId
           );
           const isMedia = !!msg.media_url;
-
           return {
             id: msg.id,
             conversationId: msg.conversation_id,
-            senderId: msg.sender_id, 
+            senderId: msg.sender_id,
             senderName: name,
             senderAvatar: avatar,
             content: isMedia ? msg.media_url : msg.content,
-            mediaUrl: msg.media_url, 
+            mediaUrl: msg.media_url,
             messageType: isMedia ? "image" : "text",
             createdAt: msg.created_at,
             timestamp: msg.created_at,
             isUnsent: msg.is_unsent,
           };
         });
-
         messages.value = mappedMessages.reverse();
       }
     } catch (error) {
@@ -164,9 +180,9 @@ export function useChatStore() {
     }
   };
 
+  // --- WebSocket Logic ---
   const connectWebSocket = () => {
     if (socket) return;
-
     const token = getToken();
     if (!token) return;
 
@@ -181,7 +197,9 @@ export function useChatStore() {
       try {
         const data = JSON.parse(event.data);
 
-        if (data.type === "group_created") {
+        if (data.type === "signal") {
+          handleSignal(data);
+        } else if (data.type === "group_created") {
           fetchConversations();
         } else if (data.type === "new_message") {
           handleIncomingMessage(data);
@@ -204,7 +222,6 @@ export function useChatStore() {
     );
 
     if (!conversation) {
-      console.log("New conversation detected, refreshing list...");
       await fetchConversations();
       conversation = conversations.value.find(
         (c) => c.id === wsMsg.conversation_id
@@ -215,9 +232,7 @@ export function useChatStore() {
       wsMsg.sender_id,
       wsMsg.conversation_id
     );
-
     const isMedia = !!wsMsg.media_url;
-
 
     const newMessage: Message = {
       id: wsMsg.id || `msg-${Date.now()}`,
@@ -237,20 +252,193 @@ export function useChatStore() {
 
     if (selectedConversationId.value === wsMsg.conversation_id) {
       messages.value.push(newMessage);
-
     }
 
     if (conversation) {
       conversation.lastMessage = newMessage;
-
       if (selectedConversationId.value !== wsMsg.conversation_id) {
         conversation.unreadCount = (conversation.unreadCount || 0) + 1;
       }
-
       conversations.value = [
         conversation,
         ...conversations.value.filter((c) => c.id !== conversation!.id),
       ];
+    }
+  };
+
+  // --- Call Signaling Logic ---
+  const handleSignal = (data: any) => {
+    if (data.sender_id === currentUser.value?.id) return;
+
+    switch (data.signal_type) {
+      case "incoming":
+        if (callState.value === "idle") {
+          const { name, avatar } = resolveSenderInfo(
+            data.sender_id,
+            data.conversation_id
+          );
+          incomingCaller.value = { id: data.sender_id, name, avatar };
+          activeCallType.value = data.call_type;
+          selectedConversationId.value = data.conversation_id;
+          callState.value = "incoming";
+        }
+        break;
+
+      case "end":
+        if (
+          callState.value !== "idle" &&
+          selectedConversationId.value === data.conversation_id
+        ) {
+          leaveCall();
+          alert("Call ended");
+        }
+        break;
+    }
+  };
+
+  // --- Agora / Call Actions ---
+  const initAgora = async (
+    channel: string,
+    token: string,
+    appId: string,
+    uid: number
+  ) => {
+    const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+
+    client.on("user-published", async (user, mediaType) => {
+      await client.subscribe(user, mediaType);
+
+      if (mediaType === "video") {
+        user.videoTrack?.play(`remote-player-${user.uid}`);
+      }
+      if (mediaType === "audio") {
+        user.audioTrack?.play();
+      }
+
+      if (!remoteUsers.value.find((u) => u.uid === user.uid)) {
+        remoteUsers.value.push(user);
+      }
+    });
+
+    client.on("user-unpublished", (user) => {
+      remoteUsers.value = remoteUsers.value.filter((u) => u.uid !== user.uid);
+    });
+
+    await client.join(appId, channel, token, uid);
+    agoraClient.value = markRaw(client);
+
+    if (activeCallType.value === "audio") {
+      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      localTracks.value.audio = markRaw(audioTrack);
+      await client.publish([localTracks.value.audio]);
+    } else {
+      const [mic, cam] = await AgoraRTC.createMicrophoneAndCameraTracks();
+      localTracks.value.audio = markRaw(mic);
+      localTracks.value.video = markRaw(cam);
+      cam.play("local-player");
+      await client.publish([mic, cam]);
+    }
+  };
+
+  const startCall = async (type: "audio" | "video") => {
+    if (!selectedConversationId.value || !currentUser.value) return;
+
+    activeCallType.value = type;
+    callState.value = "dialing";
+
+    try {
+      const token = getToken();
+      const res = await axios.post(
+        `${API_URL}/rpc/chat/GetCallToken`,
+        {
+          conversation_id: selectedConversationId.value,
+          user_id: currentUser.value.id,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { token: agoraToken, app_id, channel_name } = res.data;
+
+      const signalPayload = {
+        type: "signal",
+        signal_type: "incoming",
+        call_type: type,
+        conversation_id: selectedConversationId.value,
+        sender_id: currentUser.value.id,
+      };
+      socket?.send(JSON.stringify(signalPayload));
+
+      callState.value = "connected";
+      const uid = Math.floor(Math.random() * 10000);
+      await initAgora(channel_name, agoraToken, app_id, uid);
+    } catch (e) {
+      console.error("Call failed", e);
+      callState.value = "idle";
+    }
+  };
+
+  const acceptCall = async () => {
+    if (!selectedConversationId.value || !currentUser.value) return;
+
+    try {
+      const token = getToken();
+      const res = await axios.post(
+        `${API_URL}/rpc/chat/GetCallToken`,
+        {
+          conversation_id: selectedConversationId.value,
+          user_id: currentUser.value.id,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const { token: agoraToken, app_id, channel_name } = res.data;
+
+      callState.value = "connected";
+      const uid = Math.floor(Math.random() * 10000);
+      await initAgora(channel_name, agoraToken, app_id, uid);
+    } catch (e) {
+      console.error("Accept failed", e);
+      leaveCall();
+    }
+  };
+
+  const leaveCall = async () => {
+    localTracks.value.audio?.close();
+    localTracks.value.video?.close();
+
+    if (agoraClient.value) {
+      await agoraClient.value.leave();
+    }
+
+    if (callState.value === "connected" && selectedConversationId.value) {
+      socket?.send(
+        JSON.stringify({
+          type: "signal",
+          signal_type: "end",
+          conversation_id: selectedConversationId.value,
+          sender_id: currentUser.value?.id,
+        })
+      );
+    }
+
+    callState.value = "idle";
+    remoteUsers.value = [];
+    incomingCaller.value = null;
+    localTracks.value = {};
+    agoraClient.value = null;
+  };
+
+  const toggleAudio = () => {
+    if (localTracks.value.audio) {
+      isAudioEnabled.value = !isAudioEnabled.value;
+      localTracks.value.audio.setEnabled(isAudioEnabled.value);
+    }
+  };
+
+  const toggleVideo = () => {
+    if (localTracks.value.video) {
+      isVideoEnabled.value = !isVideoEnabled.value;
+      localTracks.value.video.setEnabled(isVideoEnabled.value);
     }
   };
 
@@ -266,8 +454,8 @@ export function useChatStore() {
       conversation_id: selectedConversationId.value,
       sender_id: currentUser.value.id,
       content: content,
-      media_type: type, 
-      media_url: mediaUrl, 
+      media_type: type,
+      media_url: mediaUrl,
     };
 
     socket.send(JSON.stringify(payload));
@@ -279,7 +467,6 @@ export function useChatStore() {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-
     conversations.value = conversations.value.filter(
       (c) => c.id !== conversationId
     );
@@ -296,7 +483,6 @@ export function useChatStore() {
       msg.mediaUrl = undefined;
       msg.messageType = "text";
     }
-
     try {
       const token = getToken();
       await fetch(`${API_URL}/chats/messages/${messageId}`, {
@@ -327,5 +513,18 @@ export function useChatStore() {
     deleteConversation,
     unsendMessage,
     fetchConversations,
+
+    // Call Exports (activeCallType was missing here)
+    callState,
+    activeCallType,
+    incomingCaller,
+    remoteUsers,
+    isAudioEnabled,
+    isVideoEnabled,
+    startCall,
+    acceptCall,
+    leaveCall,
+    toggleAudio,
+    toggleVideo,
   };
 }

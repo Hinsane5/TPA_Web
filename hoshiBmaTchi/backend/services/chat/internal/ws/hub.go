@@ -17,6 +17,9 @@ type WSMessage struct {
 	Content        string `json:"content"`
 	MediaURL       string `json:"media_url,omitempty"`
 	MediaType      string `json:"media_type,omitempty"`
+
+	SignalType string `json:"signal_type,omitempty"`
+	CallType   string `json:"call_type,omitempty"`
 }
 
 type Hub struct {
