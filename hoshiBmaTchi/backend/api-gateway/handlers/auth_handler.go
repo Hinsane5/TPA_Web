@@ -2,12 +2,18 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"github.com/minio/minio-go/v7"
+	"github.com/minio/minio-go/v7/pkg/credentials"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -536,4 +542,85 @@ func (h *AuthHandler) ReportUser(c *gin.Context) {
         return
     }
     c.JSON(http.StatusOK, gin.H{"message": "User reported"})
+}
+
+func (h *AuthHandler) UploadAvatar(c *gin.Context) {
+	file, header, err := c.Request.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file provided"})
+		return
+	}
+	defer file.Close()
+
+	// MinIO Configuration
+	accessKey := os.Getenv("MINIO_ACCESS_KEY_ID")
+	secretKey := os.Getenv("MINIO_SECRET_ACCESS_KEY")
+	bucketName := os.Getenv("MINIO_BUCKET_NAME")
+	if bucketName == "" {
+		bucketName = "users" // Default to users bucket
+	}
+
+	// Internal endpoint for upload (e.g., minio:9000)
+	endpoint := os.Getenv("MINIO_ENDPOINT")
+	if endpoint == "" {
+		endpoint = "minio:9000"
+	}
+
+	// Public endpoint for viewing (e.g., http://localhost:9000)
+	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+	if publicEndpoint == "" {
+		publicEndpoint = "http://localhost:9000"
+	}
+
+	minioClient, err := minio.New(endpoint, &minio.Options{
+		Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
+		Secure: os.Getenv("MINIO_USE_SSL") == "true",
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to storage"})
+		return
+	}
+
+	// Create unique filename
+	ext := filepath.Ext(header.Filename)
+	objectName := fmt.Sprintf("avatars/%s%s", uuid.New().String(), ext)
+	contentType := header.Header.Get("Content-Type")
+
+	ctx := context.Background()
+
+	// Ensure bucket exists
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Storage check failed"})
+		return
+	}
+	if !exists {
+		err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create bucket"})
+			return
+		}
+		
+		// Set Public Policy
+		policy := fmt.Sprintf(`{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Principal": {"AWS": ["*"]},"Action": ["s3:GetObject"],"Resource": ["arn:aws:s3:::%s/*"]}]}`, bucketName)
+		minioClient.SetBucketPolicy(ctx, bucketName, policy)
+	}
+
+	// Upload
+	_, err = minioClient.PutObject(ctx, bucketName, objectName, file, header.Size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+		return
+	}
+
+	// Construct Public URL
+	fileURL := fmt.Sprintf("%s/%s/%s", publicEndpoint, bucketName, objectName)
+
+	c.JSON(http.StatusOK, gin.H{
+		"media_url": fileURL,
+	})
 }

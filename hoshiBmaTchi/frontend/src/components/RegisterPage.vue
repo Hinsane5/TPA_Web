@@ -381,6 +381,20 @@ const handleRegister = async () => {
   isLoading.value = true;
 
   try {
+    let profilePictureUrl = "";
+
+    if (formData.profilePicture) {
+      try {
+        const uploadRes = await authApi.uploadAvatar(formData.profilePicture);
+        profilePictureUrl = uploadRes.data.media_url;
+      } catch (uploadError) {
+        console.error("Failed to upload avatar:", uploadError);
+        globalError.value = "Failed to upload profile picture. Please try again or skip it.";
+        isLoading.value = false;
+        return; 
+      }
+    }
+
     const apiData = {
       name: formData.fullName,
       username: formData.username,
@@ -389,7 +403,7 @@ const handleRegister = async () => {
       confirm_password: formData.confirmPassword,
       date_of_birth: new Date(formData.dateOfBirth).toISOString(),
       gender: formData.gender,
-      profile_picture_url: "", 
+      profile_picture_url: profilePictureUrl, 
       subscribe_to_newsletter: formData.subscribeNewsletter,
       enable_2fa: formData.enable2FA,
       otp_code: formData.otpCode,

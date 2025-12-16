@@ -13,7 +13,19 @@
           :class="['nav-item', { active: currentPage === item.id }]"
           @click.prevent="navigateTo(item.id)"
         >
-          <img :src="item.iconPath" :alt="item.label" class="nav-icon" />
+          <img 
+            v-if="item.id === 'profile' && userProfile?.profile_picture_url"
+            :src="getDisplayUrl(userProfile.profile_picture_url)"
+            :alt="item.label"
+            class="nav-icon nav-avatar"
+          />
+          <img 
+            v-else
+            :src="item.iconPath" 
+            :alt="item.label" 
+            class="nav-icon" 
+          />
+          
           <span class="nav-label">{{ item.label }}</span>
         </a>
 
@@ -85,7 +97,7 @@
 
     <div class="user-profile" v-if="userProfile">
       <img 
-        :src="userProfile.profile_picture_url || 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png'" 
+        :src="getDisplayUrl(userProfile.profile_picture_url)" 
         :alt="userProfile.username" 
         class="user-avatar" 
       />
@@ -98,10 +110,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import type { DashboardPage } from '../types'
 import { useAuth } from '../composables/useAuth'
-import { usersApi } from '../services/apiService' // Import API to fetch profile
+import { usersApi } from '../services/apiService'
 
 interface NavItem {
   id: DashboardPage
@@ -125,9 +137,8 @@ const emit = defineEmits<{
 }>()
 
 const isMoreMenuOpen = ref(false)
-const userProfile = ref<any>(null) // To store full profile data
+const userProfile = ref<any>(null) 
 
-// Get the auth user (contains ID, Role) from the composable
 const { user, logout } = useAuth()
 
 const navItems: NavItem[] = [
@@ -138,11 +149,17 @@ const navItems: NavItem[] = [
   { id: 'profile', label: 'Profile', iconPath: '/icons/profile-icon.png' },
 ]
 
+// HELPER: Convert minio:9000 to localhost:9000
+const getDisplayUrl = (url: string) => {
+  if (!url) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+  return url.replace("http://minio:9000", "http://localhost:9000");
+};
+
 const navigateTo = (page: DashboardPage | 'settings' | 'saved' | 'admin') => {
   if (page === 'settings') {
-    emit('navigate', 'settings' as any) // Assuming settings page handling exists or is future work
+    emit('navigate', 'settings' as any)
   } else if (page === 'saved') {
-    emit('navigate', 'profile') // Redirect to profile to see saved
+    emit('navigate', 'profile')
   } else if (page === 'admin') {
     emit('navigate', 'admin' as any)
   } else {
@@ -156,14 +173,13 @@ const toggleMoreMenu = () => {
 }
 
 const toggleTheme = () => {
-  console.log('Toggle theme - theme switching logic here')
+  console.log('Toggle theme')
 }
 
 const handleLogout = () => {
   logout()
 }
 
-// Fetch the full user profile (username, picture) when component mounts
 const fetchUserProfile = async () => {
   try {
     const res = await usersApi.getMe();
@@ -172,6 +188,13 @@ const fetchUserProfile = async () => {
     console.error("Failed to load user profile for sidebar", error);
   }
 }
+
+// Watch for user changes (e.g. after login) to re-fetch profile
+watch(user, (newUser) => {
+  if (newUser) {
+    fetchUserProfile();
+  }
+}, { immediate: true });
 
 onMounted(() => {
   fetchUserProfile();

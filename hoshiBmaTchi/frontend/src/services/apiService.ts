@@ -36,6 +36,16 @@ export const authApi = {
   resetPassword(data: any) {
     return apiClient.post("/auth/reset-password", data);
   },
+
+  uploadAvatar(file: File) {
+    const formData = new FormData();
+    formData.append("file", file);
+    return apiClient.post("/auth/upload-avatar", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
 };
 
 export const setAuthHeader = (token: string) => {
