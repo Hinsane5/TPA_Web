@@ -65,26 +65,51 @@ const handleClick = () => {
   opacity: 1;
 }
 
-.mini-avatar {
-  width: 40px;
-  height: 40px;
+/* FIX: Renamed from .mini-avatar to .mini-avatar-container */
+.mini-avatar-container {
+  width: 48px;  /* Increased slightly for better visibility */
+  height: 48px;
   border-radius: 50%;
-  background: #262626;
+  padding: 2px; /* Space between image and border */
+  border: 2px solid #262626; /* Default border color */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
-  border: 2px solid #0095f6;
+  overflow: hidden; /* Ensures image stays inside circle */
 }
 
-.mini-story.active .mini-avatar {
+/* Active state (gradient border look) */
+.mini-story.active .mini-avatar-container {
   border-color: #0095f6;
 }
 
+/* FIX: Added style for the image */
+.mini-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Placeholder style */
+.mini-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #333;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 18px;
+}
+
 .mini-username {
-  font-size: 10px;
-  color: #a0a0a0;
-  max-width: 50px;
+  font-size: 11px;
+  color: #fff;
+  max-width: 60px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

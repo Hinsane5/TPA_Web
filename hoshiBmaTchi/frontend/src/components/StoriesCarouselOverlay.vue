@@ -13,7 +13,15 @@
 
       <div class="stories-header">
         <div class="user-info">
-          <div class="avatar">{{ currentStory?.userAvatar }}</div>
+          <img 
+            v-if="currentStory?.userAvatar"
+            :src="getSafeImageUrl(currentStory.userAvatar)" 
+            class="avatar"
+            alt="User"
+          />
+          <div v-else class="avatar placeholder">
+            {{ currentStory?.username?.charAt(0).toUpperCase() }}
+          </div>
           <div class="user-details">
             <div class="username-row">
               <span class="username">{{ currentStory?.username }}</span>
