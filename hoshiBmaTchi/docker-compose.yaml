@@ -130,6 +130,7 @@ services:
       - JWT_SECRET_KEY=${JWT_SECRET_KEY}
       - GRPC_PORT=50051 
       - DATABASE_URL=host=postgres user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} dbname=hoshi_users_db port=5432 sslmode=disable TimeZone=Asia/Jakarta
+      - MINIO_PUBLIC_ENDPOINT=http://localhost:9000
     networks:
       - ${NETWORK_NAME}
     ports:

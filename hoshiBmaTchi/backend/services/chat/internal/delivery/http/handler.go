@@ -268,22 +268,48 @@ func (h *ChatHandler) UploadMedia(c *gin.Context){
 
 	defer file.Close()
 
-	accessKey := os.Getenv("MINIO_ROOT_USER")   
-    secretKey := os.Getenv("MINIO_ROOT_PASSWORD")
-	bucketName := os.Getenv("MINIO_CHAT_BUCKET_NAME")
+	accessKey := os.Getenv("MINIO_ACCESS_KEY_ID")   
+    secretKey := os.Getenv("MINIO_SECRET_ACCESS_KEY")
+	bucketName := os.Getenv("MINIO_BUCKET_NAME")
 
-	endpoint := "localhost:9000"
+	endpoint := os.Getenv("MINIO_ENDPOINT") 
+    if endpoint == "" {
+        endpoint = "localhost:9000" 
+    }
+
+	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+    if publicEndpoint == "" {
+        publicEndpoint = "http://localhost:9000"
+    }
+
 	minioClient, err := minio.New(endpoint, &minio.Options{
         Creds:  credentials.NewStaticV4(accessKey, secretKey, ""),
-        Secure: false,
+        Secure: os.Getenv("MINIO_USE_SSL") == "true",
     })
+
+	if err != nil {
+		fmt.Printf("MinIO Connection Error: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to connect to storage"})
+		return
+    }
 
     objectName := uuid.New().String() + filepath.Ext(header.Filename)
     contentType := header.Header.Get("Content-Type")
 
 	ctx := context.Background()
-    if exists, _ := minioClient.BucketExists(ctx, bucketName); !exists {
-        minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+
+	exists, err := minioClient.BucketExists(ctx, bucketName)
+    if err != nil {
+         fmt.Printf("Bucket Check Error: %v\n", err)
+         c.JSON(http.StatusInternalServerError, gin.H{"error": "Storage bucket check failed"})
+         return
+    }
+    if !exists {
+        err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
+        if err != nil {
+             c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create storage bucket"})
+             return
+        }
     }
 
     _, err = minioClient.PutObject(ctx, bucketName, objectName, file, header.Size, minio.PutObjectOptions{
@@ -291,12 +317,12 @@ func (h *ChatHandler) UploadMedia(c *gin.Context){
     })
 
     if err != nil {
+        fmt.Printf("Upload Error: %v\n", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload to storage"})
         return
     }
 
-
-    fileURL := "http://" + endpoint + "/" + bucketName + "/" + objectName
+    fileURL := fmt.Sprintf("%s/%s/%s", publicEndpoint, bucketName, objectName)
     
     c.JSON(http.StatusOK, gin.H{
         "media_url": fileURL,

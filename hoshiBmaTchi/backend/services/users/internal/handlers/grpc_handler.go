@@ -567,6 +567,27 @@ func (h *UserHandler) ValidateToken(ctx context.Context, req *pb.ValidateTokenRe
 	}, nil
 }
 
+func (h *UserHandler) sanitizeAvatarURL(originalURL string) string {
+    if originalURL == "" {
+        return ""
+    }
+
+    publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
+    if publicEndpoint == "" {
+        publicEndpoint = "http://localhost:9000"
+    }
+
+    if strings.Contains(originalURL, "minio:9000") {
+        return strings.Replace(originalURL, "http://minio:9000", publicEndpoint, 1)
+    }
+    
+    if strings.HasPrefix(originalURL, "/") {
+        return publicEndpoint + originalURL
+    }
+
+    return originalURL
+}
+
 func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfileRequest) (*pb.GetUserProfileResponse, error){
 	if req.UserId == ""{
 		return nil, status.Error(codes.InvalidArgument, "User ID is required")
@@ -601,7 +622,7 @@ func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfile
         Username:          user.Username,
         Name:              user.Name,
         Bio:               user.Bio,
-        ProfilePictureUrl: user.ProfilePictureURL,
+        ProfilePictureUrl: h.sanitizeAvatarURL(user.ProfilePictureURL),
         FollowersCount:    followers,
         FollowingCount:    following,
 		IsFollowing:       isFollowing,
@@ -793,7 +814,7 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
             UserId:            u.ID.String(),
             Username:          u.Username,
             Name:              u.Name,
-            ProfilePictureUrl: u.ProfilePictureURL,
+            ProfilePictureUrl: h.sanitizeAvatarURL(u.ProfilePictureURL),
         })
     }
 
