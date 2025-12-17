@@ -66,6 +66,18 @@ type performPasswordResetJSON struct {
 	ConfirmPassword string `json:"confirm_password" binding:"required"`
 }
 
+
+// LoginUser godoc
+// @Summary      Login a user
+// @Description  Authenticates a user using email/username and password, returning a JWT token and user info.
+// @Tags         Auth
+// @Accept       json
+// @Produce      json
+// @Param        request body handlers.loginUserJSON true "Login Credentials"
+// @Success      200  {object}  pb.LoginUserResponse
+// @Failure      400  {object}  gin.H
+// @Failure      401  {object}  gin.H
+// @Router       /auth/login [post]
 func (h *AuthHandler) LoginUser(c *gin.Context){
 	var jsonReq loginUserJSON
 	if err := c.ShouldBindJSON(&jsonReq); err != nil {

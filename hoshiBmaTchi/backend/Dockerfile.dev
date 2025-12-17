@@ -2,6 +2,7 @@ FROM golang:1.25 AS base
 WORKDIR /app
 
 RUN go install github.com/air-verse/air@latest
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 COPY go.work go.work.sum ./
 
