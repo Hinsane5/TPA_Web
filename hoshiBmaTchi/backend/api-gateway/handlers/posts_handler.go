@@ -177,6 +177,14 @@ func (h *PostsHandler) GetPostsByUserID (c *gin.Context){
     c.JSON(http.StatusOK, res.Posts)
 }
 
+// LikePost godoc
+// @Summary      Like a Post
+// @Description  Like a specific post
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        postID   path      string  true  "Post ID"
+// @Success      201      {object}  gin.H
+// @Router       /api/v1/posts/{postID}/like [post]
 func (h *PostsHandler) LikePost(c *gin.Context) {
     postID := c.Param("postID")
     userID, _ := c.Get("userID")
@@ -215,6 +223,15 @@ func (h *PostsHandler) UnlikePost(c *gin.Context) {
     c.JSON(http.StatusOK, res)
 }
 
+// CreateComment godoc
+// @Summary      Add a Comment
+// @Description  Add a comment to a specific post
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        postID   path      string  true  "Post ID"
+// @Param        request  body      createCommentJSON  true  "Comment Content"
+// @Success      201      {object}  gin.H
+// @Router       /api/v1/posts/{postID}/comments [post]
 func (h *PostsHandler) CreateComment(c *gin.Context) {
     postID := c.Param("postID")
     userID, _ := c.Get("userID")
@@ -258,6 +275,16 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
     c.JSON(http.StatusOK, res.Comments)
 }
 
+// GetHomeFeed godoc
+// @Summary      Get Home Feed
+// @Description  Fetch and display all posts for the user feed
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        limit   query     int  false  "Limit"
+// @Param        offset  query     int  false  "Offset"
+// @Success      200     {object}  gin.H
+// @Failure      401     {object}  gin.H
+// @Router       /api/v1/posts/feed [get]
 func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     userID, exists := c.Get("userID")
     if !exists {

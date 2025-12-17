@@ -10,6 +10,13 @@ definitions:
     required:
     - name
     type: object
+  handlers.createCommentJSON:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
   handlers.createPostJSON:
     properties:
       caption:
@@ -215,6 +222,50 @@ paths:
       summary: Get Post Details
       tags:
       - Posts
+  /api/v1/posts/{postID}/comments:
+    post:
+      description: Add a comment to a specific post
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      - description: Comment Content
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.createCommentJSON'
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Add a Comment
+      tags:
+      - Posts
+  /api/v1/posts/{postID}/like:
+    post:
+      description: Like a specific post
+      parameters:
+      - description: Post ID
+        in: path
+        name: postID
+        required: true
+        type: string
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Like a Post
+      tags:
+      - Posts
   /api/v1/posts/collections/{collectionID}:
     put:
       consumes:
@@ -252,6 +303,32 @@ paths:
       summary: Update Collection
       tags:
       - Collections
+  /api/v1/posts/feed:
+    get:
+      description: Fetch and display all posts for the user feed
+      parameters:
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Get Home Feed
+      tags:
+      - Posts
   /auth/login:
     post:
       consumes:
