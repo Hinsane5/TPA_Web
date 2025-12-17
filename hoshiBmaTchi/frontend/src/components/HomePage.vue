@@ -94,8 +94,9 @@ interface Post {
 
 const posts = ref<Post[]>([]);
 const isLoading = ref(false)
-const page = ref(0)
+const offset = ref(0) // CHANGED: Track offset dynamically
 const limit = 5
+const hasMore = ref(true) // CHANGED: Track if more posts exist
 const scrollTrigger = ref<HTMLElement | null>(null);
 const isLoadingStories = ref(false);
 const selectedPost = ref<Post | null>(null);
@@ -104,12 +105,22 @@ const isStoriesOverlayOpen = ref(false);
 const { storyGroups, fetchStories } = useStories();
 
 const fetchFeed = async () => {
-  if (isLoading.value) return;
+  // CHANGED: Prevent fetch if already loading OR no more data
+  if (isLoading.value || !hasMore.value) return;
+  
   isLoading.value = true;
   try {
-    const response = await postsApi.getHomeFeed(5, 0);
-    if (response.data.data) {
-      posts.value = response.data.data;
+    // CHANGED: Use dynamic offset.value
+    const response = await postsApi.getHomeFeed(limit, offset.value);
+    
+    if (response.data.data && response.data.data.length > 0) {
+      // CHANGED: Append new posts instead of overwriting
+      posts.value.push(...response.data.data);
+      // CHANGED: Increment offset for next batch
+      offset.value += limit;
+    } else {
+      // CHANGED: No data returned, stop future fetches
+      hasMore.value = false;
     }
   } catch(error){
     console.error("Failed to fetch feed:", error);
@@ -127,11 +138,6 @@ const closeOverlay = () => {
   selectedPost.value = null;
   window.history.pushState({}, '', '/'); 
 }; 
-
-// const openStoriesCarousel = (index: number) => {
-//   selectGroup(index); 
-//   isStoriesOverlayOpen.value = true;
-// };
 
 const closeStoriesOverlay = () => {
   isStoriesOverlayOpen.value = false;
@@ -176,6 +182,7 @@ onMounted(() => {
   fetchStories();
 
   const observer = new IntersectionObserver((entries) => {
+    // CHANGED: Simply call fetchFeed, the guard clauses inside handle the logic
     if (entries[0]?.isIntersecting){
       fetchFeed();
     }

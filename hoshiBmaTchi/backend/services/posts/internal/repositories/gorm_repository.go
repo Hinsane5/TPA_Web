@@ -88,12 +88,14 @@ func (r *GormPostRepository) GetCommentsForPost(ctx context.Context, postID stri
 func (r *GormPostRepository) GetFeedPosts(ctx context.Context, userIDs []string, currentUserID string, limit, offset int) ([]*domain.Post, error) {
 	var posts []*domain.Post
 	
-	err := r.db.WithContext(ctx).
+	query := r.db.WithContext(ctx).
         Preload("Media", func(db *gorm.DB) *gorm.DB {
             return db.Order("sequence asc")
-        }).
-        Where("user_id IN ?", userIDs).
-        Order("created_at desc").
+        })
+
+    query = query.Order("created_at desc")
+
+    err := query.
         Limit(limit).
         Offset(offset).
         Find(&posts).Error
