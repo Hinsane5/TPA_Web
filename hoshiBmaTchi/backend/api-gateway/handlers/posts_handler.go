@@ -67,6 +67,10 @@ type ReelResponse struct {
     CreatedAt     string      `json:"created_at"`
 }
 
+type UpdateCollectionJSON struct {
+    Name string `json:"name" binding:"required"`
+}
+
 func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
     fileName := c.Query("file_name")
 	fileType := c.Query("file_type")
@@ -95,6 +99,20 @@ func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
     })
 }
 
+// CreatePost godoc
+// @Summary      Create a new post
+// @Description  Creates a new post with caption, location, and media items.
+// @Tags         Posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        Authorization header string true "Bearer Token"
+// @Param        request body handlers.createPostJSON true "Post Data"
+// @Success      201  {object}  postsProto.PostResponse  <-- CHANGED THIS
+// @Failure      400  {object}  gin.H
+// @Failure      401  {object}  gin.H
+// @Failure      500  {object}  gin.H
+// @Router       /api/v1/posts [post]
 func (h *PostsHandler) CreatePost(c *gin.Context){
     var jsonReq createPostJSON
     if err := c.ShouldBindJSON(&jsonReq); err != nil {
@@ -159,6 +177,14 @@ func (h *PostsHandler) GetPostsByUserID (c *gin.Context){
     c.JSON(http.StatusOK, res.Posts)
 }
 
+// LikePost godoc
+// @Summary      Like a Post
+// @Description  Like a specific post
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        postID   path      string  true  "Post ID"
+// @Success      201      {object}  gin.H
+// @Router       /api/v1/posts/{postID}/like [post]
 func (h *PostsHandler) LikePost(c *gin.Context) {
     postID := c.Param("postID")
     userID, _ := c.Get("userID")
@@ -197,6 +223,15 @@ func (h *PostsHandler) UnlikePost(c *gin.Context) {
     c.JSON(http.StatusOK, res)
 }
 
+// CreateComment godoc
+// @Summary      Add a Comment
+// @Description  Add a comment to a specific post
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        postID   path      string  true  "Post ID"
+// @Param        request  body      createCommentJSON  true  "Comment Content"
+// @Success      201      {object}  gin.H
+// @Router       /api/v1/posts/{postID}/comments [post]
 func (h *PostsHandler) CreateComment(c *gin.Context) {
     postID := c.Param("postID")
     userID, _ := c.Get("userID")
@@ -240,6 +275,16 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
     c.JSON(http.StatusOK, res.Comments)
 }
 
+// GetHomeFeed godoc
+// @Summary      Get Home Feed
+// @Description  Fetch and display all posts for the user feed
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        limit   query     int  false  "Limit"
+// @Param        offset  query     int  false  "Offset"
+// @Success      200     {object}  gin.H
+// @Failure      401     {object}  gin.H
+// @Router       /api/v1/posts/feed [get]
 func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     userID, exists := c.Get("userID")
     if !exists {
@@ -612,12 +657,26 @@ func (h *PostsHandler) GetCollectionPosts(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"data": enrichedPosts})
 }
 
+
+// UpdateCollection godoc
+// @Summary      Update Collection
+// @Description  Rename an existing collection
+// @Tags         Collections
+// @Security     BearerAuth
+// @Accept       json
+// @Produce      json
+// @Param        collectionID  path      string                    true  "Collection ID"
+// @Param        request       body      handlers.UpdateCollectionJSON  true  "New Name"
+// @Success      200           {object}  posts.CollectionResponse
+// @Failure      400           {object}  gin.H
+// @Failure      500           {object}  gin.H
+// @Router       /api/v1/posts/collections/{collectionID} [put]
 func (h *PostsHandler) UpdateCollection(c *gin.Context) {
     collectionID := c.Param("collectionID")
     userID, _ := c.Get("userID")
-    var req struct {
-        Name string `json:"name" binding:"required"`
-    }
+   
+    var req UpdateCollectionJSON
+    
     if err := c.ShouldBindJSON(&req); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
@@ -652,6 +711,18 @@ func (h *PostsHandler) DeleteCollection(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "Collection deleted"})
 }
 
+
+// GetPostByID godoc
+// @Summary      Get Post Details
+// @Description  Get full details of a specific post including media and user info
+// @Tags         Posts
+// @Accept       json
+// @Produce      json
+// @Param        postID  path      string  true  "Post ID"
+// @Success      200     {object}  gin.H
+// @Failure      400     {object}  gin.H
+// @Failure      404     {object}  gin.H
+// @Router       /api/v1/posts/{postID} [get]
 func (h *PostsHandler) GetPostByID(c *gin.Context) {
     postID := c.Param("postID")
     if postID == "" {
@@ -742,6 +813,17 @@ func (h *PostsHandler) ReportPost(c *gin.Context) {
     c.JSON(http.StatusOK, gin.H{"message": "Post reported"})
 }
 
+// DeletePost godoc
+// @Summary      Delete Post
+// @Description  Permanently remove a post
+// @Tags         Posts
+// @Security     BearerAuth
+// @Param        postID  path      string  true  "Post ID"
+// @Success      200     {object}  gin.H
+// @Failure      401     {object}  gin.H
+// @Failure      403     {object}  gin.H
+// @Failure      500     {object}  gin.H
+// @Router       /api/v1/posts/{postID} [delete]
 func (h *PostsHandler) DeletePost(c *gin.Context) {
     postID := c.Param("postID")
     userID, exists := c.Get("userID")

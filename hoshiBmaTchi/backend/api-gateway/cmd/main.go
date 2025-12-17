@@ -13,7 +13,28 @@ import (
 	"github.com/gin-contrib/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+    _ "github.com/Hinsane5/hoshiBmaTchi/backend/api-gateway/docs"
+
 )
+
+// @title           hoshiBmaTchi API
+// @version         1.0
+// @description     API Gateway for hoshiBmaTchi Instagram Clone.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name    API Support
+// @contact.email   support@hoshibmatchi.com
+
+// @host            localhost:8080
+// @BasePath        /
+// @schemes         http
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main(){
 	conn, err := grpc.NewClient("users-service:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -50,6 +71,8 @@ func main(){
 	chatClient := chatProto.NewChatServiceClient(chatConn)
 
 	router := gin.Default()
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.Use(cors.New(cors.Config{
         AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"}, // Add your frontend URL
