@@ -31,6 +31,7 @@
             :post="post"
             @open-detail="openOverlay"
             @toggle-like="handleToggleLike"
+            @post-deleted="handlePostDeleted"
           />
         </div>
 
@@ -153,6 +154,10 @@ const handleCommentAdded = () => {
        originalPost.comments_count = selectedPost.value.comments_count;
     }
   }
+};
+
+const handlePostDeleted = (postId: string) => {
+  posts.value = posts.value.filter(p => p.id !== postId);
 };
 
 const handleToggleLike = async (post: Post) => {

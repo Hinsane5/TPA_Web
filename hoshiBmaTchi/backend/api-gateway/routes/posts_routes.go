@@ -40,6 +40,7 @@ func SetupPostsRoutes(r *gin.Engine, postsHandler *handlers.PostsHandler, authHa
         postsRoutes.DELETE("/collections/:collectionID", postsHandler.DeleteCollection)
 
         postsRoutes.POST("/:postID/report", postsHandler.ReportPost)
+        postsRoutes.DELETE("/:postID", postsHandler.DeletePost)
     }
 
     reelsRoutes := r.Group("/api/v1/reels")

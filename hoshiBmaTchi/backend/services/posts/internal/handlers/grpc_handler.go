@@ -3,6 +3,8 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+
 	// "errors"
 	"log"
 	"net/http"
@@ -19,9 +21,9 @@ import (
 
 	// "github.com/jackc/pgx/v5/pgconn"
 	"github.com/minio/minio-go/v7"
+	amqp "github.com/rabbitmq/amqp091-go"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type Server struct {
@@ -787,3 +789,25 @@ func (s *Server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
     return &pb.Response{Success: true, Message: "Post reported"}, nil
 }
 
+func (s *Server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostResponse, error) {
+    err := s.service.DeletePost(ctx, req.GetPostId(), req.GetUserId())
+    if err != nil {
+        log.Printf("[ERROR] DeletePost failed: %v", err) // This prints to docker logs
+
+        // Check for specific errors
+        if strings.Contains(err.Error(), "unauthorized") {
+            return nil, status.Error(codes.PermissionDenied, "You are not authorized to delete this post")
+        }
+        if strings.Contains(err.Error(), "record not found") || strings.Contains(err.Error(), "not found") {
+            return nil, status.Error(codes.NotFound, "Post not found")
+        }
+        
+        // Return the actual error string during development so you see it in the frontend/Postman
+        return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete post: %v", err))
+    }
+
+    return &pb.DeletePostResponse{
+        Success: true, 
+        Message: "Post deleted successfully",
+    }, nil
+}

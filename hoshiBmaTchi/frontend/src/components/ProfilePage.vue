@@ -240,6 +240,7 @@
       :post="selectedPost"
       @close="closePostDetail"
       @toggle-like="handleLikeUpdate"
+      @post-deleted="handleProfilePostDeleted"
     />
   </div>
 </template>
@@ -399,6 +400,16 @@ const toggleFollow = async () => {
   } catch (error) {
     console.error("Follow action failed:", error);
   }
+};
+
+const handleProfilePostDeleted = (postId: string) => {
+  posts.value = posts.value.filter(p => p.id !== postId);
+  
+  if (profileUser.value) {
+    profileUser.value.postsCount--;
+  }
+
+  closePostDetail();
 };
 
 const getTabIconPath = (tab: string): string => {

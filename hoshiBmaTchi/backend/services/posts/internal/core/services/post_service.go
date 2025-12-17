@@ -264,3 +264,16 @@ func (s *PostService) UpdateCollection(ctx context.Context, collectionID, name, 
 func (s *PostService) DeleteCollection(ctx context.Context, collectionID, userID string) error {
     return s.repo.DeleteCollection(ctx, collectionID, userID)
 }
+
+func (s *PostService) DeletePost(ctx context.Context, postID, userID string) error {
+    post, err := s.repo.GetPostByID(ctx, postID)
+    if err != nil {
+        return fmt.Errorf("post not found or error fetching: %v", err)
+    }
+
+    if post.UserID.String() != userID {
+        return fmt.Errorf("unauthorized: you are not the owner of this post")
+    }
+
+    return s.repo.DeletePost(ctx, postID)
+}

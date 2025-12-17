@@ -194,6 +194,10 @@ export const postsApi = {
   reportPost: (postId: string, reason: string) => {
     return apiClient.post(`/v1/posts/${postId}/report`, { reason });
   },
+
+  deletePost: (postId: string) => {
+    return apiClient.delete(`/v1/posts/${postId}`);
+  },
 };
 
 export const usersApi = {

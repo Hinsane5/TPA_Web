@@ -27,6 +27,7 @@ service PostsService {
     rpc GetPostReports(Empty) returns (PostReportListResponse);
     rpc ReviewPostReport(ReviewReportRequest) returns (Response);
     rpc ReportPost(ReportPostRequest) returns (Response);
+    rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -257,4 +258,14 @@ message ReportPostRequest {
     string post_id = 1;
     string user_id = 2; // Reporter
     string reason = 3;
+}
+
+message DeletePostRequest {
+    string post_id = 1;
+    string user_id = 2;
+}
+
+message DeletePostResponse {
+    bool success = 1;
+    string message = 2;
 }

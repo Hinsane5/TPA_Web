@@ -732,3 +732,33 @@ func (h *PostsHandler) ReportPost(c *gin.Context) {
     }
     c.JSON(http.StatusOK, gin.H{"message": "Post reported"})
 }
+
+func (h *PostsHandler) DeletePost(c *gin.Context) {
+    postID := c.Param("postID")
+    userID, exists := c.Get("userID")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+        return
+    }
+
+    _, err := h.postsClient.DeletePost(context.Background(), &postsProto.DeletePostRequest{
+        PostId: postID,
+        UserId: userID.(string),
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            // Forward gRPC error status (e.g., 403 PermissionDenied)
+            httpStatus := http.StatusInternalServerError
+            if s.Code() == 7 { // PermissionDenied
+                httpStatus = http.StatusForbidden
+            }
+            c.JSON(httpStatus, gin.H{"error": s.Message()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete post"})
+        }
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
+}

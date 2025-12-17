@@ -77,11 +77,25 @@
           </div>
           
           <div class="header-actions">
-            <button class="icon-button menu-btn" @click="showMenu = !showMenu">•••</button>
+            <button class="icon-button menu-btn" @click.stop="showMenu = !showMenu">•••</button>
             <button class="close-button" @click="$emit('close')">✕</button>
             
             <div v-if="showMenu" class="dropdown-menu">
-                <button @click="handleReport" class="dropdown-item danger">Report Post</button>
+                <button 
+                  v-if="isOwnPost" 
+                  @click="handleDelete" 
+                  class="dropdown-item danger"
+                >
+                  Remove Post
+                </button>
+
+                <button 
+                  v-else 
+                  @click="handleReport" 
+                  class="dropdown-item danger"
+                >
+                  Report Post
+                </button>
             </div>
           </div>
         </div>
@@ -286,7 +300,7 @@ import ShareModal from "./ShareModal.vue";
 import CommentItem from "./commentItem.vue";
 
 const props = defineProps(["isOpen", "post"]);
-const emit = defineEmits(["close", "comment-added", "toggle-like"]);
+const emit = defineEmits(["close", "comment-added", "toggle-like", "post-deleted"]);
 
 const rawComments = ref<any[]>([]);
 const userCache = ref(new Map());
@@ -306,10 +320,8 @@ const collections = ref<any[]>([]);
 const newCollectionName = ref("");
 const createInputRef = ref<HTMLInputElement | null>(null);
 
-const currentUserId = localStorage.getItem("userID");
 const currentUsername = localStorage.getItem("username") || "me";
 const currentUserPic = localStorage.getItem("profilePicture") || "";
-const isOwnPost = props.post.user_id === currentUserId;
 const showShareModal = ref(false);
 
 // Report Logic State
@@ -356,6 +368,19 @@ const hasMultiple = computed(() => mediaList.value.length > 1);
 const getDisplayUrl = (url: string) => {
   if (!url) return "/placeholder.png";
   return url.replace("http://minio:9000", "http://localhost:9000");
+};
+
+const handleDelete = async () => {
+  if (!confirm("Are you sure you want to delete this post?")) return;
+
+  try {
+    await postsApi.deletePost(props.post.id);
+    emit("post-deleted", props.post.id);
+    emit("close"); 
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    alert("Failed to delete post.");
+  }
 };
 
 const enrichedComments = computed(() => {
@@ -563,6 +588,34 @@ const formatFullDate = (d: string | number | Date) => {
     return "";
   }
 };
+
+const getUserIdFromToken = (): string | null => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
+
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return null;
+    
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+
+    const payload = JSON.parse(atob(payloadPart));
+    const id = payload.user_id || payload.sub || payload.id;
+    return id ? String(id) : null;
+  } catch (e) {
+    console.error("Error parsing token:", e);
+    return null;
+  }
+};
+
+const currentUserId = getUserIdFromToken();
+
+// --- 3. FIX OWNERSHIP CHECK ---
+const isOwnPost = computed(() => {
+  // Convert both to string to be safe
+  return String(props.post.user_id) === String(currentUserId);
+});
 
 // Report Logic
 const handleReport = () => {

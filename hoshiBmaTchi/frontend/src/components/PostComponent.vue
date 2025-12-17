@@ -16,13 +16,37 @@
         </div>
       </div>
 
-      <button class="more-button">
-        <svg class="dots-icon" fill="currentColor" viewBox="0 0 24 24">
-          <circle cx="6" cy="12" r="2" />
-          <circle cx="12" cy="12" r="2" />
-          <circle cx="18" cy="12" r="2" />
-        </svg>
-      </button>
+      <div class="more-options-wrapper">
+        <button class="more-button" @click.stop="showMenu = !showMenu">
+          <svg class="dots-icon" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="6" cy="12" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="18" cy="12" r="2" />
+          </svg>
+        </button>
+
+        <div v-if="showMenu" class="options-menu" v-click-outside="closeMenu">
+          <button 
+            v-if="isOwnPost" 
+            class="menu-item delete" 
+            @click="handleDelete"
+          >
+            Remove Post
+          </button>
+          
+          <button 
+            v-else 
+            class="menu-item report" 
+            @click="openReportModal"
+          >
+            Report Post
+          </button>
+          
+          <button class="menu-item cancel" @click="showMenu = false">
+            Cancel
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="post-media" @dblclick="$emit('toggle-like', post)">
@@ -222,6 +246,21 @@
       </button>
     </div>
 
+    <div v-if="showReportModal" class="report-modal-backdrop" @click.self="showReportModal = false">
+        <div class="report-modal">
+            <h3>Report Post</h3>
+            <textarea 
+              v-model="reportReason" 
+              placeholder="Why are you reporting this post?" 
+              rows="4"
+            ></textarea>
+            <div class="modal-buttons">
+                <button @click="submitReport" class="btn-submit">Submit</button>
+                <button @click="showReportModal = false" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <ShareModal 
       v-if="showShareModal" 
       :contentId="post.id"
@@ -239,13 +278,14 @@ import { postsApi, usersApi } from "../services/apiService";
 import { useRouter } from 'vue-router';
 import ShareModal from "./ShareModal.vue";
 import { aiApi } from "../services/apiService";
+import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
 
 const props = defineProps({
   post: { type: Object, required: true },
 });
-const emit = defineEmits(["open-detail", "toggle-like"]);
+const emit = defineEmits(["open-detail", "toggle-like", "post-deleted"]);
 
 const isSaved = ref(false);
 const savedCollectionId = ref<string | null>(null); 
@@ -260,6 +300,11 @@ const showShareModal = ref(false);
 const isSummarized = ref(false);
 const summaryText = ref("");
 const isLoadingSummary = ref(false);
+
+const { user } = useAuth(); 
+const showMenu = ref(false);
+const showReportModal = ref(false);
+const reportReason = ref("");
 
 onMounted(() => {
   if (props.post.is_saved !== undefined) {
@@ -287,6 +332,27 @@ const fetchCollections = async () => {
   }
 };
 
+const isOwner = computed(() => {
+  return user.value?.id === props.post.user_id;
+});
+
+const closeMenu = () => {
+  showMenu.value = false;
+};
+
+const handleDelete = async () => {
+  if (!confirm("Are you sure you want to delete this post?")) return;
+  
+  try {
+    await postsApi.deletePost(props.post.id);
+    emit("post-deleted", props.post.id);
+    showMenu.value = false;
+  } catch (error) {
+    console.error("Failed to delete post:", error);
+    alert("Failed to delete post.");
+  }
+};
+
 const toggleDefaultSave = async () => {
   if (isSaved.value) {
     await toggleSaveApi("");
@@ -297,6 +363,39 @@ const toggleDefaultSave = async () => {
     isSaved.value = true;
     savedCollectionId.value = "";
   }
+};
+
+const openReportModal = () => {
+  showMenu.value = false;
+  showReportModal.value = true;
+};
+
+const submitReport = async () => {
+  if (!reportReason.value.trim()) return;
+  
+  try {
+    await postsApi.reportPost(props.post.id, reportReason.value);
+    alert("Post reported. Thank you.");
+    showReportModal.value = false;
+    reportReason.value = "";
+  } catch (error) {
+    console.error("Report failed", error);
+    alert("Failed to report post");
+  }
+};
+
+const vClickOutside = {
+  mounted(el: any, binding: any) {
+    el.clickOutsideEvent = (event: Event) => {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value(event);
+      }
+    };
+    document.body.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el: any) {
+    document.body.removeEventListener('click', el.clickOutsideEvent);
+  },
 };
 
 const saveToCollection = async (collectionId: string) => {
@@ -423,6 +522,34 @@ const handleSummarize = async () => {
     isLoadingSummary.value = false;
   }
 };
+
+const getUserIdFromToken = (): string | null => {
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
+
+  try {
+    const parts = token.split(".");
+
+    if (parts.length < 2) return null;
+    
+    const payloadPart = parts[1];
+    if (!payloadPart) return null;
+
+    const payload = JSON.parse(atob(payloadPart));
+    
+    const id = payload.user_id || payload.sub || payload.id;
+    return id ? String(id) : null;
+  } catch (e) {
+    console.error("Error parsing token:", e);
+    return null;
+  }
+};
+
+const currentUserId = getUserIdFromToken();
+
+const isOwnPost = computed(() => {
+  return props.post.user_id === currentUserId; 
+});
 
 const toggleOriginal = () => {
   isSummarized.value = false;
@@ -855,6 +982,147 @@ const toggleOriginal = () => {
 
 .mini-btn:hover {
   background: #007bb5;
+}
+
+.more-options-wrapper {
+  position: relative;
+}
+
+.options-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #262626;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 20;
+  width: 120px;
+  overflow: hidden;
+  border: 1px solid #363636;
+}
+
+.menu-item {
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: center;
+  border-bottom: 1px solid #363636;
+  color: #fff;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background-color: #3a3a3a;
+}
+
+.menu-item.delete {
+  color: #ed4956;
+  font-weight: 600;
+}
+
+.more-options-wrapper {
+  position: relative;
+}
+
+.options-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #262626;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  z-index: 20;
+  width: 140px;
+  overflow: hidden;
+  border: 1px solid #363636;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-item {
+  padding: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #363636;
+  color: #fff;
+  text-align: center;
+  width: 100%;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:hover {
+  background-color: #3a3a3a;
+}
+
+.menu-item.delete, .menu-item.report {
+  color: #ed4956;
+  font-weight: 600;
+}
+
+/* Report Modal Styles */
+.report-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.report-modal {
+  background: #262626;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  color: white;
+  text-align: center;
+  border: 1px solid #363636;
+}
+
+.report-modal textarea {
+  width: 100%;
+  background: #121212;
+  border: 1px solid #363636;
+  color: white;
+  border-radius: 4px;
+  padding: 10px;
+  resize: none;
+  margin: 15px 0;
+}
+
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.btn-submit {
+  background: #ed4956;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-cancel {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #363636;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
 /* Transition */
