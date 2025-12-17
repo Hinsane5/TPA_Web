@@ -272,10 +272,12 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
 
         username := "Unknown"
         profilePic := ""
+        isVerified := false
         
         if err == nil {
             username = userRes.Username
             profilePic = userRes.ProfilePictureUrl
+            isVerified = userRes.IsVerified
         }
 
 
@@ -295,7 +297,8 @@ func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
             "location":        post.Location,
             "created_at":      post.CreatedAt,
             "username":        username,          
-            "profile_picture": profilePic,        
+            "profile_picture": profilePic,     
+            "is_verified":     isVerified,   
             "likes_count":     post.LikesCount,
             "comments_count":  post.CommentsCount,
             "is_liked":        post.IsLiked,
@@ -394,9 +397,12 @@ func (h *PostsHandler) GetUserMentions(c *gin.Context) {
         
         username := "Unknown"
         profilePic := ""
+        isVerified := false
+
         if err == nil {
             username = userRes.Username
             profilePic = userRes.ProfilePictureUrl
+            isVerified = userRes.IsVerified
         }
 
         var mediaList []gin.H
@@ -412,6 +418,7 @@ func (h *PostsHandler) GetUserMentions(c *gin.Context) {
             "user_id":         post.UserId,
             "username":        username,
             "profile_picture": profilePic,
+            "is_verified":     isVerified,
             "media":           mediaList,
             "caption":         post.Caption,
             "likes_count":     post.LikesCount,
@@ -504,9 +511,11 @@ func (h *PostsHandler) GetExplorePosts(c *gin.Context) {
         
         username := "Unknown"
         profilePic := ""
+        isVerified := false
         if err == nil {
             username = userRes.Username
             profilePic = userRes.ProfilePictureUrl
+            isVerified = userRes.IsVerified
         }
 
         var mediaList []gin.H
@@ -522,6 +531,7 @@ func (h *PostsHandler) GetExplorePosts(c *gin.Context) {
             "user_id":         post.UserId,
             "username":        username,
             "profile_picture": profilePic,
+            "is_verified":     isVerified,
             "media":           mediaList,
             "caption":         post.Caption,
             "likes_count":     post.LikesCount,
@@ -577,11 +587,8 @@ func (h *PostsHandler) GetCollectionPosts(c *gin.Context) {
         return
     }
 
-    // Reuse logic to enrich with user profiles if necessary, or return raw
-    // For brevity, returning enriched structure similar to Explore
     enrichedPosts := []gin.H{}
     for _, post := range res.Posts {
-         // (Optional: fetch user profile for each post author if needed)
          var mediaList []gin.H
         for _, m := range post.Media {
             mediaList = append(mediaList, gin.H{
@@ -599,7 +606,6 @@ func (h *PostsHandler) GetCollectionPosts(c *gin.Context) {
             "comments_count":  post.CommentsCount,
             "created_at":      post.CreatedAt,
             "is_liked":        post.IsLiked,
-             // Add username/profile_picture here if fetched from UsersService
         })
     }
     
@@ -676,6 +682,7 @@ func (h *PostsHandler) GetPostByID(c *gin.Context) {
     // 2. Get Author Data
     username := "Unknown"
     profilePic := ""
+    isVerified := false
     
     userRes, err := h.usersClient.GetUserProfile(context.Background(), &usersProto.GetUserProfileRequest{
         UserId: res.UserId,
@@ -683,6 +690,7 @@ func (h *PostsHandler) GetPostByID(c *gin.Context) {
     if err == nil {
         username = userRes.Username
         profilePic = userRes.ProfilePictureUrl
+        isVerified = userRes.IsVerified
     }
 
     // 3. Format Response
@@ -699,6 +707,7 @@ func (h *PostsHandler) GetPostByID(c *gin.Context) {
         "user_id":         res.UserId,
         "username":        username,
         "profile_picture": profilePic,
+        "is_verified":     isVerified,
         "media":           mediaList,
         "caption":         res.Caption,
         "location":        res.Location,

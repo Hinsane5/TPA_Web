@@ -22,7 +22,16 @@
               <h1 class="full-name">
                 {{ profileUser?.fullName || "Loading..." }}
               </h1>
-              <p class="username">@{{ profileUser?.username || "username" }}</p>
+              <div class="username-wrapper">
+                <p class="username">@{{ profileUser?.username || "username" }}</p>
+                <img 
+                  v-if="profileUser?.is_verified" 
+                  src="/icons/verified-icon.png" 
+                  alt="Verified" 
+                  class="verified-badge-large"
+                  title="Verified"
+                />
+              </div>
             </div>
 
             <div class="profile-actions">
@@ -280,6 +289,7 @@ const profileUser = ref({
   followers: 0,
   following: 0,
   profileImage: "",
+  is_verified: false,
 });
 
 const getUserIdFromToken = (): string | null => {
@@ -350,6 +360,7 @@ const loadProfileData = async () => {
       followers: data.followers_count,
       following: data.following_count,
       postsCount: 0,
+      is_verified: data.is_verified || false,
     };
 
     if (data.is_following !== undefined) {
@@ -824,6 +835,14 @@ watch(activeTab, (newTab) => {
 
 .close-btn:hover {
   background: rgba(0, 0, 0, 0.8);
+}
+
+.verified-badge-large {
+  width: 16px;      
+  height: 16px;      
+  object-fit: contain;
+  vertical-align: text-bottom; 
+  margin-left: 4px;  
 }
 
 .modal-image {

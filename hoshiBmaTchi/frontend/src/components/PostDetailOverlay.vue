@@ -59,6 +59,12 @@
             />
             <div class="author-info">
               <p class="author-username">{{ post.username }}</p>
+                <img 
+                  v-if="post.is_verified" 
+                  src="/icons/verified-icon.png" 
+                  alt="Verified" 
+                  class="verified-badge-small"
+                />
               <p
                 v-if="!isOwnPost && !isFollowing"
                 class="follow-text"
@@ -816,6 +822,19 @@ const submitReport = async () => {
   color: white;
   font-size: 20px;
   cursor: pointer;
+}
+
+.username-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified-badge-small {
+  width: 14px;
+  height: 14px;
+  object-fit: contain;
+  vertical-align: middle;
 }
 
 .menu-btn {

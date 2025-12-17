@@ -11,7 +11,15 @@
         <div v-else class="avatar">{{ getInitials(post.username) }}</div>
 
         <div class="user-info">
-          <p class="username">{{ post.username }}</p>
+          <div class="username-row">
+            <p class="username">{{ post.username }}</p>
+            <img 
+              v-if="post.is_verified" 
+              src="/icons/verified-icon.png" 
+              alt="Verified" 
+              class="verified-badge-small"
+            />
+          </div>
           <p class="timestamp">{{ formatTime(post.created_at) }}</p>
         </div>
       </div>
@@ -615,6 +623,20 @@ const toggleOriginal = () => {
   font-weight: 600;
   color: #fff;
   margin: 0;
+}
+
+.username-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified-badge-small {
+  width: 12px;       
+  height: 12px;
+  object-fit: contain;
+  vertical-align: -1px; 
+  margin-left: 4px;
 }
 
 .timestamp {

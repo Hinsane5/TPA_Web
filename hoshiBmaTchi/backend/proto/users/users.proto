@@ -144,6 +144,7 @@ message GetUserProfileResponse {
   int64 followers_count = 6;
   int64 following_count = 7;
   bool is_following = 8;
+  bool is_verified = 9;
 }
 
 message FollowUserRequest {
@@ -181,6 +182,7 @@ message UserProfile {
   
   string email = 6;
   bool is_banned = 7;
+  bool is_verified = 8;
 }
 
 message SearchUsersRequest {

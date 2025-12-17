@@ -856,6 +856,7 @@ type GetUserProfileResponse struct {
 	FollowersCount    int64                  `protobuf:"varint,6,opt,name=followers_count,json=followersCount,proto3" json:"followers_count,omitempty"`
 	FollowingCount    int64                  `protobuf:"varint,7,opt,name=following_count,json=followingCount,proto3" json:"following_count,omitempty"`
 	IsFollowing       bool                   `protobuf:"varint,8,opt,name=is_following,json=isFollowing,proto3" json:"is_following,omitempty"`
+	IsVerified        bool                   `protobuf:"varint,9,opt,name=is_verified,json=isVerified,proto3" json:"is_verified,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -942,6 +943,13 @@ func (x *GetUserProfileResponse) GetFollowingCount() int64 {
 func (x *GetUserProfileResponse) GetIsFollowing() bool {
 	if x != nil {
 		return x.IsFollowing
+	}
+	return false
+}
+
+func (x *GetUserProfileResponse) GetIsVerified() bool {
+	if x != nil {
+		return x.IsVerified
 	}
 	return false
 }
@@ -1235,6 +1243,7 @@ type UserProfile struct {
 	IsFollowing       bool                   `protobuf:"varint,5,opt,name=is_following,json=isFollowing,proto3" json:"is_following,omitempty"`
 	Email             string                 `protobuf:"bytes,6,opt,name=email,proto3" json:"email,omitempty"`
 	IsBanned          bool                   `protobuf:"varint,7,opt,name=is_banned,json=isBanned,proto3" json:"is_banned,omitempty"`
+	IsVerified        bool                   `protobuf:"varint,8,opt,name=is_verified,json=isVerified,proto3" json:"is_verified,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -1314,6 +1323,13 @@ func (x *UserProfile) GetEmail() string {
 func (x *UserProfile) GetIsBanned() bool {
 	if x != nil {
 		return x.IsBanned
+	}
+	return false
+}
+
+func (x *UserProfile) GetIsVerified() bool {
+	if x != nil {
+		return x.IsVerified
 	}
 	return false
 }
@@ -3435,7 +3451,7 @@ const file_users_users_proto_rawDesc = "" +
 	"\x04role\x18\x03 \x01(\tR\x04role\"M\n" +
 	"\x15GetUserProfileRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1b\n" +
-	"\tviewer_id\x18\x02 \x01(\tR\bviewerId\"\x8f\x02\n" +
+	"\tviewer_id\x18\x02 \x01(\tR\bviewerId\"\xb0\x02\n" +
 	"\x16GetUserProfileResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +
@@ -3444,7 +3460,9 @@ const file_users_users_proto_rawDesc = "" +
 	"\x13profile_picture_url\x18\x05 \x01(\tR\x11profilePictureUrl\x12'\n" +
 	"\x0ffollowers_count\x18\x06 \x01(\x03R\x0efollowersCount\x12'\n" +
 	"\x0ffollowing_count\x18\a \x01(\x03R\x0efollowingCount\x12!\n" +
-	"\fis_following\x18\b \x01(\bR\visFollowing\"W\n" +
+	"\fis_following\x18\b \x01(\bR\visFollowing\x12\x1f\n" +
+	"\vis_verified\x18\t \x01(\bR\n" +
+	"isVerified\"W\n" +
 	"\x11FollowUserRequest\x12\x1f\n" +
 	"\vfollower_id\x18\x01 \x01(\tR\n" +
 	"followerId\x12!\n" +
@@ -3460,7 +3478,7 @@ const file_users_users_proto_rawDesc = "" +
 	"\x17GetFollowingListRequest\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\"?\n" +
 	"\x18GetFollowingListResponse\x12#\n" +
-	"\rfollowing_ids\x18\x01 \x03(\tR\ffollowingIds\"\xdc\x01\n" +
+	"\rfollowing_ids\x18\x01 \x03(\tR\ffollowingIds\"\xfd\x01\n" +
 	"\vUserProfile\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x1a\n" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x12\n" +
@@ -3468,7 +3486,9 @@ const file_users_users_proto_rawDesc = "" +
 	"\x13profile_picture_url\x18\x04 \x01(\tR\x11profilePictureUrl\x12!\n" +
 	"\fis_following\x18\x05 \x01(\bR\visFollowing\x12\x14\n" +
 	"\x05email\x18\x06 \x01(\tR\x05email\x12\x1b\n" +
-	"\tis_banned\x18\a \x01(\bR\bisBanned\"C\n" +
+	"\tis_banned\x18\a \x01(\bR\bisBanned\x12\x1f\n" +
+	"\vis_verified\x18\b \x01(\bR\n" +
+	"isVerified\"C\n" +
 	"\x12SearchUsersRequest\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\tR\x05query\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"?\n" +

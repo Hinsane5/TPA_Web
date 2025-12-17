@@ -9,7 +9,15 @@
     
     <div class="comment-content">
       <div class="comment-text-wrapper">
-        <span class="comment-username" @click="$emit('click-user')">{{ username }}</span>
+        <div class="comment-header-row">
+          <span class="comment-username" @click="$emit('click-user')">{{ username }}</span>
+          <img 
+            v-if="isVerified" 
+            src="/icons/verified-icon.png" 
+            class="verified-badge-tiny" 
+            alt="Verified"
+          />
+        </div>
         <span 
           class="comment-body" 
           v-html="parseRichText(commentText)"
@@ -31,10 +39,7 @@
       </div>
     </div>
 
-    <button 
-      class="like-button"
-      @click="toggleLike"
-    >
+    <button class="like-button" @click="toggleLike">
       <img 
         :src="isLiked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
         class="action-icon"
@@ -58,6 +63,7 @@ const props = withDefaults(
     timestamp: string;
     likes?: number;
     repliesCount?: number;
+    isVerified?: boolean;
   }>(),
   {
     username: "User",
@@ -274,6 +280,19 @@ const handleCommentClick = async (event: MouseEvent) => {
 .reply-button {
   font-size: 14px;
   color: #65676b;
+}
+
+.comment-header-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 6px;
+}
+
+.verified-badge-tiny {
+  width: 12px;
+  height: 12px;
+  vertical-align: middle;
 }
 
 @media (max-width: 768px) {

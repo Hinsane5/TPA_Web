@@ -24,6 +24,7 @@ export interface User {
   following: number;
   postsCount: number;
   verified: boolean;
+  is_verified?: boolean;
 }
 
 export interface Notification {

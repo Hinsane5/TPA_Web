@@ -626,6 +626,7 @@ func (h *UserHandler) GetUserProfile(ctx context.Context, req *pb.GetUserProfile
         FollowersCount:    followers,
         FollowingCount:    following,
 		IsFollowing:       isFollowing,
+		IsVerified:        user.IsVerified,
     }, nil
 }
 
@@ -815,6 +816,7 @@ func (h *UserHandler) SearchUsers(ctx context.Context, req *pb.SearchUsersReques
             Username:          u.Username,
             Name:              u.Name,
             ProfilePictureUrl: h.sanitizeAvatarURL(u.ProfilePictureURL),
+			IsVerified:        u.IsVerified,
         })
     }
 
@@ -856,7 +858,8 @@ func (h *UserHandler) GetSuggestedUsers(ctx context.Context, req *pb.GetSuggeste
             Username:          u.Username,
             Name:              u.Name,
             ProfilePictureUrl: u.ProfilePictureURL,
-            IsFollowing:       false, // By definition, these are not followed
+            IsFollowing:       false, 
+			IsVerified:        u.IsVerified,
         })
     }
 
@@ -883,6 +886,7 @@ func (h *UserHandler) GetFollowingProfiles(ctx context.Context, req *pb.GetFollo
             Name:              u.Name,
             ProfilePictureUrl: u.ProfilePictureURL,
             IsFollowing:       true,
+			IsVerified:        u.IsVerified,
         })
     }
 
@@ -930,6 +934,7 @@ func (h *UserHandler) GetBlockedList(ctx context.Context, req *pb.GetBlockedList
             Username:          u.Username,
             Name:              u.Name,
             ProfilePictureUrl: u.ProfilePictureURL,
+			IsVerified:        u.IsVerified,
         })
     }
 
@@ -1031,6 +1036,7 @@ func (h *UserHandler) GetCloseFriends(ctx context.Context, req *pb.GetListReques
 			Username:          u.Username,
 			Name:              u.Name,
 			ProfilePictureUrl: u.ProfilePictureURL,
+			IsVerified:        u.IsVerified,
 		})
 	}
 
@@ -1122,6 +1128,7 @@ func (h *UserHandler) GetAllUsers(ctx context.Context, req *pb.Empty) (*pb.UserL
             Email:             u.Email, 
             IsBanned:          u.IsBanned, 
             ProfilePictureUrl: u.ProfilePictureURL,
+			IsVerified:        u.IsVerified,
         })
     }
     return &pb.UserListResponse{Users: pbUsers}, nil
