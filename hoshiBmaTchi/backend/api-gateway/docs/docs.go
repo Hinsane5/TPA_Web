@@ -26,7 +26,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Creates a new post with caption, location, and media items.",
+                "description": "Creates a new post containing a caption, location, and media items.",
                 "consumes": [
                     "application/json"
                 ],
@@ -36,17 +36,10 @@ const docTemplate = `{
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Create a new post",
+                "summary": "Create a New Post",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer Token",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Post Data",
+                        "description": "Post creation data",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -90,7 +83,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Rename an existing collection",
+                "description": "Updates the name of an existing collection belonging to the user.",
                 "consumes": [
                     "application/json"
                 ],
@@ -100,17 +93,17 @@ const docTemplate = `{
                 "tags": [
                     "Collections"
                 ],
-                "summary": "Update Collection",
+                "summary": "Update Collection Name",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Collection ID",
+                        "description": "ID of the collection to update",
                         "name": "collectionID",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "New Name",
+                        "description": "New collection name",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -148,7 +141,13 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Fetch and display all posts for the user feed",
+                "description": "Retrieves a paginated list of posts for the authenticated user's home feed.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Posts"
                 ],
@@ -156,13 +155,13 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "Limit",
+                        "description": "Number of posts to return (default: 10)",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Offset",
+                        "description": "Pagination offset (default: 0)",
                         "name": "offset",
                         "in": "query"
                     }
@@ -176,6 +175,12 @@ const docTemplate = `{
                     },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
                         }
@@ -232,15 +237,21 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Permanently remove a post",
+                "description": "Permanently deletes a post by its unique ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Posts"
                 ],
-                "summary": "Delete Post",
+                "summary": "Delete a Post",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Post ID",
+                        "description": "ID of the post to delete",
                         "name": "postID",
                         "in": "path",
                         "required": true

@@ -126,14 +126,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Creates a new post with caption, location, and media items.
+      description: Creates a new post containing a caption, location, and media items.
       parameters:
-      - description: Bearer Token
-        in: header
-        name: Authorization
-        required: true
-        type: string
-      - description: Post Data
+      - description: Post creation data
         in: body
         name: request
         required: true
@@ -160,18 +155,22 @@ paths:
             $ref: '#/definitions/gin.H'
       security:
       - BearerAuth: []
-      summary: Create a new post
+      summary: Create a New Post
       tags:
       - Posts
   /api/v1/posts/{postID}:
     delete:
-      description: Permanently remove a post
+      consumes:
+      - application/json
+      description: Permanently deletes a post by its unique ID.
       parameters:
-      - description: Post ID
+      - description: ID of the post to delete
         in: path
         name: postID
         required: true
         type: string
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
@@ -191,7 +190,7 @@ paths:
             $ref: '#/definitions/gin.H'
       security:
       - BearerAuth: []
-      summary: Delete Post
+      summary: Delete a Post
       tags:
       - Posts
     get:
@@ -270,14 +269,14 @@ paths:
     put:
       consumes:
       - application/json
-      description: Rename an existing collection
+      description: Updates the name of an existing collection belonging to the user.
       parameters:
-      - description: Collection ID
+      - description: ID of the collection to update
         in: path
         name: collectionID
         required: true
         type: string
-      - description: New Name
+      - description: New collection name
         in: body
         name: request
         required: true
@@ -300,21 +299,26 @@ paths:
             $ref: '#/definitions/gin.H'
       security:
       - BearerAuth: []
-      summary: Update Collection
+      summary: Update Collection Name
       tags:
       - Collections
   /api/v1/posts/feed:
     get:
-      description: Fetch and display all posts for the user feed
+      consumes:
+      - application/json
+      description: Retrieves a paginated list of posts for the authenticated user's
+        home feed.
       parameters:
-      - description: Limit
+      - description: 'Number of posts to return (default: 10)'
         in: query
         name: limit
         type: integer
-      - description: Offset
+      - description: 'Pagination offset (default: 0)'
         in: query
         name: offset
         type: integer
+      produces:
+      - application/json
       responses:
         "200":
           description: OK
@@ -322,6 +326,10 @@ paths:
             $ref: '#/definitions/gin.H'
         "401":
           description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/gin.H'
       security:

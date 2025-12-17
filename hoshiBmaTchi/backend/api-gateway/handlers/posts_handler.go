@@ -100,18 +100,17 @@ func (h *PostsHandler) GenerateUploadURL (c *gin.Context){
 }
 
 // CreatePost godoc
-// @Summary      Create a new post
-// @Description  Creates a new post with caption, location, and media items.
+// @Summary      Create a New Post
+// @Description  Creates a new post containing a caption, location, and media items.
 // @Tags         Posts
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization header string true "Bearer Token"
-// @Param        request body handlers.createPostJSON true "Post Data"
-// @Success      201  {object}  postsProto.PostResponse  <-- CHANGED THIS
-// @Failure      400  {object}  gin.H
-// @Failure      401  {object}  gin.H
-// @Failure      500  {object}  gin.H
+// @Param        request body      createPostJSON  true  "Post creation data"
+// @Success      201     {object}  postsProto.PostResponse
+// @Failure      400     {object}  gin.H
+// @Failure      401     {object}  gin.H
+// @Failure      500     {object}  gin.H
 // @Router       /api/v1/posts [post]
 func (h *PostsHandler) CreatePost(c *gin.Context){
     var jsonReq createPostJSON
@@ -277,13 +276,16 @@ func (h *PostsHandler) GetCommentsForPost(c *gin.Context) {
 
 // GetHomeFeed godoc
 // @Summary      Get Home Feed
-// @Description  Fetch and display all posts for the user feed
+// @Description  Retrieves a paginated list of posts for the authenticated user's home feed.
 // @Tags         Posts
+// @Accept       json
+// @Produce      json
 // @Security     BearerAuth
-// @Param        limit   query     int  false  "Limit"
-// @Param        offset  query     int  false  "Offset"
+// @Param        limit   query     int  false  "Number of posts to return (default: 10)"
+// @Param        offset  query     int  false  "Pagination offset (default: 0)"
 // @Success      200     {object}  gin.H
 // @Failure      401     {object}  gin.H
+// @Failure      500     {object}  gin.H
 // @Router       /api/v1/posts/feed [get]
 func (h *PostsHandler) GetHomeFeed(c *gin.Context) {
     userID, exists := c.Get("userID")
@@ -659,17 +661,17 @@ func (h *PostsHandler) GetCollectionPosts(c *gin.Context) {
 
 
 // UpdateCollection godoc
-// @Summary      Update Collection
-// @Description  Rename an existing collection
+// @Summary      Update Collection Name
+// @Description  Updates the name of an existing collection belonging to the user.
 // @Tags         Collections
-// @Security     BearerAuth
 // @Accept       json
 // @Produce      json
-// @Param        collectionID  path      string                    true  "Collection ID"
-// @Param        request       body      handlers.UpdateCollectionJSON  true  "New Name"
-// @Success      200           {object}  posts.CollectionResponse
-// @Failure      400           {object}  gin.H
-// @Failure      500           {object}  gin.H
+// @Security     BearerAuth
+// @Param        collectionID path      string                true  "ID of the collection to update"
+// @Param        request      body      UpdateCollectionJSON  true  "New collection name"
+// @Success      200          {object}  postsProto.CollectionResponse
+// @Failure      400          {object}  gin.H
+// @Failure      500          {object}  gin.H
 // @Router       /api/v1/posts/collections/{collectionID} [put]
 func (h *PostsHandler) UpdateCollection(c *gin.Context) {
     collectionID := c.Param("collectionID")
@@ -814,11 +816,13 @@ func (h *PostsHandler) ReportPost(c *gin.Context) {
 }
 
 // DeletePost godoc
-// @Summary      Delete Post
-// @Description  Permanently remove a post
+// @Summary      Delete a Post
+// @Description  Permanently deletes a post by its unique ID.
 // @Tags         Posts
+// @Accept       json
+// @Produce      json
 // @Security     BearerAuth
-// @Param        postID  path      string  true  "Post ID"
+// @Param        postID  path      string  true  "ID of the post to delete"
 // @Success      200     {object}  gin.H
 // @Failure      401     {object}  gin.H
 // @Failure      403     {object}  gin.H
