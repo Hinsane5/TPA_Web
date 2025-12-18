@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { formatDistanceToNow } from "date-fns";
 import { useRouter } from 'vue-router';
 import { usersApi } from '../services/apiService';
+import { parseRichText } from "../utils/textParser";
 
 const props = withDefaults(
   defineProps<{
@@ -51,14 +52,6 @@ const toggleReplies = () => {
   showReplies.value = !showReplies.value
 }
 
-const parseRichText = (text: string) => {
-  if (!text) return ''
-  return text.replace(
-    /(@[\w.]+)/g, 
-    '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer;">$1</span>'
-  );
-}
-
 const handleCommentClick = async (event: MouseEvent) => {
   const target = event.target as HTMLElement;
 
@@ -66,25 +59,27 @@ const handleCommentClick = async (event: MouseEvent) => {
     const rawUsername = target.dataset.username;
     
     if (rawUsername) {
-      const username = rawUsername.substring(1); // Remove '@'
+      const username = rawUsername.startsWith('@') ? rawUsername.substring(1) : rawUsername;
       
       try {
         const response = await usersApi.searchUsers(username);
-        // Handle different API response structures (data.users vs data.data)
         const users = response.data.users || response.data.data || [];
-        
-        // Use case-insensitive search
         const foundUser = users.find((u: any) => u.username.toLowerCase() === username.toLowerCase());
         
         if (foundUser && (foundUser.user_id || foundUser.id)) {
           const userId = foundUser.user_id || foundUser.id;
           router.push(`/dashboard/profile/${userId}`);
-        } else {
-          console.warn("User not found for mention:", username);
         }
       } catch (error) {
-        console.error("Failed to resolve mention in comment:", error);
+        console.error("Failed to resolve mention:", error);
       }
+    }
+  }
+
+  if (target.classList.contains("hashtag-link")) {
+    const tag = target.dataset.tag;
+    if (tag) {
+      router.push({ path: '/dashboard/explore', query: { q: tag } });
     }
   }
 };

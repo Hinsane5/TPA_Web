@@ -243,15 +243,14 @@ const parseCaption = (text: string) => {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-  // Parse Mentions (@username)
-  content = content.replace(
-    /(@[a-zA-Z0-9._]+)/g,
-    '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer; font-weight: 600;">$1</span>'
-  );
-
   content = content.replace(
     /#([a-zA-Z0-9_]+)/g,
     '<span class="hashtag-link" data-tag="$1" style="color: #00376b; cursor: pointer; font-weight: 400;">#$1</span>'
+  );
+
+  content = content.replace(
+    /(@[a-zA-Z0-9._]+)/g,
+    '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer; font-weight: 600;">$1</span>'
   );
 
   return content;
