@@ -16,8 +16,9 @@ type PostMedia struct {
 type Post struct {
 	ID              uuid.UUID   `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
 	UserID          uuid.UUID   `gorm:"type:uuid;not null"`
-	Media           []PostMedia `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"` 
+	Media          	[]PostMedia `gorm:"foreignKey:PostID;constraint:OnDelete:CASCADE"` 
 	Caption         string      `gorm:"type:text"`
+	Hashtags      	[]Hashtag   `gorm:"many2many:post_hashtags;"`
 	Location        string      `gorm:"type:varchar(255)"`
 	IsReel          bool        `gorm:"default:false;index"`
 	CreatedAt       time.Time   `gorm:"autoCreateTime"`
@@ -63,4 +64,11 @@ type PostReport struct {
     Reason      string    `gorm:"type:text"`
     Status      string    `gorm:"default:'PENDING'"`
     CreatedAt   time.Time
+}
+
+type Hashtag struct {
+	ID        uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()"`
+	Name      string    `gorm:"type:varchar(100);uniqueIndex;not null"` 
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	Posts     []Post    `gorm:"many2many:post_hashtags;"` 
 }

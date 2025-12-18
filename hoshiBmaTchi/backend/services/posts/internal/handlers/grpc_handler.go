@@ -85,56 +85,51 @@ func (s *Server) GenerateUploadURL(ctx context.Context, req *pb.GenerateUploadUR
 }
 
 func (s *Server) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*pb.CreatePostResponse, error){
-	userID, err := uuid.Parse(req.GetUserId())
+    if _, err := uuid.Parse(req.GetUserId()); err != nil {
+        return nil, status.Errorf(codes.InvalidArgument, "Invalid User ID")
+    }
 
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "UserID tidak valid")
-	}
+    newPost, err := s.service.CreatePost(ctx, req)
+    if err != nil {
+        log.Printf("Service failed to create post: %v", err)
+        return nil, status.Error(codes.Internal, "Failed to create post")
+    }
 
-	var mediaItems []domain.PostMedia
-	for i, item := range req.GetMedia() {
-		mediaItems = append(mediaItems, domain.PostMedia{
-			MediaObjectName: item.MediaObjectName,
-			MediaType:       item.MediaType,
-			Sequence:        i,
-		})
-	}
+    var pbMedia []*pb.PostMediaResponse
+    for _, m := range newPost.Media {
+        pbMedia = append(pbMedia, &pb.PostMediaResponse{
+            MediaType: m.MediaType,
+        })
+    }
 
-	newPost := &domain.Post{
-		UserID:   userID,
-		Caption:  req.GetCaption(),
-		Location: req.GetLocation(),
-		Media:    mediaItems, 
-		IsReel:    req.IsReel,
-	}
-
-	err = s.repo.CreatePost(ctx, newPost)
-	if err != nil{
-		log.Printf("Failed to save into DB: %v", err)
-		return nil, status.Error(codes.Internal, "Failed to create post")
-	}
-
-	var pbMedia []*pb.PostMediaResponse
-
-	for _, m := range newPost.Media {
-		pbMedia = append(pbMedia, &pb.PostMediaResponse{
-
-			MediaType: m.MediaType,
-		})
-	}
-
-	return &pb.CreatePostResponse{
-		Post: &pb.PostResponse{
-			Id:        newPost.ID.String(),
-			UserId:    newPost.UserID.String(),
-			Media:     pbMedia, 
-			Caption:   newPost.Caption,
-			Location:  newPost.Location,
-			CreatedAt: newPost.CreatedAt.Format(time.RFC3339),
-		},
-	}, nil
+    return &pb.CreatePostResponse{
+        Post: &pb.PostResponse{
+            Id:        newPost.ID.String(),
+            UserId:    newPost.UserID.String(),
+            Media:     pbMedia,
+            Caption:   newPost.Caption,
+            Location:  newPost.Location,
+            CreatedAt: newPost.CreatedAt.Format(time.RFC3339),
+        },
+    }, nil
 }
 
+func (s *Server) SearchHashtags(ctx context.Context, req *pb.SearchHashtagsRequest) (*pb.SearchHashtagsResponse, error) {
+    results, err := s.service.SearchHashtags(ctx, req.Query)
+    if err != nil {
+        return nil, status.Error(codes.Internal, "Failed to search hashtags")
+    }
+
+    var pbResults []*pb.HashtagResult
+    for _, r := range results {
+        pbResults = append(pbResults, &pb.HashtagResult{
+            Name:  r.Name,
+            Count: r.Count,
+        })
+    }
+
+    return &pb.SearchHashtagsResponse{Hashtags: pbResults}, nil
+}
 
 func (s *Server) GetPostsByUserID(ctx context.Context, req *pb.GetPostsByUserIDRequest) (*pb.GetPostsResponse, error){
 	if req.GetUserId() == ""{

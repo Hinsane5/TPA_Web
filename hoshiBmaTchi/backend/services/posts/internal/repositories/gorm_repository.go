@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports"
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -518,7 +519,6 @@ func (r *GormPostRepository) GetPostReportByID(ctx context.Context, reportID str
     return &report, nil
 }
 
-// Add this method
 func (r *GormPostRepository) CreatePostReport(report *domain.PostReport) error {
     if report.ID == uuid.Nil {
         report.ID = uuid.New()
@@ -526,4 +526,52 @@ func (r *GormPostRepository) CreatePostReport(report *domain.PostReport) error {
     report.CreatedAt = time.Now()
     report.Status = "PENDING"
     return r.db.Create(report).Error
+}
+
+func (r *GormPostRepository) SearchHashtags(ctx context.Context, query string) ([]ports.HashtagSearchParam, error) {
+    var results []ports.HashtagSearchParam
+    
+    err := r.db.Table("hashtags").
+        Select("hashtags.name, COUNT(post_hashtags.post_id) as count").
+        Joins("LEFT JOIN post_hashtags ON post_hashtags.hashtag_id = hashtags.id").
+        Where("hashtags.name ILIKE ?", "%"+query+"%"). // ILIKE for case-insensitive
+        Group("hashtags.id").
+        Order("count DESC").
+        Limit(10).
+        Scan(&results).Error
+
+    return results, err
+}
+
+func (r *GormPostRepository) CreateFullPost(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error {
+    return r.db.Transaction(func(tx *gorm.DB) error {
+        
+        if len(post.Hashtags) > 0 {
+            var processedTags []domain.Hashtag
+            for _, tag := range post.Hashtags {
+                var existingTag domain.Hashtag
+                if err := tx.Where("name = ?", tag.Name).First(&existingTag).Error; err == nil {
+                    processedTags = append(processedTags, existingTag)
+                } else {
+                    processedTags = append(processedTags, tag)
+                }
+            }
+            post.Hashtags = processedTags
+        }
+
+        if err := tx.Create(post).Error; err != nil {
+            return err
+        }
+
+        if len(mentions) > 0 {
+            for i := range mentions {
+                mentions[i].PostID = post.ID
+            }
+            if err := tx.Create(&mentions).Error; err != nil {
+                return err
+            }
+        }
+
+        return nil
+    })
 }

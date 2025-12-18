@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
+	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/ports" // <--- ADD THIS IMPORT
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 )
 
@@ -34,6 +35,16 @@ func (m *MockPostRepository) DeletePost(ctx context.Context, postID string) erro
 }
 
 // --- Stubs for other interface methods (Required to satisfy the interface) ---
+
+// <--- ADD THIS MISSING METHOD --->
+func (m *MockPostRepository) SearchHashtags(ctx context.Context, query string) ([]ports.HashtagSearchParam, error) {
+	return nil, nil
+}
+
+// <--- ENSURE THIS IS PRESENT --->
+func (m *MockPostRepository) CreateFullPost(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error {
+	return nil
+}
 
 func (m *MockPostRepository) CreatePost(ctx context.Context, post *domain.Post) error {
 	return nil

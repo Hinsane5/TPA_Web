@@ -42,6 +42,7 @@ const (
 	PostsService_ReviewPostReport_FullMethodName   = "/posts.PostsService/ReviewPostReport"
 	PostsService_ReportPost_FullMethodName         = "/posts.PostsService/ReportPost"
 	PostsService_DeletePost_FullMethodName         = "/posts.PostsService/DeletePost"
+	PostsService_SearchHashtags_FullMethodName     = "/posts.PostsService/SearchHashtags"
 )
 
 // PostsServiceClient is the client API for PostsService service.
@@ -71,6 +72,7 @@ type PostsServiceClient interface {
 	ReviewPostReport(ctx context.Context, in *ReviewReportRequest, opts ...grpc.CallOption) (*Response, error)
 	ReportPost(ctx context.Context, in *ReportPostRequest, opts ...grpc.CallOption) (*Response, error)
 	DeletePost(ctx context.Context, in *DeletePostRequest, opts ...grpc.CallOption) (*DeletePostResponse, error)
+	SearchHashtags(ctx context.Context, in *SearchHashtagsRequest, opts ...grpc.CallOption) (*SearchHashtagsResponse, error)
 }
 
 type postsServiceClient struct {
@@ -311,6 +313,16 @@ func (c *postsServiceClient) DeletePost(ctx context.Context, in *DeletePostReque
 	return out, nil
 }
 
+func (c *postsServiceClient) SearchHashtags(ctx context.Context, in *SearchHashtagsRequest, opts ...grpc.CallOption) (*SearchHashtagsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SearchHashtagsResponse)
+	err := c.cc.Invoke(ctx, PostsService_SearchHashtags_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // PostsServiceServer is the server API for PostsService service.
 // All implementations must embed UnimplementedPostsServiceServer
 // for forward compatibility.
@@ -338,6 +350,7 @@ type PostsServiceServer interface {
 	ReviewPostReport(context.Context, *ReviewReportRequest) (*Response, error)
 	ReportPost(context.Context, *ReportPostRequest) (*Response, error)
 	DeletePost(context.Context, *DeletePostRequest) (*DeletePostResponse, error)
+	SearchHashtags(context.Context, *SearchHashtagsRequest) (*SearchHashtagsResponse, error)
 	mustEmbedUnimplementedPostsServiceServer()
 }
 
@@ -416,6 +429,9 @@ func (UnimplementedPostsServiceServer) ReportPost(context.Context, *ReportPostRe
 }
 func (UnimplementedPostsServiceServer) DeletePost(context.Context, *DeletePostRequest) (*DeletePostResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeletePost not implemented")
+}
+func (UnimplementedPostsServiceServer) SearchHashtags(context.Context, *SearchHashtagsRequest) (*SearchHashtagsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SearchHashtags not implemented")
 }
 func (UnimplementedPostsServiceServer) mustEmbedUnimplementedPostsServiceServer() {}
 func (UnimplementedPostsServiceServer) testEmbeddedByValue()                      {}
@@ -852,6 +868,24 @@ func _PostsService_DeletePost_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _PostsService_SearchHashtags_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SearchHashtagsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PostsServiceServer).SearchHashtags(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PostsService_SearchHashtags_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PostsServiceServer).SearchHashtags(ctx, req.(*SearchHashtagsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // PostsService_ServiceDesc is the grpc.ServiceDesc for PostsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -950,6 +984,10 @@ var PostsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeletePost",
 			Handler:    _PostsService_DeletePost_Handler,
+		},
+		{
+			MethodName: "SearchHashtags",
+			Handler:    _PostsService_SearchHashtags_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

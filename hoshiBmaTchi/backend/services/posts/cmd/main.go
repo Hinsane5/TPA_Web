@@ -49,6 +49,7 @@ func main() {
         &domain.PostMedia{}, 
 		&domain.UserMention{},
 		&domain.PostReport{},
+		&domain.Hashtag{},
     )
 	if err != nil {
 		log.Fatalf("Failed to automigrate: %v", err)

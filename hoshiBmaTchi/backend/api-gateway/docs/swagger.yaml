@@ -356,6 +356,29 @@ paths:
       summary: Get Home Feed
       tags:
       - Posts
+  /api/v1/posts/hashtags/search:
+    get:
+      consumes:
+      - application/json
+      description: Search for hashtags and get their usage counts
+      parameters:
+      - description: Search query (e.g. 'gen')
+        in: query
+        name: q
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+      security:
+      - BearerAuth: []
+      summary: Search Hashtags
+      tags:
+      - Posts
   /auth/login:
     post:
       consumes:

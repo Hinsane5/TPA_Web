@@ -188,6 +188,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/v1/posts/hashtags/search": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Search for hashtags and get their usage counts",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Search Hashtags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Search query (e.g. 'gen')",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/posts/{postID}": {
             "get": {
                 "description": "Get full details of a specific post including media and user info",

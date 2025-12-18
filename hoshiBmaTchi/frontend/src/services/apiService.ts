@@ -8,6 +8,11 @@ const apiClient = axios.create({
     }
 })
 
+export interface HashtagResult {
+  name: string;
+  count: number;
+}
+
 export const authApi = {
   register(data: any) {
     return apiClient.post("/auth/register", data);
@@ -197,6 +202,15 @@ export const postsApi = {
 
   deletePost: (postId: string) => {
     return apiClient.delete(`/v1/posts/${postId}`);
+  },
+
+  searchHashtags: (query: string) => {
+    return apiClient.get<{ hashtags: HashtagResult[] }>(
+      "/v1/posts/hashtags/search",
+      {
+        params: { q: query },
+      }
+    );
   },
 };
 

@@ -2473,6 +2473,146 @@ func (x *DeletePostResponse) GetMessage() string {
 	return ""
 }
 
+type SearchHashtagsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Query         string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchHashtagsRequest) Reset() {
+	*x = SearchHashtagsRequest{}
+	mi := &file_posts_posts_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchHashtagsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchHashtagsRequest) ProtoMessage() {}
+
+func (x *SearchHashtagsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchHashtagsRequest.ProtoReflect.Descriptor instead.
+func (*SearchHashtagsRequest) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *SearchHashtagsRequest) GetQuery() string {
+	if x != nil {
+		return x.Query
+	}
+	return ""
+}
+
+type HashtagResult struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Count         int64                  `protobuf:"varint,2,opt,name=count,proto3" json:"count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HashtagResult) Reset() {
+	*x = HashtagResult{}
+	mi := &file_posts_posts_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HashtagResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HashtagResult) ProtoMessage() {}
+
+func (x *HashtagResult) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HashtagResult.ProtoReflect.Descriptor instead.
+func (*HashtagResult) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *HashtagResult) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *HashtagResult) GetCount() int64 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+type SearchHashtagsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Hashtags      []*HashtagResult       `protobuf:"bytes,1,rep,name=hashtags,proto3" json:"hashtags,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SearchHashtagsResponse) Reset() {
+	*x = SearchHashtagsResponse{}
+	mi := &file_posts_posts_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SearchHashtagsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SearchHashtagsResponse) ProtoMessage() {}
+
+func (x *SearchHashtagsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_posts_posts_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SearchHashtagsResponse.ProtoReflect.Descriptor instead.
+func (*SearchHashtagsResponse) Descriptor() ([]byte, []int) {
+	return file_posts_posts_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *SearchHashtagsResponse) GetHashtags() []*HashtagResult {
+	if x != nil {
+		return x.Hashtags
+	}
+	return nil
+}
+
 var File_posts_posts_proto protoreflect.FileDescriptor
 
 const file_posts_posts_proto_rawDesc = "" +
@@ -2636,7 +2776,14 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"H\n" +
 	"\x12DeletePostResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\x18\n" +
-	"\amessage\x18\x02 \x01(\tR\amessage2\xaf\r\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\"-\n" +
+	"\x15SearchHashtagsRequest\x12\x14\n" +
+	"\x05query\x18\x01 \x01(\tR\x05query\"9\n" +
+	"\rHashtagResult\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
+	"\x05count\x18\x02 \x01(\x03R\x05count\"J\n" +
+	"\x16SearchHashtagsResponse\x120\n" +
+	"\bhashtags\x18\x01 \x03(\v2\x14.posts.HashtagResultR\bhashtags2\xfe\r\n" +
 	"\fPostsService\x12V\n" +
 	"\x11GenerateUploadURL\x12\x1f.posts.GenerateUploadURLRequest\x1a .posts.GenerateUploadURLResponse\x12A\n" +
 	"\n" +
@@ -2664,7 +2811,8 @@ const file_posts_posts_proto_rawDesc = "" +
 	"\n" +
 	"ReportPost\x12\x18.posts.ReportPostRequest\x1a\x0f.posts.Response\x12A\n" +
 	"\n" +
-	"DeletePost\x12\x18.posts.DeletePostRequest\x1a\x19.posts.DeletePostResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
+	"DeletePost\x12\x18.posts.DeletePostRequest\x1a\x19.posts.DeletePostResponse\x12M\n" +
+	"\x0eSearchHashtags\x12\x1c.posts.SearchHashtagsRequest\x1a\x1d.posts.SearchHashtagsResponseB6Z4github.com/Hinsane5/hoshiBmaTchi/backend/proto/postsb\x06proto3"
 
 var (
 	file_posts_posts_proto_rawDescOnce sync.Once
@@ -2678,7 +2826,7 @@ func file_posts_posts_proto_rawDescGZIP() []byte {
 	return file_posts_posts_proto_rawDescData
 }
 
-var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 45)
+var file_posts_posts_proto_msgTypes = make([]protoimpl.MessageInfo, 48)
 var file_posts_posts_proto_goTypes = []any{
 	(*GenerateUploadURLRequest)(nil),   // 0: posts.GenerateUploadURLRequest
 	(*GenerateUploadURLResponse)(nil),  // 1: posts.GenerateUploadURLResponse
@@ -2725,6 +2873,9 @@ var file_posts_posts_proto_goTypes = []any{
 	(*ReportPostRequest)(nil),          // 42: posts.ReportPostRequest
 	(*DeletePostRequest)(nil),          // 43: posts.DeletePostRequest
 	(*DeletePostResponse)(nil),         // 44: posts.DeletePostResponse
+	(*SearchHashtagsRequest)(nil),      // 45: posts.SearchHashtagsRequest
+	(*HashtagResult)(nil),              // 46: posts.HashtagResult
+	(*SearchHashtagsResponse)(nil),     // 47: posts.SearchHashtagsResponse
 }
 var file_posts_posts_proto_depIdxs = []int32{
 	3,  // 0: posts.CreatePostRequest.media:type_name -> posts.PostMediaItem
@@ -2738,57 +2889,60 @@ var file_posts_posts_proto_depIdxs = []int32{
 	8,  // 8: posts.GetExplorePostsResponse.posts:type_name -> posts.PostResponse
 	8,  // 9: posts.GetCollectionPostsResponse.posts:type_name -> posts.PostResponse
 	39, // 10: posts.PostReportListResponse.reports:type_name -> posts.PostReportItem
-	0,  // 11: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
-	2,  // 12: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
-	5,  // 13: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
-	7,  // 14: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
-	10, // 15: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
-	12, // 16: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
-	14, // 17: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
-	15, // 18: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
-	18, // 19: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
-	20, // 20: posts.PostsService.ToggleSavePost:input_type -> posts.ToggleSavePostRequest
-	22, // 21: posts.PostsService.CreateCollection:input_type -> posts.CreateCollectionRequest
-	24, // 22: posts.PostsService.GetUserCollections:input_type -> posts.GetUserCollectionsRequest
-	26, // 23: posts.PostsService.GetUserMentions:input_type -> posts.GetUserMentionsRequest
-	27, // 24: posts.PostsService.GetReels:input_type -> posts.GetReelsRequest
-	29, // 25: posts.PostsService.GetExplorePosts:input_type -> posts.GetExplorePostsRequest
-	31, // 26: posts.PostsService.GetUserReels:input_type -> posts.GetUserReelsRequest
-	32, // 27: posts.PostsService.GetCollectionPosts:input_type -> posts.GetCollectionPostsRequest
-	34, // 28: posts.PostsService.UpdateCollection:input_type -> posts.UpdateCollectionRequest
-	35, // 29: posts.PostsService.DeleteCollection:input_type -> posts.DeleteCollectionRequest
-	37, // 30: posts.PostsService.GetPostReports:input_type -> posts.Empty
-	41, // 31: posts.PostsService.ReviewPostReport:input_type -> posts.ReviewReportRequest
-	42, // 32: posts.PostsService.ReportPost:input_type -> posts.ReportPostRequest
-	43, // 33: posts.PostsService.DeletePost:input_type -> posts.DeletePostRequest
-	1,  // 34: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
-	4,  // 35: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
-	6,  // 36: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
-	8,  // 37: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
-	11, // 38: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
-	13, // 39: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
-	17, // 40: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
-	16, // 41: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
-	19, // 42: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
-	21, // 43: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
-	23, // 44: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
-	25, // 45: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
-	6,  // 46: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
-	28, // 47: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
-	30, // 48: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
-	6,  // 49: posts.PostsService.GetUserReels:output_type -> posts.GetPostsResponse
-	33, // 50: posts.PostsService.GetCollectionPosts:output_type -> posts.GetCollectionPostsResponse
-	23, // 51: posts.PostsService.UpdateCollection:output_type -> posts.CollectionResponse
-	36, // 52: posts.PostsService.DeleteCollection:output_type -> posts.DeleteCollectionResponse
-	40, // 53: posts.PostsService.GetPostReports:output_type -> posts.PostReportListResponse
-	38, // 54: posts.PostsService.ReviewPostReport:output_type -> posts.Response
-	38, // 55: posts.PostsService.ReportPost:output_type -> posts.Response
-	44, // 56: posts.PostsService.DeletePost:output_type -> posts.DeletePostResponse
-	34, // [34:57] is the sub-list for method output_type
-	11, // [11:34] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	46, // 11: posts.SearchHashtagsResponse.hashtags:type_name -> posts.HashtagResult
+	0,  // 12: posts.PostsService.GenerateUploadURL:input_type -> posts.GenerateUploadURLRequest
+	2,  // 13: posts.PostsService.CreatePost:input_type -> posts.CreatePostRequest
+	5,  // 14: posts.PostsService.GetPostsByUserID:input_type -> posts.GetPostsByUserIDRequest
+	7,  // 15: posts.PostsService.GetPostByID:input_type -> posts.GetPostByIDRequest
+	10, // 16: posts.PostsService.LikePost:input_type -> posts.LikePostRequest
+	12, // 17: posts.PostsService.UnlikePost:input_type -> posts.UnlikePostRequest
+	14, // 18: posts.PostsService.CreateComment:input_type -> posts.CreateCommentRequest
+	15, // 19: posts.PostsService.GetCommentsForPost:input_type -> posts.GetCommentsForPostRequest
+	18, // 20: posts.PostsService.GetHomeFeed:input_type -> posts.GetHomeFeedRequest
+	20, // 21: posts.PostsService.ToggleSavePost:input_type -> posts.ToggleSavePostRequest
+	22, // 22: posts.PostsService.CreateCollection:input_type -> posts.CreateCollectionRequest
+	24, // 23: posts.PostsService.GetUserCollections:input_type -> posts.GetUserCollectionsRequest
+	26, // 24: posts.PostsService.GetUserMentions:input_type -> posts.GetUserMentionsRequest
+	27, // 25: posts.PostsService.GetReels:input_type -> posts.GetReelsRequest
+	29, // 26: posts.PostsService.GetExplorePosts:input_type -> posts.GetExplorePostsRequest
+	31, // 27: posts.PostsService.GetUserReels:input_type -> posts.GetUserReelsRequest
+	32, // 28: posts.PostsService.GetCollectionPosts:input_type -> posts.GetCollectionPostsRequest
+	34, // 29: posts.PostsService.UpdateCollection:input_type -> posts.UpdateCollectionRequest
+	35, // 30: posts.PostsService.DeleteCollection:input_type -> posts.DeleteCollectionRequest
+	37, // 31: posts.PostsService.GetPostReports:input_type -> posts.Empty
+	41, // 32: posts.PostsService.ReviewPostReport:input_type -> posts.ReviewReportRequest
+	42, // 33: posts.PostsService.ReportPost:input_type -> posts.ReportPostRequest
+	43, // 34: posts.PostsService.DeletePost:input_type -> posts.DeletePostRequest
+	45, // 35: posts.PostsService.SearchHashtags:input_type -> posts.SearchHashtagsRequest
+	1,  // 36: posts.PostsService.GenerateUploadURL:output_type -> posts.GenerateUploadURLResponse
+	4,  // 37: posts.PostsService.CreatePost:output_type -> posts.CreatePostResponse
+	6,  // 38: posts.PostsService.GetPostsByUserID:output_type -> posts.GetPostsResponse
+	8,  // 39: posts.PostsService.GetPostByID:output_type -> posts.PostResponse
+	11, // 40: posts.PostsService.LikePost:output_type -> posts.LikePostResponse
+	13, // 41: posts.PostsService.UnlikePost:output_type -> posts.UnlikePostResponse
+	17, // 42: posts.PostsService.CreateComment:output_type -> posts.CommentResponse
+	16, // 43: posts.PostsService.GetCommentsForPost:output_type -> posts.GetCommentsForPostResponse
+	19, // 44: posts.PostsService.GetHomeFeed:output_type -> posts.GetHomeFeedResponse
+	21, // 45: posts.PostsService.ToggleSavePost:output_type -> posts.ToggleSavePostResponse
+	23, // 46: posts.PostsService.CreateCollection:output_type -> posts.CollectionResponse
+	25, // 47: posts.PostsService.GetUserCollections:output_type -> posts.GetUserCollectionsResponse
+	6,  // 48: posts.PostsService.GetUserMentions:output_type -> posts.GetPostsResponse
+	28, // 49: posts.PostsService.GetReels:output_type -> posts.GetReelsResponse
+	30, // 50: posts.PostsService.GetExplorePosts:output_type -> posts.GetExplorePostsResponse
+	6,  // 51: posts.PostsService.GetUserReels:output_type -> posts.GetPostsResponse
+	33, // 52: posts.PostsService.GetCollectionPosts:output_type -> posts.GetCollectionPostsResponse
+	23, // 53: posts.PostsService.UpdateCollection:output_type -> posts.CollectionResponse
+	36, // 54: posts.PostsService.DeleteCollection:output_type -> posts.DeleteCollectionResponse
+	40, // 55: posts.PostsService.GetPostReports:output_type -> posts.PostReportListResponse
+	38, // 56: posts.PostsService.ReviewPostReport:output_type -> posts.Response
+	38, // 57: posts.PostsService.ReportPost:output_type -> posts.Response
+	44, // 58: posts.PostsService.DeletePost:output_type -> posts.DeletePostResponse
+	47, // 59: posts.PostsService.SearchHashtags:output_type -> posts.SearchHashtagsResponse
+	36, // [36:60] is the sub-list for method output_type
+	12, // [12:36] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_posts_posts_proto_init() }
@@ -2802,7 +2956,7 @@ func file_posts_posts_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_posts_posts_proto_rawDesc), len(file_posts_posts_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   45,
+			NumMessages:   48,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

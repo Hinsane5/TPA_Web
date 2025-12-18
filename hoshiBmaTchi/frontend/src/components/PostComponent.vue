@@ -230,7 +230,8 @@
           </span>
 
           <span v-else>
-            <span v-html="parseCaption(post.caption)"></span>
+            <span v-html="parseCaption(post.caption)"
+            @click="handleCaptionClick"></span>
             
             <button 
               v-if="post.caption.length > 100" 
@@ -489,10 +490,12 @@ const formatTime = (dateStr: string) => {
 
 const handleCaptionClick = async (event: MouseEvent) => {
   const target = event.target as HTMLElement;
+
+  // Handle Mentions
   if (target.classList.contains("mention-link")) {
     const rawUsername = target.dataset.username;
     if (rawUsername) {
-      const username = rawUsername.substring(1);
+      const username = rawUsername.substring(1); 
       try {
         const response = await usersApi.searchUsers(username);
         const user = response.data.users?.find((u: any) => u.username === username);
@@ -500,14 +503,40 @@ const handleCaptionClick = async (event: MouseEvent) => {
       } catch (e) { console.error(e); }
     }
   }
+
+  // Handle Hashtags -> ADD THIS
+  if (target.classList.contains("hashtag-link")) {
+    const rawTag = target.dataset.tag; // e.g. "#test"
+    if (rawTag) {
+      // Navigate to explore page with the tag as a query
+      router.push({ path: '/dashboard/explore', query: { q: rawTag } });
+    }
+  }
 };
 
 const parseCaption = (text: string) => {
   if (!text) return "";
-  return text.replace(
+  
+  // Basic HTML escape to prevent XSS before we add our own tags
+  let content = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  // Parse Mentions (@username)
+  content = content.replace(
     /(@[a-zA-Z0-9._]+)/g,
     '<span class="mention-link" data-username="$1" style="color: #0095f6; cursor: pointer; font-weight: 600;">$1</span>'
   );
+
+  content = content.replace(
+    /#([a-zA-Z0-9_]+)/g,
+    '<span class="hashtag-link" data-tag="$1" style="color: #00376b; cursor: pointer; font-weight: 400;">#$1</span>'
+  );
+
+  return content;
 };
 
 const handleSummarize = async () => {
@@ -1157,5 +1186,12 @@ const toggleOriginal = () => {
 .fade-leave-to {
   opacity: 0;
   transform: translateY(5px);
+}
+
+:deep(.hashtag-link) {
+  color: #00376b;
+}
+:deep(.hashtag-link:hover) {
+  text-decoration: underline;
 }
 </style>

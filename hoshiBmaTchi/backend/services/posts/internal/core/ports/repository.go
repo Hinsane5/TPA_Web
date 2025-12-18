@@ -5,6 +5,10 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/domain"
 )
 
+type HashtagSearchParam struct {
+    Name  string `json:"name"`
+    Count int64  `json:"count"`
+}
 
 type PostRepository interface {
 	CreatePost(ctx context.Context, post *domain.Post) error
@@ -41,4 +45,6 @@ type PostRepository interface {
     DeletePost(ctx context.Context, postID string) error
 
 	CreatePostReport(report *domain.PostReport) error
+	CreateFullPost(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error
+	SearchHashtags(ctx context.Context, query string) ([]HashtagSearchParam, error)
 }

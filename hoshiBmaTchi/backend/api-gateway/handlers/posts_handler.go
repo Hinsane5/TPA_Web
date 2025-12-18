@@ -857,3 +857,44 @@ func (h *PostsHandler) DeletePost(c *gin.Context) {
 
     c.JSON(http.StatusOK, gin.H{"message": "Post deleted successfully"})
 }
+
+// SearchHashtags godoc
+// @Summary      Search Hashtags
+// @Description  Search for hashtags and get their usage counts
+// @Tags         Posts
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        q   query     string  true  "Search query (e.g. 'gen')"
+// @Success      200 {object}  gin.H
+// @Router       /api/v1/posts/hashtags/search [get]
+func (h *PostsHandler) SearchHashtags(c *gin.Context) {
+    query := c.Query("q")
+    if query == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Query parameter 'q' is required"})
+        return
+    }
+
+    res, err := h.postsClient.SearchHashtags(context.Background(), &postsProto.SearchHashtagsRequest{
+        Query: query,
+    })
+
+    if err != nil {
+        if s, ok := status.FromError(err); ok {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": s.Message()})
+        } else {
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to call gRPC: " + err.Error()})
+        }
+        return
+    }
+
+    var hashtags []gin.H
+    for _, tag := range res.Hashtags {
+        hashtags = append(hashtags, gin.H{
+            "name":  tag.Name,
+            "count": tag.Count,
+        })
+    }
+
+    c.JSON(http.StatusOK, gin.H{"hashtags": hashtags})
+}

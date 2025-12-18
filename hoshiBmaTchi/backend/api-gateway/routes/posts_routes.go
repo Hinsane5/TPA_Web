@@ -41,6 +41,7 @@ func SetupPostsRoutes(r *gin.Engine, postsHandler *handlers.PostsHandler, authHa
 
         postsRoutes.POST("/:postID/report", postsHandler.ReportPost)
         postsRoutes.DELETE("/:postID", postsHandler.DeletePost)
+        postsRoutes.GET("/hashtags/search", postsHandler.SearchHashtags)
     }
 
     reelsRoutes := r.Group("/api/v1/reels")

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
-	// "strings"
+	"strings"
 
 	pb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/posts"
 	userPb "github.com/Hinsane5/hoshiBmaTchi/backend/proto/users"
@@ -17,6 +17,7 @@ import (
 )
 
 var mentionRegex = regexp.MustCompile(`@([a-zA-Z0-9._]+)`)
+var hashtagRegex = regexp.MustCompile(`#([a-zA-Z0-9_]+)`)
 
 type PostService struct {
 	repo       ports.PostRepository
@@ -45,53 +46,68 @@ func NewPostService(repo ports.PostRepository, amqpChan *amqp.Channel, userClien
 func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest) (*domain.Post, error) {
 	userID, _ := uuid.Parse(req.UserId)
 
-    log.Printf("[DEBUG] ---------------- START CREATE POST ----------------")
-    log.Printf("[DEBUG] Incoming Post from User: %s", req.UserId)
-    log.Printf("[DEBUG] Caption: %s", req.Caption)
+	log.Printf("[DEBUG] ---------------- START CREATE POST ----------------")
+	log.Printf("[DEBUG] Incoming Post from User: %s", req.UserId)
+	log.Printf("[DEBUG] Caption: %s", req.Caption)
+
+    var mediaItems []domain.PostMedia
+    for i, item := range req.Media {
+        mediaItems = append(mediaItems, domain.PostMedia{
+            MediaObjectName: item.MediaObjectName,
+            MediaType:       item.MediaType,
+            Sequence:        i,
+        })
+    }
 
 	post := &domain.Post{
 		UserID:   userID,
 		Caption:  req.Caption,
 		Location: req.Location,
-        IsReel:   req.IsReel,
+		IsReel:   req.IsReel,
+        Media:    mediaItems,
 	}
 
 	uniqueUsernames := make(map[string]bool)
 	matches := mentionRegex.FindAllStringSubmatch(req.Caption, -1)
 
-    log.Printf("[DEBUG] Regex found %d potential mentions", len(matches))
-
 	for _, match := range matches {
 		if len(match) > 1 {
-			uniqueUsernames[match[1]] = true 
+			uniqueUsernames[match[1]] = true
 		}
 	}
 
 	var mentions []domain.UserMention
-    var mentionedUsers []*userPb.GetUserProfileResponse
 
-    for username := range uniqueUsernames {
-        log.Printf("[DEBUG] Attempting to resolve username: '%s'", username)
-        targetUser, err := s.userClient.GetUserByUsername(ctx, &userPb.GetUserByUsernameRequest{Username: username})
+	for username := range uniqueUsernames {
+		targetUser, err := s.userClient.GetUserByUsername(ctx, &userPb.GetUserByUsernameRequest{Username: username})
+		if err == nil && targetUser != nil {
+			mentions = append(mentions, domain.UserMention{
+				MentionedUserID: uuid.MustParse(targetUser.Id),
+				CreatedByUserID: userID,
+			})
+		}
+	}
 
-        
+	uniqueTags := make(map[string]bool)
+	tagMatches := hashtagRegex.FindAllStringSubmatch(req.Caption, -1)
 
-       if err != nil {
-            log.Printf("[ERROR] Failed to call GetUserByUsername for '%s': %v", username, err)
-        } else if targetUser == nil {
-            log.Printf("[WARN] User '%s' returned nil/not found", username)
-        } else {
-            log.Printf("[DEBUG] SUCCESS! Resolved '%s' to UserID: %s", username, targetUser.Id)
-            
-            mentions = append(mentions, domain.UserMention{
-                MentionedUserID: uuid.MustParse(targetUser.Id),
-                CreatedByUserID: userID,
-            })
-            mentionedUsers = append(mentionedUsers, targetUser)
-        }
-    }
-	
-	err := s.repo.CreatePostWithMentions(ctx, post, mentions)
+	for _, match := range tagMatches {
+		if len(match) > 1 {
+			tagName := strings.ToLower(match[1])
+			uniqueTags[tagName] = true
+		}
+	}
+
+	var hashtags []domain.Hashtag
+	for tagName := range uniqueTags {
+		hashtags = append(hashtags, domain.Hashtag{
+			Name: tagName,
+		})
+	}
+
+	post.Hashtags = hashtags
+
+	err := s.repo.CreateFullPost(ctx, post, mentions)
 	if err != nil {
 		return nil, err
 	}
@@ -101,20 +117,19 @@ func (s *PostService) CreatePost(ctx context.Context, req *pb.CreatePostRequest)
 		if err != nil {
 			return
 		}
-		
-        // Re-using the resolved mentions logic conceptually, but for notifications
+
 		for _, mention := range mentions {
-            event := NotificationEvent{
-                RecipientID: mention.MentionedUserID.String(),
-                SenderID:    req.UserId,
-                SenderName:  senderProfile.Username,
-                SenderImage: senderProfile.ProfilePictureUrl,
-                Type:        "mention",
-                EntityID:    post.ID.String(), 
-                Message:     "mentioned you in a post",
-            }
-            s.publishNotification(event)
-        }
+			event := NotificationEvent{
+				RecipientID: mention.MentionedUserID.String(),
+				SenderID:    req.UserId,
+				SenderName:  senderProfile.Username,
+				SenderImage: senderProfile.ProfilePictureUrl,
+				Type:        "mention",
+				EntityID:    post.ID.String(),
+				Message:     "mentioned you in a post",
+			}
+			s.publishNotification(event)
+		}
 	}()
 
 	return post, nil
@@ -276,4 +291,9 @@ func (s *PostService) DeletePost(ctx context.Context, postID, userID string) err
     }
 
     return s.repo.DeletePost(ctx, postID)
+}
+
+func (s *PostService) SearchHashtags(ctx context.Context, query string) ([]ports.HashtagSearchParam, error) {
+    cleanQuery := strings.TrimPrefix(query, "#")
+    return s.repo.SearchHashtags(ctx, cleanQuery)
 }

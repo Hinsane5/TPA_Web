@@ -28,6 +28,7 @@ service PostsService {
     rpc ReviewPostReport(ReviewReportRequest) returns (Response);
     rpc ReportPost(ReportPostRequest) returns (Response);
     rpc DeletePost(DeletePostRequest) returns (DeletePostResponse);
+    rpc SearchHashtags(SearchHashtagsRequest) returns (SearchHashtagsResponse);
 }
 
 message GenerateUploadURLRequest {
@@ -268,4 +269,17 @@ message DeletePostRequest {
 message DeletePostResponse {
     bool success = 1;
     string message = 2;
+}
+
+message SearchHashtagsRequest {
+    string query = 1;
+}
+
+message HashtagResult {
+    string name = 1;
+    int64 count = 2;
+}
+
+message SearchHashtagsResponse {
+    repeated HashtagResult hashtags = 1;
 }

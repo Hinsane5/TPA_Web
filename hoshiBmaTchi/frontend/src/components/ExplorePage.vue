@@ -1,7 +1,7 @@
 <template>
   <div class="explore-container">
     <div class="explore-header" v-if="searchQuery">
-      <h2>#{{ searchQuery }}</h2>
+      <h2>{{ searchQuery.startsWith('#') ? searchQuery : '#' + searchQuery }}</h2>
     </div>
 
     <div class="explore-grid" ref="scrollContainer">
@@ -106,10 +106,11 @@ const fetchPosts = async (reset = false) => {
   }
 
   try {
-    const res = await postsApi.getExplorePosts(limit, offset.value, searchQuery.value)
-    
-    console.log("Explore Data:", res.data);
+    const rawQuery = searchQuery.value || '';
+    const cleanQuery = rawQuery.startsWith('#') ? rawQuery.slice(1) : rawQuery;
 
+    const res = await postsApi.getExplorePosts(limit, offset.value, cleanQuery)
+    
     const newPosts = res.data?.data || []
 
     if (newPosts.length > 0) {
