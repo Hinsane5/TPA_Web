@@ -1,0 +1,16 @@
+FROM node:alpine
+
+WORKDIR /app
+
+# Copy package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy the rest of the application
+COPY . .
+
+# Expose the Vite default port
+EXPOSE 5173
+
+# Start the app with --host to ensure it's accessible inside Docker
+CMD ["npm", "run", "dev", "--", "--host"]
