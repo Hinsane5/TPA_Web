@@ -1,17 +1,23 @@
-root = "/app"
-working_dir = "/app/backend/api-gateway"
+root = "."
+tmp_dir = "tmp"
 
 [build]
-cmd = "swag init -g main.go --dir ./cmd,./handlers --parseDependency --parseInternal && go build -o ./tmp/main ./cmd/main.go"
+cmd = "swag init -g cmd/main.go -o docs --parseDependency --parseInternal && go build -o ./tmp/api-gateway ./cmd/main.go"
 bin = "./tmp/api-gateway"
-
-include_ext = ["go", "toml", "proto"]
-exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs"]
-
-include_dir = ["backend/api-gateway", "backend/proto"]
-exclude_regex = ["_test.go", "docs/.*"]
+include_ext = ["go", "toml"]
+exclude_dir = ["tmp", "vendor", "docs"]
+include_dir = []
+exclude_regex = ["_test.go"]
+delay = 1000
 
 [log]
-color = true
+time = true
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
 [misc]
-reload_on_config_change = true
+clean_on_exit = true

@@ -68,15 +68,15 @@ type performPasswordResetJSON struct {
 
 
 // LoginUser godoc
-// @Summary      Login a user
-// @Description  Authenticates a user using email/username and password, returning a JWT token and user info.
-// @Tags         Auth
+// @Summary      Login user
+// @Description  Authenticate user with username and password
+// @Tags         auth
 // @Accept       json
 // @Produce      json
-// @Param        request body handlers.loginUserJSON true "Login Credentials"
-// @Success      200  {object}  pb.LoginUserResponse
-// @Failure      400  {object}  gin.H
-// @Failure      401  {object}  gin.H
+// @Param        request body loginUserJSON true "Login credentials"
+// @Success      200  {object}  LoginResponse
+// @Failure      400  {object}  ErrorResponse
+// @Failure      401  {object}  ErrorResponse
 // @Router       /auth/login [post]
 func (h *AuthHandler) LoginUser(c *gin.Context){
 	var jsonReq loginUserJSON

@@ -358,7 +358,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Authenticates a user using email/username and password, returning a JWT token and user info.",
+                "description": "Authenticate user with username and password",
                 "consumes": [
                     "application/json"
                 ],
@@ -366,12 +366,12 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Auth"
+                    "auth"
                 ],
-                "summary": "Login a user",
+                "summary": "Login user",
                 "parameters": [
                     {
-                        "description": "Login Credentials",
+                        "description": "Login credentials",
                         "name": "request",
                         "in": "body",
                         "required": true,
@@ -384,19 +384,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/users.LoginUserResponse"
+                            "$ref": "#/definitions/handlers.LoginResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -408,6 +408,32 @@ const docTemplate = `{
             "type": "object",
             "additionalProperties": {}
         },
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "Invalid credentials"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "Please check your username and password"
+                }
+            }
+        },
+        "handlers.LoginResponse": {
+            "description": "Login response with user token",
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "user": {
+                    "$ref": "#/definitions/handlers.UserInfo"
+                }
+            }
+        },
         "handlers.UpdateCollectionJSON": {
             "type": "object",
             "required": [
@@ -416,6 +442,27 @@ const docTemplate = `{
             "properties": {
                 "name": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.UserInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "john@example.com"
+                },
+                "full_name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "123"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "john_doe"
                 }
             }
         },
@@ -549,28 +596,6 @@ const docTemplate = `{
                     }
                 },
                 "user_id": {
-                    "type": "string"
-                }
-            }
-        },
-        "users.LoginUserResponse": {
-            "type": "object",
-            "properties": {
-                "tokens": {
-                    "$ref": "#/definitions/users.TokenResponse"
-                },
-                "two_fa_required": {
-                    "type": "boolean"
-                }
-            }
-        },
-        "users.TokenResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "refresh_token": {
                     "type": "string"
                 }
             }

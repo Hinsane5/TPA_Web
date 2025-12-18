@@ -74,6 +74,10 @@ func main(){
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
+	router.GET("/swagger", func(c *gin.Context) {
+		c.Redirect(301, "/swagger/index.html")
+	})
+
 	router.Use(cors.New(cors.Config{
         AllowOrigins:     []string{"http://localhost:5173", "http://localhost:3000"}, // Add your frontend URL
         AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},

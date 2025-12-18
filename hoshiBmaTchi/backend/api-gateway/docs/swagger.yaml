@@ -3,12 +3,45 @@ definitions:
   gin.H:
     additionalProperties: {}
     type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        example: Invalid credentials
+        type: string
+      message:
+        example: Please check your username and password
+        type: string
+    type: object
+  handlers.LoginResponse:
+    description: Login response with user token
+    properties:
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/handlers.UserInfo'
+    type: object
   handlers.UpdateCollectionJSON:
     properties:
       name:
         type: string
     required:
     - name
+    type: object
+  handlers.UserInfo:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      full_name:
+        example: John Doe
+        type: string
+      id:
+        example: "123"
+        type: string
+      username:
+        example: john_doe
+        type: string
     type: object
   handlers.createCommentJSON:
     properties:
@@ -96,20 +129,6 @@ definitions:
           $ref: '#/definitions/posts.PostMediaResponse'
         type: array
       user_id:
-        type: string
-    type: object
-  users.LoginUserResponse:
-    properties:
-      tokens:
-        $ref: '#/definitions/users.TokenResponse'
-      two_fa_required:
-        type: boolean
-    type: object
-  users.TokenResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
         type: string
     type: object
 host: localhost:8080
@@ -341,10 +360,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Authenticates a user using email/username and password, returning
-        a JWT token and user info.
+      description: Authenticate user with username and password
       parameters:
-      - description: Login Credentials
+      - description: Login credentials
         in: body
         name: request
         required: true
@@ -356,18 +374,18 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/users.LoginUserResponse'
+            $ref: '#/definitions/handlers.LoginResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/gin.H'
-      summary: Login a user
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Login user
       tags:
-      - Auth
+      - auth
 schemes:
 - http
 securityDefinitions:
