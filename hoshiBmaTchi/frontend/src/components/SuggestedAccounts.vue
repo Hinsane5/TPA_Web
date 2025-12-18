@@ -29,7 +29,6 @@ const handleFollow = async (user: SuggestedUser) => {
   isProcessing.value = user.user_id;
   try {
     await usersApi.followUser(user.user_id);
-    // Remove user from the list after following
     suggestedUsers.value = suggestedUsers.value.filter(u => u.user_id !== user.user_id);
   } catch (error) {
     console.error("Failed to follow user", error);

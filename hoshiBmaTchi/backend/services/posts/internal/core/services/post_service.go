@@ -151,14 +151,13 @@ func (s *PostService) GetExplorePosts(ctx context.Context, limit, offset int, ha
 func (s *PostService) publishNotification(event NotificationEvent) {
 	body, _ := json.Marshal(event)
 
-	// [FIX] Use dynamic routing key based on event type (e.g., "notification.mention")
 	routingKey := fmt.Sprintf("notification.%s", event.Type)
 
 	log.Printf("[DEBUG] Publishing to RabbitMQ. Key: %s, Recipient: %s", routingKey, event.RecipientID)
 
 	err := s.amqpChan.PublishWithContext(context.Background(),
 		"notification_exchange",
-		routingKey, // [FIX] Replaced hardcoded "notification.event"
+		routingKey, 
 		false, false,
 		amqp.Publishing{
 			ContentType: "application/json",

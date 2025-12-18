@@ -91,7 +91,6 @@ func (s *ChatGRPCServer) GetCallToken(ctx context.Context, req *pb.GetCallTokenR
 	tokenExpireTimeInSeconds := uint32(86400)
 	privilegeExpireTimeInSeconds := uint32(86400)
 
-	// 4. Generate Token
 	channelName := req.ConversationId
 	token, err := rtctokenbuilder2.BuildTokenWithUid(
 		appID,

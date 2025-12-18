@@ -38,7 +38,6 @@ const navItems: NavItem[] = [
   { id: 'profile', label: 'Profile', iconPath: '/icons/profile-icon.png' },
 ]
 
-// HELPER: Convert minio:9000 to localhost:9000
 const getDisplayUrl = (url: string) => {
   if (!url) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
   return url.replace("http://minio:9000", "http://localhost:9000");
@@ -78,7 +77,6 @@ const fetchUserProfile = async () => {
   }
 }
 
-// Watch for user changes (e.g. after login) to re-fetch profile
 watch(user, (newUser) => {
   if (newUser) {
     fetchUserProfile();

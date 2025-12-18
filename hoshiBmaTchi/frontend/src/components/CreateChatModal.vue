@@ -34,7 +34,7 @@ const toggleUser = (user: any) => {
   } else {
     selectedUsers.value.push(user);
   }
-  searchQuery.value = ''; // Clear search after selection
+  searchQuery.value = '';
   searchResults.value = [];
 };
 
@@ -44,7 +44,6 @@ const createChat = async () => {
     user_ids: selectedUsers.value.map(u => u.user_id)
   };
   
-  // Call API to create chat
   const token = localStorage.getItem('accessToken');
   try {
     const res = await fetch('/api/chats', {

@@ -509,19 +509,16 @@ func (h *StoriesHandler) GetArchivedStories(c *gin.Context) {
 		return
 	}
 
-	// Parse pagination
 	var limit int32 = 15
 	var offset int32 = 0
-	// You can add parsing logic here if needed, e.g., strconv.Atoi(c.Query("limit"))
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Call gRPC with IsArchive: true
 	resp, err := h.client.GetUserStories(ctx, &pb.GetUserStoriesRequest{
 		UserId:    userID.(string),
 		ViewerId:  userID.(string),
-		IsArchive: true, // This fetches expired stories too
+		IsArchive: true,
 		Limit:     limit,
 		Offset:    offset,
 	})

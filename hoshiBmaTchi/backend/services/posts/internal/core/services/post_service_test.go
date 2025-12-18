@@ -14,13 +14,10 @@ import (
 	"github.com/Hinsane5/hoshiBmaTchi/backend/services/posts/internal/core/services"
 )
 
-// --- Mock Implementation of PostRepository ---
-
 type MockPostRepository struct {
 	mock.Mock
 }
 
-// Methods actually used in the test
 func (m *MockPostRepository) GetPostByID(ctx context.Context, postID string) (*domain.Post, error) {
 	args := m.Called(ctx, postID)
 	if args.Get(0) == nil {
@@ -34,14 +31,10 @@ func (m *MockPostRepository) DeletePost(ctx context.Context, postID string) erro
 	return args.Error(0)
 }
 
-// --- Stubs for other interface methods (Required to satisfy the interface) ---
-
-// <--- ADD THIS MISSING METHOD --->
 func (m *MockPostRepository) SearchHashtags(ctx context.Context, query string) ([]ports.HashtagSearchParam, error) {
 	return nil, nil
 }
 
-// <--- ENSURE THIS IS PRESENT --->
 func (m *MockPostRepository) CreateFullPost(ctx context.Context, post *domain.Post, mentions []domain.UserMention) error {
 	return nil
 }
@@ -142,12 +135,9 @@ func (m *MockPostRepository) CreatePostReport(report *domain.PostReport) error {
 	return nil
 }
 
-// --- Unit Tests ---
-
 func TestDeletePost(t *testing.T) {
-	// Setup
 	mockRepo := new(MockPostRepository)
-	// We pass nil for amqpChan and userClient because DeletePost doesn't use them
+
 	service := services.NewPostService(mockRepo, nil, nil)
 
 	ctx := context.Background()
@@ -155,57 +145,42 @@ func TestDeletePost(t *testing.T) {
 	ownerID := uuid.New()
 	otherUserID := uuid.New()
 
-	// Create a dummy post object representing an existing post in DB
 	existingPost := &domain.Post{
 		ID:     postID,
 		UserID: ownerID,
 	}
 
 	t.Run("Success: Owner deletes their own post", func(t *testing.T) {
-		// Mock Expectation: GetPostByID called with postID, returns the post
 		mockRepo.On("GetPostByID", ctx, postID.String()).Return(existingPost, nil).Once()
 
-		// Mock Expectation: DeletePost called with postID, returns no error
 		mockRepo.On("DeletePost", ctx, postID.String()).Return(nil).Once()
 
-		// Execute
 		err := service.DeletePost(ctx, postID.String(), ownerID.String())
 
-		// Assert
 		assert.NoError(t, err)
 		mockRepo.AssertExpectations(t)
 	})
 
 	t.Run("Failure: Non-owner tries to delete post", func(t *testing.T) {
-		// Mock Expectation: GetPostByID called, returns the post
 		mockRepo.On("GetPostByID", ctx, postID.String()).Return(existingPost, nil).Once()
 
-		// Mock Expectation: DeletePost should NOT be called
-		// We verify this implicitly by not adding an .On() for it, or checking AssertNotCalled later
-
-		// Execute
 		err := service.DeletePost(ctx, postID.String(), otherUserID.String())
 
-		// Assert
 		assert.Error(t, err)
 		assert.Equal(t, "unauthorized: you are not the owner of this post", err.Error())
 		
-		// Ensure DeletePost was never called
 		mockRepo.AssertNotCalled(t, "DeletePost")
 	})
 
 	t.Run("Failure: Post not found", func(t *testing.T) {
-		// Mock Expectation: GetPostByID returns an error (e.g. record not found)
 		mockRepo.On("GetPostByID", ctx, postID.String()).Return(nil, errors.New("record not found")).Once()
 
-		// Execute
 		err := service.DeletePost(ctx, postID.String(), ownerID.String())
 
-		// Assert
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "post not found")
 		
-		// Ensure DeletePost was never called
+
 		mockRepo.AssertNotCalled(t, "DeletePost")
 	})
 }

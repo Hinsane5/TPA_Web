@@ -50,7 +50,6 @@ func (p *EventPublisher) Close() {
 	}
 }
 
-// Struct for the Notification Payload
 type NotificationEvent struct {
 	Type      string    `json:"type"`       
 	ActorID   string    `json:"actor_id"`   

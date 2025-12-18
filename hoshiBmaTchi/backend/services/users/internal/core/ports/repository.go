@@ -27,17 +27,14 @@ type UserRepository interface{
     IsBlocked(userA, userB string) (bool, error)
 	UpdateUser(user *domain.User) error
 	
-	// Close Friends
 	AddCloseFriend(userID, targetID uuid.UUID) error
 	RemoveCloseFriend(userID, targetID uuid.UUID) error
 	GetCloseFriends(userID uuid.UUID) ([]domain.User, error)
 	
-	// Hidden Stories
 	HideStoryFromUser(userID, targetID uuid.UUID) error
 	UnhideStoryFromUser(userID, targetID uuid.UUID) error
 	GetHiddenStoryUsers(userID uuid.UUID) ([]domain.User, error)
 
-	// Verification
 	CreateVerificationRequest(req *domain.VerificationRequest) error
 	GetSubscribedEmails() ([]string, error) 
 	GetPendingVerificationRequests() ([]*domain.VerificationRequest, error)

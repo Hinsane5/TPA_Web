@@ -56,20 +56,14 @@ func NewGRPCHandler(
 
 func (h *GRPCHandler) CreateStory(ctx context.Context, req *pb.CreateStoryRequest) (*pb.CreateStoryResponse, error) {
 
-    // --- FIX START: Use Public Endpoint for the DB Record ---
-    baseURL := os.Getenv("MINIO_PUBLIC_ENDPOINT") // "http://localhost:9000"
+    baseURL := os.Getenv("MINIO_PUBLIC_ENDPOINT") 
     if baseURL == "" {
-        // Fallback to internal if public is not set
         baseURL = fmt.Sprintf("http://%s", os.Getenv("MINIO_ENDPOINT"))
     }
-
-    // Construct the URL using the public base (localhost)
-    // fullMediaURL := fmt.Sprintf("%s/%s/%s", baseURL, h.bucketName, req.MediaUrl)
-    // --- FIX END ---
     
     story := &domain.Story{
         UserID:    req.UserId,
-        MediaURL:  req.MediaUrl, // Now saves as http://localhost:9000/...
+        MediaURL:  req.MediaUrl, 
         MediaType: domain.MediaType(req.MediaType.String()),
         Duration:  int(req.Duration),
         CreatedAt: time.Now(),
@@ -89,7 +83,6 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
     objectName := uuid.New().String() + "-" + req.FileName
     expiry := 15 * time.Minute
 
-    // Generate Presigned URL
     presignedURL, err := h.presignClient.PresignedPutObject(ctx, h.bucketName, objectName, expiry)
     if err != nil {
 		fmt.Printf("Error generating MinIO URL: %v\n", err)
@@ -107,7 +100,6 @@ func (h *GRPCHandler) GenerateUploadURL(ctx context.Context, req *pb.GenerateUpl
 }
 
 func (h *GRPCHandler) getSignedURL(ctx context.Context, objectName string) string {
-    // Sanity check: If legacy data in DB still has full URLs (http://...), strip them.
     if strings.HasPrefix(objectName, "http") {
         parts := strings.Split(objectName, h.bucketName+"/")
         if len(parts) > 1 {
@@ -115,14 +107,10 @@ func (h *GRPCHandler) getSignedURL(ctx context.Context, objectName string) strin
         }
     }
 
-    // Use the presignClient (which main.go configured with MINIO_PUBLIC_ENDPOINT)
-    // This ensures the link is generated for "localhost:9000" (browser accessible)
-    // not "minio:9000" (docker internal).
     expiry := 1 * time.Hour 
     presignedURL, err := h.presignClient.PresignedGetObject(ctx, h.bucketName, objectName, expiry, nil)
     if err != nil {
         log.Printf("Failed to sign URL for %s: %v", objectName, err)
-        // Fallback: return raw string if signing fails, though it likely won't load
         return objectName 
     }
 
@@ -212,7 +200,6 @@ func (h *GRPCHandler) groupStoriesToResponse(ctx context.Context, stories []*dom
 		for _, story := range userStoryList {
 			pbStories = append(pbStories, h.domainStoryToPb(ctx, story))
 
-			// Check if viewed (This N+1 check might be slow; optimize by fetching all views for these stories in 1 query if needed)
 			viewed, _ := h.repo.IsStoryViewed(ctx, story.ID, viewerID)
 			if !viewed {
 				hasUnseen = true
@@ -254,13 +241,11 @@ func (h *GRPCHandler) ViewStory(ctx context.Context, req *pb.ViewStoryRequest) (
 }
 
 func (h *GRPCHandler) LikeStory(ctx context.Context, req *pb.LikeStoryRequest) (*pb.LikeStoryResponse, error) {
-	// 1. Check if story exists to get Owner ID
 	story, err := h.repo.GetStoryByID(ctx, req.StoryId)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "story not found")
 	}
 
-	// 2. Save Like to DB
 	like := &domain.StoryLike{
 		StoryID:   req.StoryId,
 		UserID:    req.UserId,
@@ -271,7 +256,6 @@ func (h *GRPCHandler) LikeStory(ctx context.Context, req *pb.LikeStoryRequest) (
 		return nil, status.Errorf(codes.Internal, "failed to like story: %v", err)
 	}
 
-	// 3. Publish Notification Event (if not liking own story)
 	if story.UserID != req.UserId && h.publisher != nil {
 		go func() {
 			err := h.publisher.PublishNotification(context.Background(), events.NotificationEvent{
@@ -300,7 +284,6 @@ func (h *GRPCHandler) UnlikeStory(ctx context.Context, req *pb.UnlikeStoryReques
 }
 
 func (h *GRPCHandler) ReplyToStory(ctx context.Context, req *pb.ReplyToStoryRequest) (*pb.ReplyToStoryResponse, error) {
-	// 1. Get Story for Owner ID
 	story, err := h.repo.GetStoryByID(ctx, req.StoryId)
 	if err != nil {
 		return nil, status.Errorf(codes.NotFound, "story not found")
@@ -317,7 +300,6 @@ func (h *GRPCHandler) ReplyToStory(ctx context.Context, req *pb.ReplyToStoryRequ
 		return nil, status.Errorf(codes.Internal, "failed to reply to story: %v", err)
 	}
 
-	// 2. Publish Notification Event
 	if story.UserID != req.UserId && h.publisher != nil {
 		go func() {
 			err := h.publisher.PublishNotification(context.Background(), events.NotificationEvent{
@@ -472,9 +454,7 @@ func (h *GRPCHandler) GetHiddenUsers(ctx context.Context, req *pb.GetHiddenUsers
     }, nil
 }
 
-// [ADD THIS FUNCTION]
 func (h *GRPCHandler) GetStoriesByAuthors(ctx context.Context, req *pb.GetStoriesByAuthorsRequest) (*pb.GetStoriesResponse, error) {
-    // 1. Call the repo
     stories, err := h.repo.GetStoriesByAuthors(req.AuthorIds)
     if err != nil {
         return nil, status.Error(codes.Internal, "Failed to fetch stories")

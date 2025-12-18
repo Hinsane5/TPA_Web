@@ -2,10 +2,9 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import { storiesApi } from "../services/apiService";
 import type { Story, StoryGroup, User } from "../types/stories";
 
-// Global state to persist across components
 const storyGroups = ref<StoryGroup[]>([]);
 const currentGroupIndex = ref(0);
-const currentStoryIndex = ref(0); // Index relative to the current group
+const currentStoryIndex = ref(0);
 const selectedUsers = ref<Set<string>>(new Set());
 
 export function useStories() {
@@ -21,11 +20,7 @@ export function useStories() {
     { id: "s2", username: "perry", fullName: "Perry", userAvatar: "" },
   ]);
 
-  // --- Computed Properties ---
-
-  // The specific group of stories the user is currently watching
   const currentGroup = computed(() => {
-    // FIX: Optional chaining safety
     return storyGroups.value[currentGroupIndex.value] || null;
   });
 
@@ -35,17 +30,14 @@ export function useStories() {
     () => stories.value[currentStoryIndex.value] || null
   );
 
-  // Helper: Just the stories for the current user (for Progress Bars)
   const currentGroupStories = computed(() => currentGroup.value?.stories || []);
 
-  // --- Fetch & Grouping Logic ---
 
   const fetchStories = async () => {
     try {
       const response = await storiesApi.getFollowingStories();
       const rawStories = response.data.user_stories || [];
 
-      // 1. Map Data
       const mappedStories: Story[] = rawStories.map((s: any) => {
         const userObj = s.user || {};
         return {
@@ -70,7 +62,6 @@ export function useStories() {
         };
       });
 
-      // 2. Group by User ID
       const groupsMap = new Map<string, StoryGroup>();
       mappedStories.forEach((story) => {
         if (!groupsMap.has(story.userId)) {
@@ -106,7 +97,6 @@ export function useStories() {
     if (storyGroups.value[index]) {
       currentGroupIndex.value = index;
 
-      // Find first unseen story in this user's list
       const firstUnseen = storyGroups.value[index].stories.findIndex(
         (s) => !s.isViewed
       );
@@ -116,21 +106,17 @@ export function useStories() {
     }
   };
 
-  // --- Navigation Logic ---
 
   const nextStory = () => {
     stopProgress();
 
-    // Case 1: More stories in THIS group?
     if (currentStoryIndex.value < stories.value.length - 1) {
       currentStoryIndex.value++;
     }
-    // Case 2: Jump to NEXT User Group?
     else if (currentGroupIndex.value < storyGroups.value.length - 1) {
       currentGroupIndex.value++;
-      currentStoryIndex.value = 0; // Start from their first story
+      currentStoryIndex.value = 0; 
     }
-    // Case 3: End of everything
     else {
       isPlaying.value = false;
     }
@@ -139,20 +125,15 @@ export function useStories() {
   const previousStory = () => {
     stopProgress();
 
-    // Case 1: Back in this group
     if (currentStoryIndex.value > 0) {
       currentStoryIndex.value--;
     }
-    // Case 2: Back to PREVIOUS User Group
     else if (currentGroupIndex.value > 0) {
       currentGroupIndex.value--;
-      // Go to the LAST story of that user
       currentStoryIndex.value =
         (storyGroups.value[currentGroupIndex.value]?.stories.length || 1) - 1;
     }
   };
-
-  // --- Utility Functions ---
 
   const addReply = async () => {
     if (!storyReplyText.value.trim() || !currentStory.value) return;
@@ -223,7 +204,6 @@ export function useStories() {
     }
   };
 
-  // Watch for story changes to handle viewed status and progress reset
   watch(currentStory, (newStory) => {
     if (newStory) {
       startProgress();
@@ -231,7 +211,6 @@ export function useStories() {
         storiesApi.viewStory(newStory.id).catch(console.error);
         newStory.isViewed = true;
 
-        // FIX: Ensure currentGroup.value exists before accessing
         if (currentGroup.value) {
           currentGroup.value.hasUnseen = currentGroup.value.stories.some(
             (s) => !s.isViewed

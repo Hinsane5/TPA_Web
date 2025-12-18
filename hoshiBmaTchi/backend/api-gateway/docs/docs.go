@@ -459,7 +459,6 @@ const docTemplate = `{
             }
         },
         "handlers.LoginResponse": {
-            "description": "Login response with user token",
             "type": "object",
             "properties": {
                 "token": {

@@ -146,16 +146,12 @@ func (r *gormUserRepository) SearchUsers(ctx context.Context, query string, user
 func (r *gormUserRepository) GetSuggestedUsers(ctx context.Context, userID string) ([]*domain.User, error) {
     var users []*domain.User
     
-    // 1. Exclude people you already follow
     followingSubQuery := r.db.Table("follows").Select("following_id").Where("follower_id = ?", userID)
     
-    // 2. Exclude people YOU blocked
     blockedSubQuery := r.db.Table("blocks").Select("blocked_id").Where("blocker_id = ?", userID)
     
-    // 3. Exclude people who blocked YOU
     blockerSubQuery := r.db.Table("blocks").Select("blocker_id").Where("blocked_id = ?", userID)
 
-    // Execute Main Query
     err := r.db.WithContext(ctx).
         Where("id != ?", userID).               
         Where("id NOT IN (?)", followingSubQuery).       
@@ -186,7 +182,6 @@ func (r *gormUserRepository) GetFollowingUsers(userID string) ([]*domain.User, e
 }
 
 func (r *gormUserRepository) CreateBlock(blockerID, blockedID string) error {
-    // 1. Create Block Record
     block := &domain.Block{
         BlockerID: uuid.MustParse(blockerID),
         BlockedID: uuid.MustParse(blockedID),
@@ -223,7 +218,6 @@ func (r *gormUserRepository) IsBlocked(userA, userB string) (bool, error) {
     return count > 0, err
 }
 
-// --- Close Friends Operations ---
 func (r *gormUserRepository) AddCloseFriend(userID, targetID uuid.UUID) error {
 	cf := domain.CloseFriend{
 		ID:            uuid.New(),
@@ -245,8 +239,6 @@ func (r *gormUserRepository) GetCloseFriends(userID uuid.UUID) ([]domain.User, e
 		Find(&users).Error
 	return users, err
 }
-
-// --- Hidden Story Operations ---
 
 func (r *gormUserRepository) HideStoryFromUser(userID, targetID uuid.UUID) error {
 	hide := domain.HiddenStoryViewer{
@@ -270,10 +262,7 @@ func (r *gormUserRepository) GetHiddenStoryUsers(userID uuid.UUID) ([]domain.Use
 	return users, err
 }
 
-// --- Verification Operations ---
-
 func (r *gormUserRepository) CreateVerificationRequest(req *domain.VerificationRequest) error {
-	// ID generation logic in GORM BeforeCreate hooks is safer, but redundant explicit assignment is fine
 	if req.ID == uuid.Nil {
 		req.ID = uuid.New()
 	}
@@ -303,7 +292,6 @@ func (r *gormUserRepository) GetSubscribedEmails() ([]string, error) {
 
 func (r *gormUserRepository) GetPendingVerificationRequests() ([]*domain.VerificationRequest, error) {
     var reqs []*domain.VerificationRequest
-    // Preload user to get username/profile pic for the UI
     err := r.db.Preload("User").Where("status = ?", "PENDING").Find(&reqs).Error
     return reqs, err
 }
@@ -353,7 +341,6 @@ func (r *gormUserRepository) CreateUserReport(report *domain.UserReport) error {
     return r.db.Create(report).Error
 }
 
-// Add this method
 func (r *gormUserRepository) CreatePostReport(report *domain.PostReport) error {
     if report.ID == uuid.Nil {
         report.ID = uuid.New()

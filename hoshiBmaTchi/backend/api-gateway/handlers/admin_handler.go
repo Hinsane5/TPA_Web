@@ -21,8 +21,6 @@ func NewAdminHandler(userClient userPb.UserServiceClient, postClient postPb.Post
 	}
 }
 
-// --- User Management ---
-
 func (h *AdminHandler) GetAllUsers(c *gin.Context) {
 	res, err := h.UserClient.GetAllUsers(context.Background(), &userPb.Empty{})
 	if err != nil {
@@ -53,8 +51,6 @@ func (h *AdminHandler) BanUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "User status updated"})
 }
 
-// --- Newsletter ---
-
 func (h *AdminHandler) SendNewsletter(c *gin.Context) {
 	var req struct {
 		Subject string `json:"subject"`
@@ -65,7 +61,6 @@ func (h *AdminHandler) SendNewsletter(c *gin.Context) {
 		return
 	}
 
-	// 1. Get emails from User Service
 	res, err := h.UserClient.GetSubscribedEmails(context.Background(), &userPb.Empty{})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch subscribers"})
@@ -73,8 +68,6 @@ func (h *AdminHandler) SendNewsletter(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Newsletter queued for " + string(rune(len(res.Emails))) + " subscribers"})
 }
-
-// --- Verification ---
 
 func (h *AdminHandler) GetVerificationRequests(c *gin.Context) {
 	res, err := h.UserClient.GetVerificationRequests(context.Background(), &userPb.Empty{})
@@ -88,7 +81,7 @@ func (h *AdminHandler) GetVerificationRequests(c *gin.Context) {
 func (h *AdminHandler) ReviewVerification(c *gin.Context) {
 	reqID := c.Param("id")
 	var req struct {
-		Action string `json:"action"` // ACCEPT or REJECT
+		Action string `json:"action"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Action required"})
@@ -106,10 +99,8 @@ func (h *AdminHandler) ReviewVerification(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Review processed"})
 }
 
-// --- Reports ---
-
 func (h *AdminHandler) GetReports(c *gin.Context) {
-	reportType := c.Query("type") // "post" or "user"
+	reportType := c.Query("type")
 
 	if reportType == "post" {
 		res, err := h.PostClient.GetPostReports(context.Background(), &postPb.Empty{})
@@ -131,8 +122,8 @@ func (h *AdminHandler) GetReports(c *gin.Context) {
 func (h *AdminHandler) ReviewReport(c *gin.Context) {
 	reportID := c.Param("id")
 	var req struct {
-		Type   string `json:"type"`   // "post" or "user"
-		Action string `json:"action"` // "DELETE_POST", "BAN_USER", "IGNORE"
+		Type   string `json:"type"`   
+		Action string `json:"action"` 
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Type and Action required"})

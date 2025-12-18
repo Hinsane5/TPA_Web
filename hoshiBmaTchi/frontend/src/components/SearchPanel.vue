@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import UserListItem from './UserListItem.vue'
-import { usersApi, postsApi } from '../services/apiService' // Import postsApi
+import { usersApi, postsApi } from '../services/apiService'
 
 interface Props {
   isOpen: boolean
@@ -18,7 +18,7 @@ const router = useRouter()
 const searchQuery = ref('')
 const results = ref<any[]>([])
 const recentSearches = ref<any[]>([])
-const isHashtagSearch = ref(false) // Track search type
+const isHashtagSearch = ref(false)
 
 let searchTimeout: ReturnType<typeof setTimeout> | null = null 
 
@@ -33,7 +33,6 @@ watch(searchQuery, (newQuery) => {
     return
   }
 
-  // Check if query starts with #
   if (newQuery.startsWith('#')) {
     isHashtagSearch.value = true
   } else {
@@ -43,18 +42,14 @@ watch(searchQuery, (newQuery) => {
   searchTimeout = setTimeout(async () => {
     try {
       if (isHashtagSearch.value) {
-        // --- HASHTAG SEARCH ---
-        // Remove the '#' for the API call (e.g., "#test" -> "test")
         const cleanQuery = newQuery.substring(1);
-        if (!cleanQuery) return; // Don't search if it's just "#"
+        if (!cleanQuery) return;
         
-        // Assuming you implemented apiService.searchHashtags in previous steps
         const response = await postsApi.searchHashtags(cleanQuery)
         
         results.value = response.data.hashtags || [];
       
       } else {
-        // --- USER SEARCH ---
         const response = await usersApi.searchUsers(newQuery)
         results.value = response.data.users || [] 
       }
@@ -76,21 +71,17 @@ const closeSearch = () => {
   emit('close')
 }
 
-// Handle User Click
 const goToProfile = (user: any) => {
   addToHistory(user)
   router.push(`/dashboard/profile/${user.user_id}`)
   emit('close')
 }
 
-// Handle Hashtag Click
 const goToHashtag = (tagName: string) => {
-  // Navigate to Explore page with query
   router.push({ path: '/dashboard/explore', query: { q: tagName } })
   emit('close')
 }
 
-// ... (History Logic remains the same) ...
 const addToHistory = (user: any) => {
   if (!storageKey.value) return 
   const filtered = recentSearches.value.filter(u => u.user_id !== user.user_id)
@@ -150,7 +141,6 @@ const loadHistory = () => {
 }
 
 onMounted(() => {
-  // Initial load if needed
 })
 </script>
 

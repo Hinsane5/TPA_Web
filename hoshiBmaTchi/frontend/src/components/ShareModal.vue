@@ -18,7 +18,6 @@ const selectedUserId = ref<string | null>(null);
 onMounted(async () => {
   loading.value = true;
   try {
-    // Fetch users (using "following" list as recipients)
     const res = await reelsApi.getShareRecipients();
     users.value = res.data.users || res.data || []; 
   } catch (error) {

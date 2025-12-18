@@ -948,8 +948,8 @@ func (h *UserHandler) GetSettings(ctx context.Context, req *pb.GetSettingsReques
     }
 
     return &pb.GetSettingsResponse{
-        IsPrivate:   user.IsPrivate,            // Ensure this exists in domain.User
-        EnablePush:  user.PushNotificationsEnabled,    // Ensure this exists in domain.User
+        IsPrivate:   user.IsPrivate,            
+        EnablePush:  user.PushNotificationsEnabled,    
         EnableEmail: user.SubscribedToNewsletter, 
     }, nil
 }
@@ -960,12 +960,10 @@ func (h *UserHandler) UpdateUserProfile(ctx context.Context, req *pb.UpdateUserP
         return nil, status.Error(codes.NotFound, "User not found")
     }
 
-    // Update fields
     user.Name = req.Name
     user.Bio = req.Bio
     user.Gender = req.Gender
     
-    // Only update picture if a new URL is provided
     if req.ProfilePictureUrl != "" {
         user.ProfilePictureURL = req.ProfilePictureUrl
     }
@@ -1023,7 +1021,6 @@ func (h *UserHandler) GetCloseFriends(ctx context.Context, req *pb.GetListReques
 		return nil, status.Error(codes.InvalidArgument, "User ID required")
 	}
 
-    // Call the repo method (already exists in your gorm_repository.go)
 	users, err := h.repo.GetCloseFriends(utils.ParseUUID(req.UserId))
 	if err != nil {
 		return nil, status.Error(codes.Internal, "Failed to fetch close friends")
@@ -1094,15 +1091,13 @@ func (h *UserHandler) UnhideStoryFromUser(ctx context.Context, req *pb.ManageRel
 	return &pb.ManageRelationResponse{Success: true}, nil
 }
 
-// --- Verification ---
-
 func (h *UserHandler) RequestVerification(ctx context.Context, req *pb.RequestVerificationRequest) (*pb.RequestVerificationResponse, error) {
 	verificationReq := &domain.VerificationRequest{
 		UserID:           utils.ParseUUID(req.UserId),
 		NationalIDNumber: req.NationalIdNumber,
 		Reason:           req.Reason,
 		SelfieURL:        req.SelfieUrl,
-        Status:           "PENDING", // Default status
+        Status:           "PENDING",
 	}
 
 	err := h.repo.CreateVerificationRequest(verificationReq)
@@ -1144,8 +1139,6 @@ func (h *UserHandler) ToggleUserBan(ctx context.Context, req *pb.ToggleUserBanRe
         return nil, status.Error(codes.Internal, "Failed to update ban status")
     }
     
-    // Optional: Send Email Notification about Ban/Unban
-    
     return &pb.Response{Success: true, Message: "User status updated"}, nil
 }
 
@@ -1165,8 +1158,6 @@ func (h *UserHandler) GetVerificationRequests(ctx context.Context, req *pb.Empty
 
     var pbReqs []*pb.VerificationRequestItem
     for _, r := range reqs {
-        // You might need to fetch User details here if not preloaded
-        // user, _ := h.repo.FindByID(r.UserID.String())
         
         pbReqs = append(pbReqs, &pb.VerificationRequestItem{
             Id:               r.ID.String(),
@@ -1184,20 +1175,16 @@ func (h *UserHandler) GetVerificationRequests(ctx context.Context, req *pb.Empty
 }
 
 func (h *UserHandler) ReviewVerification(ctx context.Context, req *pb.ReviewVerificationRequest) (*pb.Response, error) {
-    // 1. Update Request Status
     verificationReq, err := h.repo.UpdateVerificationStatus(req.RequestId, req.Action)
     if err != nil {
         return nil, status.Error(codes.Internal, "Failed to update status")
     }
 
-    // 2. If Accepted, Verify User and Send Email
     if req.Action == "ACCEPTED" {
         h.repo.VerifyUser(verificationReq.UserID)
 
-        // Fetch User to get Email
         user, _ := h.repo.FindByID(verificationReq.UserID.String())
         
-        // Send Email
         emailBody := "Congratulations! Your account has been verified."
         task := EmailTask{Email: user.Email, Subject: "Verification Approved", Body: emailBody}
         taskBody, _ := json.Marshal(task)
@@ -1286,7 +1273,6 @@ func (h *UserHandler) ReportUser(ctx context.Context, req *pb.ReportUserRequest)
     return &pb.Response{Success: true, Message: "User reported successfully"}, nil
 }
 
-// Implement GetUserEmail (Internal)
 func (h *UserHandler) GetUserEmail(ctx context.Context, req *pb.GetUserEmailRequest) (*pb.GetUserEmailResponse, error) {
     user, err := h.repo.FindByID(req.UserId)
     if err != nil {

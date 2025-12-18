@@ -1,8 +1,6 @@
-// Helper function to convert raw text into HTML with clickable links
 export const parseRichText = (text: string): string => {
   if (!text) return "";
 
-  // Escape HTML to prevent XSS before parsing
   let escapedText = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")

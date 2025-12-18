@@ -520,14 +520,12 @@ func (s *Server) GetUserReels(ctx context.Context, req *pb.GetUserReelsRequest) 
         return nil, status.Error(codes.InvalidArgument, "User ID is required")
     }
 
-    // Call the service we created in Step 2
     posts, err := s.service.GetUserReels(ctx, req.GetUserId())
     if err != nil {
         log.Printf("Failed to fetch user reels: %v", err)
         return nil, status.Error(codes.Internal, "Failed to fetch user reels")
     }
 
-    // Map Domain Posts to Proto Response (with Presigned URLs)
     var pbPosts []*pb.PostResponse
     expiry := time.Hour * 1
 
@@ -538,12 +536,10 @@ func (s *Server) GetUserReels(ctx context.Context, req *pb.GetUserReelsRequest) 
             reqParams := make(url.Values)
             reqParams.Set("response-content-type", m.MediaType)
             
-            // Generate MinIO Presigned URL
             presignedURL, err := s.presignClient.PresignedGetObject(ctx, s.bucketName, m.MediaObjectName, expiry, reqParams)
             
             mediaURLString := ""
             if err == nil {
-                // Docker networking fix for browser (localhost)
                 mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
                 mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
             }
@@ -591,7 +587,6 @@ func (s *Server) GetCollectionPosts(ctx context.Context, req *pb.GetCollectionPo
             
             mediaURLString := ""
             if err == nil {
-                // Docker networking fix
                 mediaURLString = strings.Replace(presignedURL.String(), "minio:9000", "localhost:9000", 1)
                 mediaURLString = strings.Replace(mediaURLString, "http://backend:9000", "http://localhost:9000", 1)
             }
@@ -640,7 +635,6 @@ func (s *Server) DeleteCollection(ctx context.Context, req *pb.DeleteCollectionR
 }
 
 func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*pb.PostResponse, error) {
-    // 1. Fetch from Repo
     post, err := s.repo.GetPostByID(ctx, req.GetPostId())
     if err != nil {
         log.Printf("Failed to fetch post %s: %v", req.GetPostId(), err)
@@ -652,7 +646,6 @@ func (s *Server) GetPostByID(ctx context.Context, req *pb.GetPostByIDRequest) (*
         isLiked, _ = s.repo.IsPostLikedByUser(ctx, req.GetPostId(), req.UserId)
     }
 
-    // 2. Generate Presigned URLs for Media
     var pbMedia []*pb.PostMediaResponse
     expiry := time.Hour * 1
 
@@ -711,7 +704,6 @@ func (s *Server) GetPostReports(ctx context.Context, req *pb.Empty) (*pb.PostRep
 }
 
 func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportRequest) (*pb.Response, error) {
-    // 1. Fetch Report to get PostID
     report, err := s.repo.GetPostReportByID(ctx, req.ReportId)
     if err != nil {
         return nil, status.Error(codes.NotFound, "Report not found")
@@ -719,7 +711,6 @@ func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportReque
 
     statusStr := "REJECTED"
     
-    // 2. Handle Actions
     if req.Action == "DELETE_POST" {
         statusStr = "RESOLVED"
         if err := s.repo.DeletePost(ctx, report.PostID.String()); err != nil {
@@ -728,16 +719,13 @@ func (s *Server) ReviewPostReport(ctx context.Context, req *pb.ReviewReportReque
         }
     }
 
-    // 3. Update Report Status
     if err := s.repo.UpdatePostReportStatus(ctx, req.ReportId, statusStr); err != nil {
         return nil, status.Error(codes.Internal, "Failed to update report status")
     }
 
 	if req.Action == "DELETE_POST" {
-        // 1. Get Reporter Email
         emailRes, err := s.userClient.GetUserEmail(ctx, &userPb.GetUserEmailRequest{UserId: report.ReporterID.String()})
         if err == nil && emailRes.Email != "" {
-            // 2. Publish Email Task
             type EmailTask struct {
                 Email   string `json:"email"`
                 Subject string `json:"subject"`
@@ -787,9 +775,8 @@ func (s *Server) ReportPost(ctx context.Context, req *pb.ReportPostRequest) (*pb
 func (s *Server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb.DeletePostResponse, error) {
     err := s.service.DeletePost(ctx, req.GetPostId(), req.GetUserId())
     if err != nil {
-        log.Printf("[ERROR] DeletePost failed: %v", err) // This prints to docker logs
+        log.Printf("[ERROR] DeletePost failed: %v", err)
 
-        // Check for specific errors
         if strings.Contains(err.Error(), "unauthorized") {
             return nil, status.Error(codes.PermissionDenied, "You are not authorized to delete this post")
         }
@@ -797,7 +784,6 @@ func (s *Server) DeletePost(ctx context.Context, req *pb.DeletePostRequest) (*pb
             return nil, status.Error(codes.NotFound, "Post not found")
         }
         
-        // Return the actual error string during development so you see it in the frontend/Postman
         return nil, status.Error(codes.Internal, fmt.Sprintf("Failed to delete post: %v", err))
     }
 

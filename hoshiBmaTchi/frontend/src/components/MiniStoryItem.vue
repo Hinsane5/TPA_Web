@@ -1,11 +1,10 @@
 <script setup lang="ts">
 interface Props {
-  avatar?: string; // Made optional
-  username?: string; // Made optional
+  avatar?: string; 
+  username?: string; 
   isActive: boolean;
 }
 
-// Default values to prevent crashes
 withDefaults(defineProps<Props>(), {
     avatar: '',
     username: 'User'

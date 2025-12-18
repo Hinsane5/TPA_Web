@@ -28,19 +28,14 @@ const parseMessage = (text: string) => {
   
   let parsed = text;
 
-  // 1. Sanitize HTML (Basic XSS prevention)
   parsed = parsed.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-  // 2. **Bold**
   parsed = parsed.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
   
-  // 3. *Italic*
   parsed = parsed.replace(/\*(.*?)\*/g, '<i>$1</i>');
   
-  // 4. ~~Strikethrough~~
   parsed = parsed.replace(/~~(.*?)~~/g, '<s>$1</s>');
 
-  // 5. Mentions (@username)
   parsed = parsed.replace(
     /(@[a-zA-Z0-9._]+)/g,
     '<span class="mention-link" data-username="$1" style="color: rgb(0, 149, 246); cursor: pointer; font-weight: 600;">$1</span>'
@@ -106,14 +101,11 @@ const getDisplayUrl = (url: string | undefined) => {
 };
 
 const viewSharedContent = () => {
-  const contentId = props.message.content; // Content ID is stored in message content for shares
+  const contentId = props.message.content;
   
   if (props.message.messageType === 'post_share') {
-    // Navigate to post (or open overlay logic if implemented)
-    // router.push(`/p/${contentId}`); 
     alert("Navigating to Post: " + contentId);
   } else if (props.message.messageType === 'reel_share') {
-    // router.push(`/reels/${contentId}`);
     alert("Navigating to Reel: " + contentId);
   } else if (props.message.messageType === 'story_share') {
      alert("View Story: " + contentId);

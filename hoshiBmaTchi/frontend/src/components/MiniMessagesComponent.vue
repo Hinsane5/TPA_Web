@@ -41,25 +41,23 @@ const recentChatUsers = computed(() => {
   return users;
 });
 
-// 3. Count of conversations with unread messages
 const unreadSourcesCount = computed(() => {
   return chatStore.conversations.value.filter(c => c.unreadCount > 0).length;
 });
 
-// --- Drag & Interaction Logic ---
 const position = ref({ x: window.innerWidth - 350, y: window.innerHeight - 100 });
 const isDragging = ref(false);
 const dragStart = ref({ x: 0, y: 0 });
-const hasMoved = ref(false); // Track if actual movement occurred to distinguish click from drag
+const hasMoved = ref(false);
 
 const startDrag = (event: MouseEvent) => {
   isDragging.value = true;
-  hasMoved.value = false; // Reset movement tracker
+  hasMoved.value = false;
   dragStart.value = { x: event.clientX - position.value.x, y: event.clientY - position.value.y };
   
   const handleMouseMove = (moveEvent: MouseEvent) => {
     if (isDragging.value) {
-      hasMoved.value = true; // User is dragging
+      hasMoved.value = true;
       position.value = {
         x: moveEvent.clientX - dragStart.value.x,
         y: moveEvent.clientY - dragStart.value.y,
@@ -72,7 +70,6 @@ const startDrag = (event: MouseEvent) => {
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('mouseup', handleMouseUp);
 
-    // If no movement occurred, treat it as a click
     if (!hasMoved.value) {
       navigateToMessages();
     }

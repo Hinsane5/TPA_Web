@@ -114,7 +114,6 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
-	// Logic for Direct Message (1-on-1) reuse
 	if len(req.UserIDs) == 1 {
 		targetUserID := req.UserIDs[0]
 		existingConv, err := h.Repo.FindDirectConversation(c, userID, targetUserID)
@@ -128,10 +127,8 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		}
 	}
 
-	// Combine Creator + Selected Users
 	allUserIDs := append(req.UserIDs, userID)
     
-    // Default name if empty for groups
     groupName := req.Name
     if groupName == "" && len(req.UserIDs) > 1 {
         groupName = "New Group"
@@ -149,9 +146,6 @@ func (h *ChatHandler) CreateGroupChat(c *gin.Context) {
 		return
 	}
 
-	// Broadcast "group_created" event to notify participants to refresh their lists
-	// Note: In a production app, you would target specific users. 
-    // Here we broadcast, and the frontend store handles the "fetch if unknown" logic.
 	wsMsg := map[string]interface{}{
 		"type":            "group_created",
 		"conversation_id": conv.ID.String(),
@@ -245,7 +239,6 @@ func (h *ChatHandler) RemoveParticipant(c *gin.Context) {
 		return
 	}
 
-    // Broadcast update
 	wsMsg := map[string]interface{}{
 		"type":            "participant_removed",
 		"conversation_id": conversationID,
@@ -394,7 +387,6 @@ func (h *ChatHandler) ShareContent(c *gin.Context) {
 		conversationID = conv.ID
 	}
 
-	// 2. Create Message
 	sID, _ := uuid.Parse(senderID)
 	
 	msg := &domain.Message{
@@ -437,7 +429,6 @@ func (h *ChatHandler) GetCallToken(c *gin.Context) {
 		return
 	}
 
-	// Call the gRPC service
 	resp, err := h.client.GetCallToken(c.Request.Context(), &req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -456,28 +447,22 @@ func (h *ChatHandler) GenerateCallToken(c *gin.Context) {
 		return
 	}
 
-	// 1. Get Agora Config from Env
 	appID := os.Getenv("AGORA_APP_ID")
 	appCertificate := os.Getenv("AGORA_APP_CERTIFICATE")
 
 	if appID == "" || appCertificate == "" {
-		// Log error for debugging, but return generic error to user
 		fmt.Println("Error: AGORA_APP_ID or AGORA_APP_CERTIFICATE not set")
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Voice service configuration error"})
 		return
 	}
 
-	// 2. Define Channel Name (Use conversation ID) and UID
 	channelName := conversationID
 	
-	// UID 0 allows Agora to assign a UID or allows the client to join with any numeric UID
 	tokenUID := uint32(0) 
 	
-	// 3. Set Expiration (e.g., 24 hours)
 	tokenExpirationInSeconds := uint32(86400) 
 	privilegeExpirationInSeconds := uint32(86400)
 
-	// 4. Generate Token
 	token, err := rtctokenbuilder2.BuildTokenWithUid(
 		appID,
 		appCertificate,
@@ -493,7 +478,6 @@ func (h *ChatHandler) GenerateCallToken(c *gin.Context) {
 		return
 	}
 
-	// 5. Return success response
 	c.JSON(http.StatusOK, gin.H{
 		"token":        token,
 		"app_id":       appID,

@@ -32,7 +32,6 @@ func failOnError(err error, msg string) {
 }
 
 func main() {
-	// 1. Load Environment Variables
 	smtpHost := os.Getenv("SMTP_HOST")
 	smtpPortStr := os.Getenv("SMTP_PORT")
 	emailUser := os.Getenv("EMAIL_USER")
@@ -47,7 +46,6 @@ func main() {
 	smtpPort, err := strconv.Atoi(smtpPortStr)
 	failOnError(err, "Invalid SMTP_PORT")
 
-	// 2. Initialize Database (PostgreSQL)
 	db, err := gorm.Open(postgres.Open(dbDSN), &gorm.Config{})
 	failOnError(err, "Failed to connect to Database")
 	
@@ -57,19 +55,15 @@ func main() {
 	repo := repository.NewNotificationRepository(db)
 	log.Println("Database connected and migrated.")
 
-	// 3. Initialize WebSocket Hub
 	hub := ws.NewHub()
 
-	// 4. Initialize SMTP Dialer
 	dialer := gomail.NewDialer(smtpHost, smtpPort, emailUser, emailPass)
 	
-	// Test SMTP connection
 	dialerConn, err := dialer.Dial()
 	failOnError(err, "Failed to connect to SMTP server")
 	dialerConn.Close()
 	log.Println("SMTP connection successful.")
 
-	// 5. Connect to RabbitMQ
 	conn, err := amqp.Dial(rabbitMQURL)
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
@@ -81,13 +75,11 @@ func main() {
 	err = ch.ExchangeDeclare("email_exchange", "direct", true, false, false, false, nil)
 	failOnError(err, "Failed to declare email_exchange")
 
-	// OTP Queue
 	qOTP, err := ch.QueueDeclare("email_queue", true, false, false, false, nil)
 	failOnError(err, "Failed to declare email_queue")
 	err = ch.QueueBind(qOTP.Name, "send_email", "email_exchange", false, nil)
 	failOnError(err, "Failed to bind email_queue")
 
-	// Welcome Queue
 	qWelcome, err := ch.QueueDeclare("welcome_email_queue", true, false, false, false, nil)
 	failOnError(err, "Failed to declare welcome_email_queue")
 	err = ch.QueueBind(qWelcome.Name, "email.welcome", "email_exchange", false, nil)
@@ -111,10 +103,8 @@ func main() {
 	notifMsgs, err := ch.Consume(qNotif.Name, "app_notif_consumer", true, false, false, false, nil)
 	failOnError(err, "Failed to register Notification consumer")
 
-	// --- OTP EMAIL CONSUMER (With Original Logs) ---
 	go func() {
 		for d := range otpMsgs {
-			// RESTORED: Logging the body so you can see the OTP content
 			log.Printf(" [OTP] Received email task for: %s", d.Body)
 			
 			var task EmailTask
@@ -140,7 +130,6 @@ func main() {
 		}
 	}()
 
-	// --- WELCOME EMAIL CONSUMER (With Original Logs) ---
 	go func() {
 		for d := range welcomeMsgs {
 			log.Printf(" [WELCOME] Received email task: %s", d.Body)
@@ -168,7 +157,6 @@ func main() {
 		}
 	}()
 	
-	// --- REAL-TIME NOTIFICATION CONSUMER ---
 	go func() {
 		for d := range notifMsgs {
 			log.Printf(" [NOTIF] Received event: %s", d.Body)
@@ -179,7 +167,6 @@ func main() {
 				continue
 			}
 
-			// 1. Save to Database
 			notif := models.Notification{
 				RecipientID: event.RecipientID,
 				SenderID:    event.SenderID,
@@ -195,7 +182,6 @@ func main() {
 				log.Printf("Error saving notification to DB: %v", err)
 			}
 
-			// 2. Send to WebSocket
 			hub.SendNotification(event.RecipientID, notif)
 		}
 	}()
@@ -271,13 +257,11 @@ func main() {
 
 		hub.Register(userID, conn)
 		
-		// Clean up on disconnect
 		defer func() {
 			hub.Unregister(userID, conn)
 			conn.Close()
 		}()
 
-		// Keep connection alive/listen for close
 		for {
 			_, _, err := conn.ReadMessage()
 			if err != nil {

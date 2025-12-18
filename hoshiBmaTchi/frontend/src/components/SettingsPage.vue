@@ -3,7 +3,6 @@ import { ref, onMounted, reactive } from 'vue';
 import { settingsApi, usersApi, postsApi } from '@/services/apiService';
 import { useAuth } from '@/composables/useAuth';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const { user } = useAuth();
 const currentTab = ref('edit-profile');
 
@@ -17,7 +16,6 @@ const tabs = [
   { id: 'request-verified', label: 'Request Verified' },
 ];
 
-// 1. Edit Profile Logic
 const fileInput = ref<HTMLInputElement | null>(null);
 const profileForm = reactive({
   name: '',
@@ -32,12 +30,9 @@ const handleFileChange = async (event: Event) => {
   const file = (event.target as HTMLInputElement).files?.[0];
   if (file) {
     try {
-      // 1. Get Presigned URL
       const res = await postsApi.generateUploadUrl(file.name, file.type);
       const uploadUrl = res.data.upload_url;
-      // 2. Upload to MinIO
       await postsApi.uploadFileToMinio(uploadUrl, file);
-      // 3. Set Public URL
       profileForm.profile_picture_url = res.data.public_url || uploadUrl.split('?')[0]; 
     } catch (error) {
       alert("Failed to upload image");
@@ -53,7 +48,6 @@ const saveProfile = async () => {
     } catch(e) { alert('Failed to save profile'); }
 };
 
-// 2 & 3. Settings (Notif & Privacy)
 const notifSettings = reactive({ enable_push: true, enable_email: true });
 const privacySettings = reactive({ is_private: false });
 
@@ -68,7 +62,6 @@ const savePrivacy = async () => {
   } catch (e) { console.error("Failed to update privacy", e); }
 };
 
-// 4. Close Friends
 const closeFriendsList = ref<any[]>([]);
 const searchQuery = ref('');
 const searchResults = ref<any[]>([]);
@@ -96,7 +89,6 @@ const removeFromCloseFriends = async (id: string) => {
     } catch(e) { alert("Failed to remove user"); }
 };
 
-// 5. Blocked
 const blockedList = ref<any[]>([]);
 const unblockUser = async (id: string) => {
     try {
@@ -105,7 +97,6 @@ const unblockUser = async (id: string) => {
     } catch(e) { alert("Failed to unblock user"); }
 };
 
-// 6. Hide Story
 const hiddenStoryList = ref<any[]>([]);
 const searchQueryStory = ref('');
 const searchResultsStory = ref<any[]>([]);
@@ -132,7 +123,6 @@ const unhideStory = async (id: string) => {
     } catch(e) { alert("Failed to unhide story"); }
 };
 
-// 7. Request Verified
 const selfieInput = ref<HTMLInputElement | null>(null);
 const verifyForm = reactive({ national_id: '', reason: '' });
 
@@ -141,13 +131,11 @@ const submitVerification = async () => {
     if(!file) return alert("Selfie photo required");
     
     try {
-      // 1. Upload Image First
       const res = await postsApi.generateUploadUrl(file.name, file.type);
       const uploadUrl = res.data.upload_url;
       await postsApi.uploadFileToMinio(uploadUrl, file);
       const selfieUrl = res.data.public_url || uploadUrl.split('?')[0];
 
-      // 2. Submit Request as JSON (Backend expects JSON binding)
       const requestData = {
           national_id: verifyForm.national_id,
           reason: verifyForm.reason,
@@ -159,7 +147,7 @@ const submitVerification = async () => {
       alert("Request Submitted Successfully!");
       verifyForm.national_id = '';
       verifyForm.reason = '';
-      if (selfieInput.value) selfieInput.value.value = ''; // Reset file input
+      if (selfieInput.value) selfieInput.value.value = ''; 
     } catch(e) { 
       alert("Submission failed"); 
       console.error(e);

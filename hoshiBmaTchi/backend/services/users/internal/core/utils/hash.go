@@ -15,7 +15,6 @@ func CheckPasswordHash(password, hash string) bool{
 	return err == nil
 }
 
-// Inside internal/core/utils/ or strictly inside the handler if you prefer
 func ParseUUID(id string) uuid.UUID {
     uid, _ := uuid.Parse(id)
     return uid

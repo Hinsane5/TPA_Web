@@ -17,13 +17,11 @@ const unreadCount = ref(0);
 let socket: WebSocket | null = null;
 
 export function useNotifications() {
-  const { token, user } = useAuth(); // Now this works because you fixed useAuth!
+  const { token, user } = useAuth(); 
 
   const connect = () => {
-    // Guard: Don't connect if no token or no user ID
     if (socket || !token.value || !user.value?.id) return;
 
-    // Connect to Backend WS
     const wsUrl = import.meta.env.VITE_WS_URL || "ws://localhost:8084/ws";
     socket = new WebSocket(
       `${wsUrl}?token=${token.value}&userId=${user.value.id}`
@@ -45,7 +43,6 @@ export function useNotifications() {
     socket.onclose = () => {
       console.log("WS Disconnected");
       socket = null;
-      // Optional: Add reconnection logic here
     };
   };
 
@@ -55,7 +52,6 @@ export function useNotifications() {
   };
 
   const fetchHistory = async () => {
-    // FIX: Guard clause to prevent crash if user is null
     if (!user.value || !user.value.id) return;
 
     try {
@@ -74,7 +70,6 @@ export function useNotifications() {
     }
   };
 
-  // Watch for user changes to connect/fetch automatically
   watch(user, (newUser) => {
     if (newUser) {
       connect();

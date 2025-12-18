@@ -53,16 +53,12 @@ const handleSearchToggle = () => {
   isSearchOpen.value = !isSearchOpen.value;
 };
 
-// --- NEW: Handle Notification Toggle & Read Status ---
 const toggleNotifications = () => {
   isNotificationOpen.value = !isNotificationOpen.value;
 }
 
-// Watch for panel opening to mark as read
 watch(isNotificationOpen, (newValue) => {
-  // Check if panel is open, we have unread items, AND we have a user ID
   if (newValue && notificationStore.unreadCount > 0 && user.value?.id) {
-    // FIX: Pass the user ID argument here
     notificationStore.markNotificationsAsRead(user.value.id);
   }
 });
@@ -75,7 +71,6 @@ const formatTimeAgo = (timestamp: string | undefined) => {
     return 'just now';
   }
 };
-// -----------------------------------------------------
 
 const openCreateModal = () => {
   showCreateChoice.value = true
@@ -103,20 +98,18 @@ const handleStoryCreated = () => {
 }
 
 const handleNotificationClick = (notif: Notification) => {
-  // Close the notification drawer
   isNotificationOpen.value = false;
 
   const type = notif.type ? notif.type.toLowerCase() : "";
   const targetId = notif.sender_id;
 
-  // 1. Follow & Mention -> Go to User Profile
   if (['follow', 'mention'].includes(type)) {
     router.push({ 
       name: 'profile', 
       params: { id: targetId } 
     });
   } 
-  // 2. Like & Comment -> Go to Post Detail Page
+
   else if (['like', 'comment'].includes(type)) {
     if (notif.entity_id) {
       router.push({ 
@@ -131,12 +124,11 @@ const handleNotificationClick = (notif: Notification) => {
       });
     }
   }
-  // Default fallback
+  
   else {
      router.push({ name: 'profile', params: { id: targetId } });
   }
   
-  // Mark as read
   if (!notif.is_read) {
     notificationStore.markAsRead(notif.ID);
   }

@@ -8,8 +8,7 @@ const route = useRoute();
 const router = useRouter();
 const collectionID = route.params.collectionID as string;
 
-// State
-const collectionName = ref("Collection"); // Ideally fetch name or pass as query param
+const collectionName = ref("Collection");
 const posts = ref<any[]>([]);
 const loading = ref(true);
 const showActionsModal = ref(false);
@@ -17,14 +16,12 @@ const modalView = ref<'options' | 'rename' | 'delete_confirm'>('options');
 const renameInput = ref("");
 const selectedPost = ref<any>(null);
 
-// Fetch Data
 const fetchPosts = async () => {
   try {
     loading.value = true;
     const res = await postsApi.getCollectionPosts(collectionID);
     posts.value = res.data.data || [];
     
-    // Attempt to get name from query if passed, or could fetch specific collection details API if exists
     if (route.query.name) {
         collectionName.value = route.query.name as string;
     }
@@ -39,7 +36,6 @@ onMounted(() => {
     fetchPosts();
 });
 
-// Rename Logic
 const startRename = () => {
     renameInput.value = collectionName.value;
     modalView.value = 'rename';
@@ -57,7 +53,6 @@ const handleRename = async () => {
     }
 };
 
-// Delete Logic
 const handleDelete = async () => {
     try {
         await postsApi.deleteCollection(collectionID);
@@ -67,7 +62,6 @@ const handleDelete = async () => {
     }
 };
 
-// Helpers
 const getDisplayUrl = (url: string) => {
   if (!url) return "/placeholder.png";
   return url.replace("http://minio:9000", "http://localhost:9000");
@@ -78,7 +72,6 @@ const openPostDetail = (post: any) => {
 };
 
 const handleLikeToggle = (post: any) => {
-    // Basic optimistic update for the grid item
     post.is_liked = !post.is_liked;
     post.likes_count += post.is_liked ? 1 : -1;
 };

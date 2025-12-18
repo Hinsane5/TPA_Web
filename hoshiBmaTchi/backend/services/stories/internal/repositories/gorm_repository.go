@@ -161,11 +161,9 @@ func (r *GormStoryRepository) ToggleStoryVisibility(ctx context.Context, userID,
         First(&visibility).Error
 
     if err == nil {
-        // Exists, so delete it (Unhide)
         r.db.WithContext(ctx).Delete(&visibility)
         return false, nil
     } else if err == gorm.ErrRecordNotFound {
-        // Doesn't exist, create it (Hide)
         newVis := domain.StoryVisibility{
             ID:             uuid.New().String(),
             UserID:         userID,

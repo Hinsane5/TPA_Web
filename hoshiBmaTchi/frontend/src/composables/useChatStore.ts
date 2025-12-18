@@ -8,7 +8,6 @@ import AgoraRTC, {
 import { usersApi } from "../services/apiService";
 import axios from "axios";
 
-// State
 const currentUser = ref<User | null>(null);
 const conversations = ref<Conversation[]>([]);
 const messages = ref<Message[]>([]);
@@ -16,7 +15,6 @@ const selectedConversationId = ref<string | null>(null);
 const isConnected = ref(false);
 let socket: WebSocket | null = null;
 
-// Call State
 const callState = ref<"idle" | "dialing" | "incoming" | "connected">("idle");
 const activeCallType = ref<"audio" | "video">("video"); // Defined here
 const incomingCaller = ref<{ id: string; name: string; avatar: string } | null>(
@@ -25,7 +23,6 @@ const incomingCaller = ref<{ id: string; name: string; avatar: string } | null>(
 
 const outgoingCallInfo = ref<{ name: string; avatar: string } | null>(null);
 
-// Agora State (Use shallowRef + markRaw to avoid Vue Proxy issues)
 const agoraClient = shallowRef<IAgoraRTCClient | null>(null);
 const localTracks = shallowRef<{
   video?: ICameraVideoTrack;
@@ -42,7 +39,6 @@ const WS_URL = "ws://localhost:8081/ws";
 export function useChatStore() {
   const getToken = () => localStorage.getItem("accessToken");
 
-  // --- Helper Functions ---
   const resolveSenderInfo = (senderId: string, conversationId: string) => {
     if (currentUser.value && senderId === currentUser.value.id) {
       return {
@@ -67,7 +63,6 @@ export function useChatStore() {
     return { name: "Unknown", avatar: "/placeholder.svg" };
   };
 
-  // --- Initialization & API ---
   const initialize = async (user: User) => {
     currentUser.value = user;
     await fetchConversations();
@@ -193,9 +188,6 @@ export function useChatStore() {
     }
   };
 
-
-
-  // --- WebSocket Logic ---
   const connectWebSocket = () => {
     if (socket) return;
     const token = getToken();
@@ -281,7 +273,6 @@ export function useChatStore() {
     }
   };
 
-  // --- Call Signaling Logic ---
   const handleSignal = (data: any) => {
     if (data.sender_id === currentUser.value?.id) return;
 
@@ -311,7 +302,6 @@ export function useChatStore() {
     }
   };
 
-  // --- Agora / Call Actions ---
   const initAgora = async (
     channel: string,
     token: string,
@@ -361,24 +351,20 @@ export function useChatStore() {
     activeCallType.value = type;
     callState.value = "dialing";
 
-    // 1. NEW: Identify exactly who we are calling
     const conversation = conversations.value.find(
       (c) => c.id === selectedConversationId.value
     );
     if (conversation) {
-      // Find the "other" participant
       const other = conversation.participants.find(
         (p) => p.id !== currentUser.value!.id
       );
 
       if (other) {
-        // It's a 1-on-1 call, use their specific name
         outgoingCallInfo.value = {
           name: other.fullName || other.username || "Unknown User",
           avatar: other.avatar || "/placeholder.svg",
         };
       } else {
-        // Fallback for groups or self
         outgoingCallInfo.value = {
           name: conversation.name || "Unknown Group",
           avatar: conversation.avatar || "/placeholder.svg",
@@ -388,7 +374,6 @@ export function useChatStore() {
 
     try {
       const token = getToken();
-      // Use the GET endpoint we fixed previously
       const res = await axios.get(
         `${API_URL}/chats/${selectedConversationId.value}/call-token`,
         { headers: { Authorization: `Bearer ${token}` } }

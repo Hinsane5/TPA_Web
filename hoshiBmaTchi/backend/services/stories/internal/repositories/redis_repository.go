@@ -23,7 +23,6 @@ func (r *RedisStoryRepository) SetUserFeed(ctx context.Context, userID string, s
 	if err != nil {
 		return err
 	}
-	// Expire cache after 5 minutes (or invalidate on new story creation)
 	return r.client.Set(ctx, fmt.Sprintf("feed:%s", userID), data, 5*time.Minute).Err()
 }
 

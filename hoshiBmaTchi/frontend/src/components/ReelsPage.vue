@@ -13,7 +13,6 @@ const activeReelForComments = ref<any>(null);
 
 const router = useRouter();
 
-// --- State ---
 const reels = ref<any[]>([]);
 const loading = ref(false);
 const currentReelIndex = ref(0);
@@ -23,12 +22,10 @@ const reelItems = ref<HTMLElement[]>([]);
 const videoRefs = ref<HTMLVideoElement[]>([]);
 const observer = ref<IntersectionObserver | null>(null);
 
-// Pagination
 const limit = 5;
 const offset = ref(0);
 const hasMore = ref(true);
 
-// --- Lifecycle ---
 onMounted(() => {
   fetchReels();
   setupIntersectionObserver();
@@ -38,25 +35,22 @@ onBeforeUnmount(() => {
   if (observer.value) observer.value.disconnect();
 });
 
-// --- Data Fetching ---
 const fetchReels = async () => {
   if (loading.value || !hasMore.value) return;
   
   loading.value = true;
   try {
     const response = await reelsApi.getReelsFeed(limit, offset.value);
-    const newReels = response.data.data || []; // Adjust based on actual API response structure
+    const newReels = response.data.data || []; 
     
     if (newReels.length < limit) hasMore.value = false;
     
-    // Initialize playing state for new reels
     const startIdx = reels.value.length;
     newReels.forEach(() => isPlaying.value.push(false));
     
     reels.value.push(...newReels);
     offset.value += limit;
     
-    // Re-observe new elements after DOM update
     nextTick(() => {
       observeNewItems(startIdx);
     });
@@ -68,22 +62,19 @@ const fetchReels = async () => {
   }
 };
 
-// --- Intersection Observer (Auto Play/Pause) ---
 const setupIntersectionObserver = () => {
   const options = {
     root: scrollContainer.value,
-    threshold: 0.6 // Trigger when 60% of the reel is visible
+    threshold: 0.6 
   };
 
   observer.value = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        // Find index of the intersecting element
         const index = reelItems.value.indexOf(entry.target as HTMLElement);
         if (index !== -1) {
           playVideo(index);
           
-          // Load more if we are near the end
           if (index >= reels.value.length - 2) {
             fetchReels();
           }
@@ -106,12 +97,10 @@ const observeNewItems = (startIndex: number) => {
   }
 };
 
-// --- Video Control ---
 const playVideo = (index: number) => {
   currentReelIndex.value = index;
   const video = videoRefs.value[index];
   if (video) {
-    // Pause all others first (safety check)
     videoRefs.value.forEach((v, i) => {
       if (i !== index && v) {
         v.pause();
@@ -119,12 +108,12 @@ const playVideo = (index: number) => {
       }
     });
     
-    video.muted = false; // Try to unmute, browser might block if no interaction
+    video.muted = false;
     video.play().then(() => {
       isPlaying.value[index] = true;
     }).catch(e => {
       console.warn("Autoplay blocked:", e);
-      video.muted = true; // Fallback to muted autoplay
+      video.muted = true;
       video.play();
     });
   }
@@ -232,10 +221,8 @@ const openMoreOptions = (reel: any) => {
   }
 };
 
-// --- Utilities ---
 const getDisplayUrl = (url: string) => {
   if (!url) return "";
-  // Adjust for local docker environment if needed
   return url.replace("http://minio:9000", "http://localhost:9000"); 
 };
 
@@ -251,7 +238,6 @@ const goToProfile = (userId: string) => {
 
 const parseCaption = (text: string) => {
   if (!text) return "";
-  // Simple hashtag/mention parser
   return text.replace(/(@\w+)/g, '<span style="font-weight:bold; cursor:pointer">$1</span>')
              .replace(/(#\w+)/g, '<span style="font-weight:bold; cursor:pointer">$1</span>');
 };

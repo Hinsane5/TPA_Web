@@ -2,8 +2,6 @@
 import MiniStoryItem from './MiniStoryItem.vue';
 import { useStories } from '../composables/useStories';
 
-// FIX: Remove Props. Consume global state directly.
-// This prevents the "Maximum call stack size" error by removing the reactive loop.
 const { storyGroups, currentGroupIndex, selectGroup } = useStories();
 
 const emit = defineEmits<{
@@ -11,8 +9,8 @@ const emit = defineEmits<{
 }>();
 
 const handleSelect = (index: number) => {
-  selectGroup(index); // Update global state
-  emit('open-viewer'); // Tell HomePage to open the overlay
+  selectGroup(index); 
+  emit('open-viewer');
 };
 </script>
 

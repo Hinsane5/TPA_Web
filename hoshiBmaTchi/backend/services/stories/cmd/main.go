@@ -156,7 +156,6 @@ func main() {
 func startCleanupRoutine(repo ports.StoryRepository) {
 	ticker := time.NewTicker(1 * time.Hour)
 	for range ticker.C {
-		// Ensure this method exists in your repo interface
 		repo.DeleteExpiredStories(context.Background())
 	}
 }

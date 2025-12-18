@@ -118,7 +118,7 @@ func (ss *StoryShare) BeforeCreate(tx *gorm.DB) error {
 
 type StoryVisibility struct {
     ID             string `gorm:"type:uuid;primary_key"`
-    UserID         string `gorm:"type:uuid;index"` // The story owner
-    HiddenViewerID string `gorm:"type:uuid;index"` // The person blocked from seeing stories
+    UserID         string `gorm:"type:uuid;index"`
+    HiddenViewerID string `gorm:"type:uuid;index"`
 }
 

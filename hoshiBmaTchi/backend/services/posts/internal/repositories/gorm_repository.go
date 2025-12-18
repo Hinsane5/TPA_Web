@@ -26,17 +26,14 @@ func (r *GormPostRepository) CreatePost(ctx context.Context, post *domain.Post) 
 
 func (r *GormPostRepository) GetPostByID(ctx context.Context, postID string) (*domain.Post, error) {
     var post domain.Post
-    // 1. Fetch Post with Media
     if err := r.db.Preload("Media").Where("id = ?", postID).First(&post).Error; err != nil {
         return nil, err
     }
 
-    // 2. Count Likes
     var likesCount int64
     r.db.Model(&domain.PostLike{}).Where("post_id = ?", postID).Count(&likesCount)
     post.LikesCount = int32(likesCount)
 
-    // 3. Count Comments
     var commentsCount int64
     r.db.Model(&domain.PostComment{}).Where("post_id = ?", postID).Count(&commentsCount)
     post.CommentsCount = int32(commentsCount)
@@ -265,7 +262,6 @@ func (r *GormPostRepository) GetPostsByMention(ctx context.Context, targetUserID
     return posts, nil
 }
 
-// Add this function to the file
 func (r *GormPostRepository) GetReels(ctx context.Context, limit, offset int) ([]*domain.Post, error) {
     var posts []*domain.Post
     
@@ -283,7 +279,6 @@ func (r *GormPostRepository) GetReels(ctx context.Context, limit, offset int) ([
         return nil, err
     }
 
-    // Populate likes/comments counts (same as Feed)
     for _, post := range posts {
         var likes int64
         r.db.Model(&domain.PostLike{}).Where("post_id = ?", post.ID).Count(&likes)
@@ -477,32 +472,26 @@ func (r *GormPostRepository) UpdatePostReportStatus(ctx context.Context, reportI
 
 func (r *GormPostRepository) DeletePost(ctx context.Context, postID string) error {
     return r.db.Transaction(func(tx *gorm.DB) error {
-        // 1. Delete associated SavedPosts
         if err := tx.Where("post_id = ?", postID).Delete(&domain.SavedPost{}).Error; err != nil {
             return err
         }
         
-        // 2. Delete associated Likes
         if err := tx.Where("post_id = ?", postID).Delete(&domain.PostLike{}).Error; err != nil {
             return err
         }
 
-        // 3. Delete associated Comments
         if err := tx.Where("post_id = ?", postID).Delete(&domain.PostComment{}).Error; err != nil {
             return err
         }
 
-        // 4. Delete associated Mentions (if any)
         if err := tx.Where("post_id = ?", postID).Delete(&domain.UserMention{}).Error; err != nil {
             return err
         }
 
-        // 5. Delete associated Reports (since the post is gone, reports should be cleaned or resolved)
         if err := tx.Where("post_id = ?", postID).Delete(&domain.PostReport{}).Error; err != nil {
             return err
         }
         
-        // 6. Delete the Post itself
         if err := tx.Where("id = ?", postID).Delete(&domain.Post{}).Error; err != nil {
             return err
         }

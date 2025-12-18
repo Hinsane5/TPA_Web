@@ -13,7 +13,6 @@ definitions:
         type: string
     type: object
   handlers.LoginResponse:
-    description: Login response with user token
     properties:
       token:
         example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

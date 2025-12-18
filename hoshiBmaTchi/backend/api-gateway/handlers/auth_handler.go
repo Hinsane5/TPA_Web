@@ -564,21 +564,18 @@ func (h *AuthHandler) UploadAvatar(c *gin.Context) {
 	}
 	defer file.Close()
 
-	// MinIO Configuration
 	accessKey := os.Getenv("MINIO_ACCESS_KEY_ID")
 	secretKey := os.Getenv("MINIO_SECRET_ACCESS_KEY")
 	bucketName := os.Getenv("MINIO_BUCKET_NAME")
 	if bucketName == "" {
-		bucketName = "users" // Default to users bucket
+		bucketName = "users" 
 	}
 
-	// Internal endpoint for upload (e.g., minio:9000)
 	endpoint := os.Getenv("MINIO_ENDPOINT")
 	if endpoint == "" {
 		endpoint = "minio:9000"
 	}
 
-	// Public endpoint for viewing (e.g., http://localhost:9000)
 	publicEndpoint := os.Getenv("MINIO_PUBLIC_ENDPOINT")
 	if publicEndpoint == "" {
 		publicEndpoint = "http://localhost:9000"
@@ -601,7 +598,6 @@ func (h *AuthHandler) UploadAvatar(c *gin.Context) {
 
 	ctx := context.Background()
 
-	// Ensure bucket exists
 	exists, err := minioClient.BucketExists(ctx, bucketName)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Storage check failed"})
@@ -614,12 +610,10 @@ func (h *AuthHandler) UploadAvatar(c *gin.Context) {
 			return
 		}
 		
-		// Set Public Policy
 		policy := fmt.Sprintf(`{"Version": "2012-10-17","Statement": [{"Effect": "Allow","Principal": {"AWS": ["*"]},"Action": ["s3:GetObject"],"Resource": ["arn:aws:s3:::%s/*"]}]}`, bucketName)
 		minioClient.SetBucketPolicy(ctx, bucketName, policy)
 	}
 
-	// Upload
 	_, err = minioClient.PutObject(ctx, bucketName, objectName, file, header.Size, minio.PutObjectOptions{
 		ContentType: contentType,
 	})
@@ -629,7 +623,6 @@ func (h *AuthHandler) UploadAvatar(c *gin.Context) {
 		return
 	}
 
-	// Construct Public URL
 	fileURL := fmt.Sprintf("%s/%s/%s", publicEndpoint, bucketName, objectName)
 
 	c.JSON(http.StatusOK, gin.H{
