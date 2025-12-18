@@ -293,6 +293,7 @@ services:
       - users-service
       - posts-service
       - notification-service
+      - chat-service
     restart: unless-stopped
     labels:
       - "traefik.enable=true"

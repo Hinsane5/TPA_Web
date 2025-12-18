@@ -83,7 +83,7 @@ const handleFollow = async (user: SuggestedUser) => {
 };
 
 const goToProfile = (userId: string) => {
-  router.push(`/profile/${userId}`);
+  router.push(`/dashboard/profile/${userId}`);
 };
 
 onMounted(() => {
