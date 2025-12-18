@@ -1,47 +1,3 @@
-<template>
-  <div class="suggested-container" v-if="suggestedUsers.length > 0">
-    <div class="suggested-header">
-      <h3>Suggested for you</h3>
-      <a href="#" class="see-all">See all</a>
-    </div>
-
-    <div class="suggested-list">
-      <div 
-        v-for="user in suggestedUsers" 
-        :key="user.user_id" 
-        class="suggested-user-item"
-      >
-        <div class="user-info-section" @click="goToProfile(user.user_id)">
-          <div class="avatar-wrapper">
-             <img 
-              v-if="user.profile_picture_url" 
-              :src="user.profile_picture_url" 
-              alt="Profile" 
-              class="avatar-img"
-            />
-            <div v-else class="avatar-placeholder">
-              {{ user.username.charAt(0).toUpperCase() }}
-            </div>
-          </div>
-          
-          <div class="text-info">
-            <span class="username">{{ user.username }}</span>
-            <span class="subtext">Suggested for you</span>
-          </div>
-        </div>
-
-        <button 
-          class="follow-btn" 
-          @click="handleFollow(user)"
-          :disabled="isProcessing === user.user_id"
-        >
-          {{ isProcessing === user.user_id ? 'Loading...' : 'Follow' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -90,6 +46,50 @@ onMounted(() => {
   fetchSuggestions();
 });
 </script>
+
+<template>
+  <div v-if="suggestedUsers.length > 0" class="suggested-container">
+    <div class="suggested-header">
+      <h3>Suggested for you</h3>
+      <a href="#" class="see-all">See all</a>
+    </div>
+
+    <div class="suggested-list">
+      <div 
+        v-for="user in suggestedUsers" 
+        :key="user.user_id" 
+        class="suggested-user-item"
+      >
+        <div class="user-info-section" @click="goToProfile(user.user_id)">
+          <div class="avatar-wrapper">
+             <img 
+              v-if="user.profile_picture_url" 
+              :src="user.profile_picture_url" 
+              alt="Profile" 
+              class="avatar-img"
+            />
+            <div v-else class="avatar-placeholder">
+              {{ user.username.charAt(0).toUpperCase() }}
+            </div>
+          </div>
+          
+          <div class="text-info">
+            <span class="username">{{ user.username }}</span>
+            <span class="subtext">Suggested for you</span>
+          </div>
+        </div>
+
+        <button 
+          class="follow-btn" 
+          :disabled="isProcessing === user.user_id"
+          @click="handleFollow(user)"
+        >
+          {{ isProcessing === user.user_id ? 'Loading...' : 'Follow' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .suggested-container {

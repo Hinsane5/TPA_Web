@@ -1,75 +1,3 @@
-<template>
-  <div class="home-container">
-    <div class="stories-section">
-      <MiniCarouselContainer 
-        v-if="!isLoadingStories && storyGroups.length > 0"
-        @open-viewer="isStoriesOverlayOpen = true"
-      />
-      
-      <div v-if="isLoadingStories && storyGroups.length === 0" class="story-loading">
-        Loading...
-      </div>
-      
-      <div v-else-if="storyGroups.length === 0" class="story-placeholder">
-        <p>No stories yet</p>
-      </div>
-    </div>
-
-    <StoriesCarouselOverlay 
-      v-if="isStoriesOverlayOpen"
-      :isOpen="isStoriesOverlayOpen"
-      @close="closeStoriesOverlay"
-    />
-
-    <div class="feed-container">
-      <div class="feed-section">
-        
-        <div v-if="posts.length > 0" class="posts-list">
-          <PostComponent 
-            v-for="post in posts" 
-            :key="post.id" 
-            :post="post"
-            @open-detail="openOverlay"
-            @toggle-like="handleToggleLike"
-            @post-deleted="handlePostDeleted"
-          />
-        </div>
-
-        <div v-else-if="!isLoading && posts.length === 0" class="empty-state">
-          <p>No posts yet. Follow users to see their posts!</p>
-        </div>
-
-        <div v-if="isLoading" class="skeleton-loader">
-          <div class="skeleton-card" v-for="n in 2" :key="n">
-            <div class="skeleton-header">
-              <div class="skeleton-avatar"></div>
-              <div class="skeleton-text"></div>
-            </div>
-            <div class="skeleton-media"></div>
-          </div>
-        </div>
-
-        <div ref="scrollTrigger" class="scroll-trigger"></div>
-      </div>
-
-      <div class="sidebar-wrapper">
-        <SuggestedAccounts />
-      </div>
-    </div>
-
-    <PostDetailOverlay 
-      v-if="selectedPost"
-      :isOpen="!!selectedPost" 
-      :post="selectedPost" 
-      @close="closeOverlay" 
-      @comment-added="handleCommentAdded"
-      @toggle-like="handleToggleLike"
-    />
-
-  </div>
-</template>
-
-
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
 import PostComponent from './PostComponent.vue';
@@ -199,6 +127,78 @@ onMounted(() => {
 
 });
 </script>
+
+
+<template>
+  <div class="home-container">
+    <div class="stories-section">
+      <MiniCarouselContainer 
+        v-if="!isLoadingStories && storyGroups.length > 0"
+        @open-viewer="isStoriesOverlayOpen = true"
+      />
+      
+      <div v-if="isLoadingStories && storyGroups.length === 0" class="story-loading">
+        Loading...
+      </div>
+      
+      <div v-else-if="storyGroups.length === 0" class="story-placeholder">
+        <p>No stories yet</p>
+      </div>
+    </div>
+
+    <StoriesCarouselOverlay 
+      v-if="isStoriesOverlayOpen"
+      :is-open="isStoriesOverlayOpen"
+      @close="closeStoriesOverlay"
+    />
+
+    <div class="feed-container">
+      <div class="feed-section">
+        
+        <div v-if="posts.length > 0" class="posts-list">
+          <PostComponent 
+            v-for="post in posts" 
+            :key="post.id" 
+            :post="post"
+            @open-detail="openOverlay"
+            @toggle-like="handleToggleLike"
+            @post-deleted="handlePostDeleted"
+          />
+        </div>
+
+        <div v-else-if="!isLoading && posts.length === 0" class="empty-state">
+          <p>No posts yet. Follow users to see their posts!</p>
+        </div>
+
+        <div v-if="isLoading" class="skeleton-loader">
+          <div v-for="n in 2" :key="n" class="skeleton-card">
+            <div class="skeleton-header">
+              <div class="skeleton-avatar"></div>
+              <div class="skeleton-text"></div>
+            </div>
+            <div class="skeleton-media"></div>
+          </div>
+        </div>
+
+        <div ref="scrollTrigger" class="scroll-trigger"></div>
+      </div>
+
+      <div class="sidebar-wrapper">
+        <SuggestedAccounts />
+      </div>
+    </div>
+
+    <PostDetailOverlay 
+      v-if="selectedPost"
+      :is-open="!!selectedPost" 
+      :post="selectedPost" 
+      @close="closeOverlay" 
+      @comment-added="handleCommentAdded"
+      @toggle-like="handleToggleLike"
+    />
+
+  </div>
+</template>
 
 <style scoped>
 .home-container {

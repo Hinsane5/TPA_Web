@@ -1,54 +1,3 @@
-<template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>{{ conversation.isGroup ? 'Group Details' : 'Details' }}</h3>
-        <button class="close-btn" @click="$emit('close')">✕</button>
-      </div>
-      
-      <div class="modal-body">
-        <div class="participants-section">
-          <h4>Members</h4>
-          <div class="member-list">
-             <div v-for="member in conversation.participants" :key="member.id" class="member-item">
-                <img :src="member.avatar || '/placeholder.svg'" class="avatar" />
-                <div class="member-info">
-                    <span class="username">{{ member.username }}</span>
-                </div>
-                <button 
-                  v-if="conversation.isGroup && member.id !== currentUserId" 
-                  class="action-btn remove"
-                  @click="removeMember(member.id)"
-                >
-                  Remove
-                </button>
-             </div>
-          </div>
-        </div>
-
-        <div v-if="conversation.isGroup" class="add-section">
-            <h4>Add People</h4>
-             <div class="search-box">
-                <input v-model="addQuery" placeholder="Search user to add..."/>
-             </div>
-             <div v-if="searchResults.length" class="mini-results">
-                 <div v-for="user in searchResults" :key="user.user_id" class="result-item" @click="addMember(user.user_id)">
-                     <span>{{ user.username }}</span>
-                     <span class="plus">+</span>
-                 </div>
-             </div>
-        </div>
-
-        <div class="footer-actions">
-             <button class="danger-btn" @click="$emit('leave')">
-                {{ conversation.isGroup ? 'Leave Group' : 'Delete Chat' }}
-             </button>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import type { Conversation } from '../types/chat';
@@ -110,6 +59,57 @@ watch(debouncedAddQuery, async (newQuery) => {
   }
 });
 </script>
+
+<template>
+  <div class="modal-overlay" @click.self="$emit('close')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>{{ conversation.isGroup ? 'Group Details' : 'Details' }}</h3>
+        <button class="close-btn" @click="$emit('close')">✕</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="participants-section">
+          <h4>Members</h4>
+          <div class="member-list">
+             <div v-for="member in conversation.participants" :key="member.id" class="member-item">
+                <img :src="member.avatar || '/placeholder.svg'" class="avatar" />
+                <div class="member-info">
+                    <span class="username">{{ member.username }}</span>
+                </div>
+                <button 
+                  v-if="conversation.isGroup && member.id !== currentUserId" 
+                  class="action-btn remove"
+                  @click="removeMember(member.id)"
+                >
+                  Remove
+                </button>
+             </div>
+          </div>
+        </div>
+
+        <div v-if="conversation.isGroup" class="add-section">
+            <h4>Add People</h4>
+             <div class="search-box">
+                <input v-model="addQuery" placeholder="Search user to add..."/>
+             </div>
+             <div v-if="searchResults.length" class="mini-results">
+                 <div v-for="user in searchResults" :key="user.user_id" class="result-item" @click="addMember(user.user_id)">
+                     <span>{{ user.username }}</span>
+                     <span class="plus">+</span>
+                 </div>
+             </div>
+        </div>
+
+        <div class="footer-actions">
+             <button class="danger-btn" @click="$emit('leave')">
+                {{ conversation.isGroup ? 'Leave Group' : 'Delete Chat' }}
+             </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .modal-overlay { 

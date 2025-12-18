@@ -1,15 +1,3 @@
-<template>
-  <Transition name="toast-slide">
-    <div v-if="store.toastMessage" class="toast-notification" @click="handleClick">
-      <img :src="store.toastMessage.sender_image" class="toast-avatar" />
-      <div class="toast-content">
-        <span class="toast-user">{{ store.toastMessage.sender_name }}</span>
-        <span class="toast-text">{{ getText(store.toastMessage.type) }}</span>
-      </div>
-    </div>
-  </Transition>
-</template>
-
 <script setup lang="ts">
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
@@ -36,6 +24,18 @@ const handleClick = () => {
   store.toastMessage = null; 
 };
 </script>
+
+<template>
+  <Transition name="toast-slide">
+    <div v-if="store.toastMessage" class="toast-notification" @click="handleClick">
+      <img :src="store.toastMessage.sender_image" class="toast-avatar" />
+      <div class="toast-content">
+        <span class="toast-user">{{ store.toastMessage.sender_name }}</span>
+        <span class="toast-text">{{ getText(store.toastMessage.type) }}</span>
+      </div>
+    </div>
+  </Transition>
+</template>
 
 <style scoped>
 .toast-notification {

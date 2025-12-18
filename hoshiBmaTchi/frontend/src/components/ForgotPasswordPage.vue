@@ -1,44 +1,3 @@
-<template>
-  <div class="forgot-password-container">
-    <div class="lock-icon-section">
-      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
-    </div>
-
-    <div class="content-section">
-      <h2 class="heading">Trouble logging in?</h2>
-      <p class="description">
-        Enter your email, phone, or username and we'll send you a link to get back into your account.
-      </p>
-    </div>
-
-    <form @submit.prevent="handleResetPassword" class="form">
-      <div class="form-group">
-        <input 
-          v-model="email"
-          type="email" 
-          placeholder="Enter your email" 
-          class="input-field"
-          required
-        />
-      </div>
-
-      <button type="submit" class="btn btn-primary">Send login link</button>
-    </form>
-
-    <div class="divider">
-      <span>OR</span>
-    </div>
-
-    <button type="button" class="action-button" @click="navigateToRegister">
-      Create new account
-    </button>
-
-    <button type="button" class="back-button" @click="navigateToLogin">
-      Back to login
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
@@ -97,6 +56,47 @@ const navigateToLogin = () => {
   router.push('/login')
 }
 </script>
+
+<template>
+  <div class="forgot-password-container">
+    <div class="lock-icon-section">
+      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
+    </div>
+
+    <div class="content-section">
+      <h2 class="heading">Trouble logging in?</h2>
+      <p class="description">
+        Enter your email, phone, or username and we'll send you a link to get back into your account.
+      </p>
+    </div>
+
+    <form class="form" @submit.prevent="handleResetPassword">
+      <div class="form-group">
+        <input 
+          v-model="email"
+          type="email" 
+          placeholder="Enter your email" 
+          class="input-field"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Send login link</button>
+    </form>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <button type="button" class="action-button" @click="navigateToRegister">
+      Create new account
+    </button>
+
+    <button type="button" class="back-button" @click="navigateToLogin">
+      Back to login
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .forgot-password-container {

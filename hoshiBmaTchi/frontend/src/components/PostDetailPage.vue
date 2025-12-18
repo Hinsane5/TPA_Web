@@ -1,165 +1,3 @@
-<template>
-  <div class="page-container">
-    <div v-if="loading" class="loading-state">
-      <div class="spinner"></div>
-    </div>
-
-    <div v-else-if="post" class="content-wrapper">
-      <div class="post-main-container">
-        <div class="media-section">
-          <div class="media-wrapper" @dblclick="handleLike">
-            <template v-if="currentMedia">
-              <video
-                v-if="currentMedia.media_type && currentMedia.media_type.startsWith('video/')"
-                :src="getDisplayUrl(currentMedia.media_url)"
-                controls
-                autoplay
-                class="post-content-media"
-              ></video>
-              <img
-                v-else
-                :src="getDisplayUrl(currentMedia.media_url)"
-                class="post-content-media"
-                alt="Post content"
-              />
-            </template>
-          </div>
-
-          <button
-            v-if="hasMultiple && currentIndex > 0"
-            class="nav-btn left"
-            @click="currentIndex--"
-          >
-            ❮
-          </button>
-          <button
-            v-if="hasMultiple && currentIndex < mediaList.length - 1"
-            class="nav-btn right"
-            @click="currentIndex++"
-          >
-            ❯
-          </button>
-          <div v-if="hasMultiple" class="dots-container">
-            <div
-              v-for="(_, idx) in mediaList"
-              :key="idx"
-              class="dot"
-              :class="{ active: idx === currentIndex }"
-            ></div>
-          </div>
-        </div>
-
-        <div class="details-section">
-          <div class="header">
-            <div class="user-info" @click="goToProfile(post.user_id)">
-              <img :src="post.profile_picture || '/placeholder.png'" class="avatar" />
-              <span class="username">{{ post.username }}</span>
-            </div>
-            </div>
-
-          <div class="comments-list">
-            <CommentItem
-              v-if="post.caption"
-              :username="post.username"
-              :profile-image="post.profile_picture"
-              :comment-text="post.caption"
-              :timestamp="post.created_at"
-              :likes="post.likes_count"
-            />
-            
-            <div class="divider" v-if="post.caption"></div>
-
-            <CommentItem
-              v-for="comment in comments"
-              :key="comment.id"
-              :username="comment.username"
-              :profile-image="comment.profile_picture"
-              :comment-text="comment.content"
-              :timestamp="comment.created_at"
-              @reply="handleReply(comment.username)"
-            />
-            
-            <p v-if="comments.length === 0 && !post.caption" class="no-comments">
-              No comments yet.
-            </p>
-          </div>
-
-          <div class="actions-container">
-            <div class="icons-row">
-              <div class="left-icons">
-                <button class="icon-btn" @click="handleLike">
-                  <img
-                    :src="post.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
-                    class="icon"
-                    :class="{ active: post.is_liked }"
-                  />
-                </button>
-                <button class="icon-btn" @click="focusInput">
-                  <img src="/icons/comment-icon.png" class="icon" />
-                </button>
-                <button class="icon-btn" @click="showShareModal = true">
-                  <img src="/icons/share-icon.png" class="icon" />
-                </button>
-              </div>
-              <button class="icon-btn" @click="toggleSave">
-                 <img
-                    :src="post.is_saved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
-                    class="icon"
-                  />
-              </button>
-            </div>
-            <p class="likes-count">{{ post.likes_count }} likes</p>
-            <p class="timestamp">{{ formatFullDate(post.created_at) }}</p>
-          </div>
-
-          <div class="input-section">
-            <input 
-              ref="commentInput"
-              v-model="newComment"
-              placeholder="Add a comment..."
-              @keyup.enter="submitComment"
-            />
-            <button v-if="newComment.trim()" @click="submitComment">Post</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="more-posts-section">
-        <h3>More posts from <span @click="goToProfile(post.user_id)" class="highlight">{{ post.username }}</span></h3>
-        <div class="posts-grid">
-          <div 
-            v-for="p in morePosts" 
-            :key="p.id" 
-            class="grid-item"
-            @click="goToPost(p.id)"
-          >
-            <img :src="getThumbnail(p)" class="grid-img" />
-            <div class="hover-overlay">
-              <div class="stat">
-                 <img src="/icons/liked-icon.png" class="small-icon" /> {{ p.likes_count }}
-              </div>
-              <div class="stat">
-                 <img src="/icons/comment-icon.png" class="small-icon" /> {{ p.comments_count }}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="morePosts.length === 0" class="no-more-posts">
-          No other posts to show.
-        </div>
-      </div>
-    </div>
-
-    <ShareModal 
-      v-if="showShareModal && post"
-      :contentId="post.id"
-      type="post"
-      :thumbnail="currentMedia ? getDisplayUrl(currentMedia.media_url) : ''"
-      @close="showShareModal = false"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
@@ -313,6 +151,168 @@ const formatFullDate = (d: string) => {
   try { return format(new Date(d), "MMMM d, yyyy"); } catch { return ""; }
 };
 </script>
+
+<template>
+  <div class="page-container">
+    <div v-if="loading" class="loading-state">
+      <div class="spinner"></div>
+    </div>
+
+    <div v-else-if="post" class="content-wrapper">
+      <div class="post-main-container">
+        <div class="media-section">
+          <div class="media-wrapper" @dblclick="handleLike">
+            <template v-if="currentMedia">
+              <video
+                v-if="currentMedia.media_type && currentMedia.media_type.startsWith('video/')"
+                :src="getDisplayUrl(currentMedia.media_url)"
+                controls
+                autoplay
+                class="post-content-media"
+              ></video>
+              <img
+                v-else
+                :src="getDisplayUrl(currentMedia.media_url)"
+                class="post-content-media"
+                alt="Post content"
+              />
+            </template>
+          </div>
+
+          <button
+            v-if="hasMultiple && currentIndex > 0"
+            class="nav-btn left"
+            @click="currentIndex--"
+          >
+            ❮
+          </button>
+          <button
+            v-if="hasMultiple && currentIndex < mediaList.length - 1"
+            class="nav-btn right"
+            @click="currentIndex++"
+          >
+            ❯
+          </button>
+          <div v-if="hasMultiple" class="dots-container">
+            <div
+              v-for="(_, idx) in mediaList"
+              :key="idx"
+              class="dot"
+              :class="{ active: idx === currentIndex }"
+            ></div>
+          </div>
+        </div>
+
+        <div class="details-section">
+          <div class="header">
+            <div class="user-info" @click="goToProfile(post.user_id)">
+              <img :src="post.profile_picture || '/placeholder.png'" class="avatar" />
+              <span class="username">{{ post.username }}</span>
+            </div>
+            </div>
+
+          <div class="comments-list">
+            <CommentItem
+              v-if="post.caption"
+              :username="post.username"
+              :profile-image="post.profile_picture"
+              :comment-text="post.caption"
+              :timestamp="post.created_at"
+              :likes="post.likes_count"
+            />
+            
+            <div v-if="post.caption" class="divider"></div>
+
+            <CommentItem
+              v-for="comment in comments"
+              :key="comment.id"
+              :username="comment.username"
+              :profile-image="comment.profile_picture"
+              :comment-text="comment.content"
+              :timestamp="comment.created_at"
+              @reply="handleReply(comment.username)"
+            />
+            
+            <p v-if="comments.length === 0 && !post.caption" class="no-comments">
+              No comments yet.
+            </p>
+          </div>
+
+          <div class="actions-container">
+            <div class="icons-row">
+              <div class="left-icons">
+                <button class="icon-btn" @click="handleLike">
+                  <img
+                    :src="post.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
+                    class="icon"
+                    :class="{ active: post.is_liked }"
+                  />
+                </button>
+                <button class="icon-btn" @click="focusInput">
+                  <img src="/icons/comment-icon.png" class="icon" />
+                </button>
+                <button class="icon-btn" @click="showShareModal = true">
+                  <img src="/icons/share-icon.png" class="icon" />
+                </button>
+              </div>
+              <button class="icon-btn" @click="toggleSave">
+                 <img
+                    :src="post.is_saved ? '/icons/saved-icon.png' : '/icons/save-icon.png'"
+                    class="icon"
+                  />
+              </button>
+            </div>
+            <p class="likes-count">{{ post.likes_count }} likes</p>
+            <p class="timestamp">{{ formatFullDate(post.created_at) }}</p>
+          </div>
+
+          <div class="input-section">
+            <input 
+              ref="commentInput"
+              v-model="newComment"
+              placeholder="Add a comment..."
+              @keyup.enter="submitComment"
+            />
+            <button v-if="newComment.trim()" @click="submitComment">Post</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="more-posts-section">
+        <h3>More posts from <span class="highlight" @click="goToProfile(post.user_id)">{{ post.username }}</span></h3>
+        <div class="posts-grid">
+          <div 
+            v-for="p in morePosts" 
+            :key="p.id" 
+            class="grid-item"
+            @click="goToPost(p.id)"
+          >
+            <img :src="getThumbnail(p)" class="grid-img" />
+            <div class="hover-overlay">
+              <div class="stat">
+                 <img src="/icons/liked-icon.png" class="small-icon" /> {{ p.likes_count }}
+              </div>
+              <div class="stat">
+                 <img src="/icons/comment-icon.png" class="small-icon" /> {{ p.comments_count }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="morePosts.length === 0" class="no-more-posts">
+          No other posts to show.
+        </div>
+      </div>
+    </div>
+
+    <ShareModal 
+      v-if="showShareModal && post"
+      :content-id="post.id"
+      type="post"
+      :thumbnail="currentMedia ? getDisplayUrl(currentMedia.media_url) : ''"
+      @close="showShareModal = false"
+    />
+  </div>
+</template>
 
 <style scoped>
 .page-container {

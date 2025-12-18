@@ -1,17 +1,3 @@
-<template>
-  <div class="mini-carousel">
-    <MiniStoryItem 
-      v-for="(group, index) in storyGroups" 
-      :key="group.userId"
-      :avatar="group.userAvatar" 
-      :username="group.username"
-      :isActive="index === currentGroupIndex"
-      :has-unseen="group.hasUnseen"
-      @click="handleSelect(index)"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import MiniStoryItem from './MiniStoryItem.vue';
 import { useStories } from '../composables/useStories';
@@ -29,6 +15,20 @@ const handleSelect = (index: number) => {
   emit('open-viewer'); // Tell HomePage to open the overlay
 };
 </script>
+
+<template>
+  <div class="mini-carousel">
+    <MiniStoryItem 
+      v-for="(group, index) in storyGroups" 
+      :key="group.userId"
+      :avatar="group.userAvatar" 
+      :username="group.username"
+      :is-active="index === currentGroupIndex"
+      :has-unseen="group.hasUnseen"
+      @click="handleSelect(index)"
+    />
+  </div>
+</template>
 
 <style scoped>
 .mini-carousel {

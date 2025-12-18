@@ -1,259 +1,3 @@
-<template>
-  <div class="profile-container">
-    <div class="profile-header">
-      <div class="profile-info">
-        <div
-          class="profile-picture-wrapper"
-          @click="showProfileImageModal = true"
-        >
-          <img
-            :src="
-              profileUser?.profileImage ||
-              '/placeholder.svg?height=150&width=150'
-            "
-            :alt="profileUser?.fullName || 'Profile'"
-            class="profile-picture"
-          />
-        </div>
-
-        <div class="profile-details">
-          <div class="profile-top">
-            <div class="user-info">
-              <h1 class="full-name">
-                {{ profileUser?.fullName || "Loading..." }}
-              </h1>
-              <div class="username-wrapper">
-                <p class="username">@{{ profileUser?.username || "username" }}</p>
-                <img 
-                  v-if="profileUser?.is_verified" 
-                  src="/icons/verified-icon.png" 
-                  alt="Verified" 
-                  class="verified-badge-large"
-                  title="Verified"
-                />
-              </div>
-            </div>
-
-            <div class="profile-actions">
-              <template v-if="isOwnProfile">
-                <button class="action-btn">Edit profile</button>
-                <button class="action-btn" @click="goToArchive">View archive</button>
-                <button class="action-btn settings-btn" title="Settings" @click="goToSettings">
-                  <img
-                    src="/icons/setting-icon.png"
-                    alt="Settings"
-                    class="settings-icon"
-                  />
-                </button>
-              </template>
-
-              <template v-else>
-                <button
-                  class="action-btn follow-btn"
-                  :class="{ following: isFollowing }"
-                  @click="toggleFollow"
-                >
-                  {{ isFollowing ? "Following" : "Follow" }}
-                </button>
-                <button class="action-btn" @click="handleMessageClick">
-                  Message
-                </button>
-
-                <div class="more-options-wrapper" style="position: relative;">
-                  <button class="action-btn" @click="showMoreOptions = !showMoreOptions">
-                    •••
-                  </button>
-                  <div v-if="showMoreOptions" class="options-dropdown">
-                    <button @click="handleBlockUser" class="dropdown-item danger">
-                      Block User
-                    </button>
-                    <button @click="openReportUserModal" class="dropdown-item danger">
-                      Report User
-                    </button>
-                    <button @click="showMoreOptions = false" class="dropdown-item">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </template>
-            </div>
-          </div>
-
-          <p class="bio">{{ profileUser?.bio || "No bio yet." }}</p>
-
-          <div class="stats">
-            <div class="stat">
-              <span class="stat-number">{{
-                profileUser?.postsCount || 0
-              }}</span>
-              <span class="stat-label">posts</span>
-            </div>
-            <div class="stat">
-              <span class="stat-number">{{ profileUser?.followers || 0 }}</span>
-              <span class="stat-label">followers</span>
-            </div>
-            <div class="stat">
-              <span class="stat-number">{{ profileUser?.following || 0 }}</span>
-              <span class="stat-label">following</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="profile-tabs">
-      <button
-        v-for="tab in tabs"
-        :key="tab"
-        :class="['tab', { active: activeTab === tab }]"
-        @click="activeTab = tab"
-      >
-        <img :src="getTabIconPath(tab)" :alt="tab" class="tab-icon" />
-        {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
-      </button>
-    </div>
-
-    <div class="tab-content">
-      <div v-if="activeTab === 'posts'" class="posts-grid">
-        <div
-          class="grid-item"
-          v-for="post in posts"
-          :key="post.id"
-          @click="openPostDetail(post)"
-        >
-          <img
-            :src="getThumbnail(post)"
-            class="post-image"
-            loading="lazy"
-            alt="Post thumbnail"
-          />
-
-          <div class="grid-hover-overlay">
-            <div class="hover-stat">
-              <img
-                src="/icons/notifications-icon.png"
-                class="hover-icon"
-                alt="Likes"
-              />
-              {{ post.likes_count || 0 }}
-            </div>
-            <div class="hover-stat">
-              <img
-                src="/icons/comment-icon.png"
-                class="hover-icon"
-                alt="Comments"
-              />
-              {{ post.comments_count || 0 }}
-            </div>
-          </div>
-        </div>
-
-        <div v-if="posts.length === 0" class="empty-state">
-          <p>No posts yet.</p>
-        </div>
-      </div>
-
-      <div v-if="activeTab === 'reels'">
-        <ProfileReelsTab 
-          :userId="profileUser.id" 
-          @open-post="openPostDetail" 
-        />
-      </div>
-
-      <div v-if="activeTab === 'saved'" class="saved-grid">
-        <div v-if="isOwnProfile">
-          <ProfileSavedTab />
-        </div>
-        <div v-else class="empty-state">
-          <p>Saved posts are private.</p>
-        </div>
-      </div>
-
-      <div v-if="activeTab === 'mentions'" class="mentions-grid">
-        <div
-          class="grid-item"
-          v-for="post in mentionsPosts"
-          :key="post.id"
-          @click="openPostDetail(post)"
-        >
-          <img
-            :src="getThumbnail(post)"
-            class="post-image"
-            loading="lazy"
-            alt="Mentioned post"
-          />
-
-          <div class="grid-hover-overlay">
-            <div class="hover-stat">
-              <img
-                src="/icons/notifications-icon.png"
-                class="hover-icon"
-                alt="Likes"
-              />
-              {{ post.likes_count || 0 }}
-            </div>
-            <div class="hover-stat">
-              <img
-                src="/icons/comment-icon.png"
-                class="hover-icon"
-                alt="Comments"
-              />
-              {{ post.comments_count || 0 }}
-            </div>
-          </div>
-        </div>
-
-        <div v-if="mentionsPosts.length === 0" class="empty-state">
-          <p>No mentions yet.</p>
-        </div>
-      </div>
-    </div>
-
-    <div
-      v-if="showProfileImageModal"
-      class="modal-overlay"
-      @click="showProfileImageModal = false"
-    >
-      <div class="modal-content" @click.stop>
-        <button class="close-btn" @click="showProfileImageModal = false">
-          ✕
-        </button>
-        <img
-          :src="
-            profileUser?.profileImage || '/placeholder.svg?height=400&width=400'
-          "
-          :alt="profileUser?.fullName || 'Profile'"
-          class="modal-image"
-        />
-      </div>
-    </div>
-
-    <div v-if="showReportModal" class="modal-overlay" @click.self="showReportModal = false">
-      <div class="report-box" @click.stop>
-         <h3>Report User</h3>
-         <textarea 
-            v-model="reportReason" 
-            placeholder="Reason for reporting this user..."
-            rows="4"
-         ></textarea>
-         <div class="modal-actions">
-            <button @click="submitReport" class="btn-submit">Submit</button>
-            <button @click="showReportModal = false" class="btn-cancel">Cancel</button>
-         </div>
-      </div>
-    </div>
-
-    <PostDetailOverlay
-      v-if="showPostOverlay"
-      :is-open="showPostOverlay"
-      :post="selectedPost"
-      @close="closePostDetail"
-      @toggle-like="handleLikeUpdate"
-      @post-deleted="handleProfilePostDeleted"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
@@ -518,6 +262,262 @@ watch(activeTab, (newTab) => {
   }
 });
 </script>
+
+<template>
+  <div class="profile-container">
+    <div class="profile-header">
+      <div class="profile-info">
+        <div
+          class="profile-picture-wrapper"
+          @click="showProfileImageModal = true"
+        >
+          <img
+            :src="
+              profileUser?.profileImage ||
+              '/placeholder.svg?height=150&width=150'
+            "
+            :alt="profileUser?.fullName || 'Profile'"
+            class="profile-picture"
+          />
+        </div>
+
+        <div class="profile-details">
+          <div class="profile-top">
+            <div class="user-info">
+              <h1 class="full-name">
+                {{ profileUser?.fullName || "Loading..." }}
+              </h1>
+              <div class="username-wrapper">
+                <p class="username">@{{ profileUser?.username || "username" }}</p>
+                <img 
+                  v-if="profileUser?.is_verified" 
+                  src="/icons/verified-icon.png" 
+                  alt="Verified" 
+                  class="verified-badge-large"
+                  title="Verified"
+                />
+              </div>
+            </div>
+
+            <div class="profile-actions">
+              <template v-if="isOwnProfile">
+                <button class="action-btn">Edit profile</button>
+                <button class="action-btn" @click="goToArchive">View archive</button>
+                <button class="action-btn settings-btn" title="Settings" @click="goToSettings">
+                  <img
+                    src="/icons/setting-icon.png"
+                    alt="Settings"
+                    class="settings-icon"
+                  />
+                </button>
+              </template>
+
+              <template v-else>
+                <button
+                  class="action-btn follow-btn"
+                  :class="{ following: isFollowing }"
+                  @click="toggleFollow"
+                >
+                  {{ isFollowing ? "Following" : "Follow" }}
+                </button>
+                <button class="action-btn" @click="handleMessageClick">
+                  Message
+                </button>
+
+                <div class="more-options-wrapper" style="position: relative;">
+                  <button class="action-btn" @click="showMoreOptions = !showMoreOptions">
+                    •••
+                  </button>
+                  <div v-if="showMoreOptions" class="options-dropdown">
+                    <button class="dropdown-item danger" @click="handleBlockUser">
+                      Block User
+                    </button>
+                    <button class="dropdown-item danger" @click="openReportUserModal">
+                      Report User
+                    </button>
+                    <button class="dropdown-item" @click="showMoreOptions = false">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <p class="bio">{{ profileUser?.bio || "No bio yet." }}</p>
+
+          <div class="stats">
+            <div class="stat">
+              <span class="stat-number">{{
+                profileUser?.postsCount || 0
+              }}</span>
+              <span class="stat-label">posts</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ profileUser?.followers || 0 }}</span>
+              <span class="stat-label">followers</span>
+            </div>
+            <div class="stat">
+              <span class="stat-number">{{ profileUser?.following || 0 }}</span>
+              <span class="stat-label">following</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-tabs">
+      <button
+        v-for="tab in tabs"
+        :key="tab"
+        :class="['tab', { active: activeTab === tab }]"
+        @click="activeTab = tab"
+      >
+        <img :src="getTabIconPath(tab)" :alt="tab" class="tab-icon" />
+        {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
+      </button>
+    </div>
+
+    <div class="tab-content">
+      <div v-if="activeTab === 'posts'" class="posts-grid">
+        <div
+          v-for="post in posts"
+          :key="post.id"
+          class="grid-item"
+          @click="openPostDetail(post)"
+        >
+          <img
+            :src="getThumbnail(post)"
+            class="post-image"
+            loading="lazy"
+            alt="Post thumbnail"
+          />
+
+          <div class="grid-hover-overlay">
+            <div class="hover-stat">
+              <img
+                src="/icons/notifications-icon.png"
+                class="hover-icon"
+                alt="Likes"
+              />
+              {{ post.likes_count || 0 }}
+            </div>
+            <div class="hover-stat">
+              <img
+                src="/icons/comment-icon.png"
+                class="hover-icon"
+                alt="Comments"
+              />
+              {{ post.comments_count || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="posts.length === 0" class="empty-state">
+          <p>No posts yet.</p>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'reels'">
+        <ProfileReelsTab 
+          :user-id="profileUser.id" 
+          @open-post="openPostDetail" 
+        />
+      </div>
+
+      <div v-if="activeTab === 'saved'" class="saved-grid">
+        <div v-if="isOwnProfile">
+          <ProfileSavedTab />
+        </div>
+        <div v-else class="empty-state">
+          <p>Saved posts are private.</p>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'mentions'" class="mentions-grid">
+        <div
+          v-for="post in mentionsPosts"
+          :key="post.id"
+          class="grid-item"
+          @click="openPostDetail(post)"
+        >
+          <img
+            :src="getThumbnail(post)"
+            class="post-image"
+            loading="lazy"
+            alt="Mentioned post"
+          />
+
+          <div class="grid-hover-overlay">
+            <div class="hover-stat">
+              <img
+                src="/icons/notifications-icon.png"
+                class="hover-icon"
+                alt="Likes"
+              />
+              {{ post.likes_count || 0 }}
+            </div>
+            <div class="hover-stat">
+              <img
+                src="/icons/comment-icon.png"
+                class="hover-icon"
+                alt="Comments"
+              />
+              {{ post.comments_count || 0 }}
+            </div>
+          </div>
+        </div>
+
+        <div v-if="mentionsPosts.length === 0" class="empty-state">
+          <p>No mentions yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div
+      v-if="showProfileImageModal"
+      class="modal-overlay"
+      @click="showProfileImageModal = false"
+    >
+      <div class="modal-content" @click.stop>
+        <button class="close-btn" @click="showProfileImageModal = false">
+          ✕
+        </button>
+        <img
+          :src="
+            profileUser?.profileImage || '/placeholder.svg?height=400&width=400'
+          "
+          :alt="profileUser?.fullName || 'Profile'"
+          class="modal-image"
+        />
+      </div>
+    </div>
+
+    <div v-if="showReportModal" class="modal-overlay" @click.self="showReportModal = false">
+      <div class="report-box" @click.stop>
+         <h3>Report User</h3>
+         <textarea 
+            v-model="reportReason" 
+            placeholder="Reason for reporting this user..."
+            rows="4"
+         ></textarea>
+         <div class="modal-actions">
+            <button class="btn-submit" @click="submitReport">Submit</button>
+            <button class="btn-cancel" @click="showReportModal = false">Cancel</button>
+         </div>
+      </div>
+    </div>
+
+    <PostDetailOverlay
+      v-if="showPostOverlay"
+      :is-open="showPostOverlay"
+      :post="selectedPost"
+      @close="closePostDetail"
+      @toggle-like="handleLikeUpdate"
+      @post-deleted="handleProfilePostDeleted"
+    />
+  </div>
+</template>
 
 <style scoped>
 .follow-btn {

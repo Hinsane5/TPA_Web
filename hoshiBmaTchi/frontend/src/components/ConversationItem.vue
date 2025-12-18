@@ -1,47 +1,3 @@
-<template>
-  <div
-    :class="['conversation-item', { active: isActive }]"
-    @click="$emit('select')"
-  >
-    <div class="conversation-avatar">
-      <img
-        v-if="participant"
-        :src="participant.avatar"
-        :alt="participant.username"
-        class="avatar"
-      />
-      <div
-        v-if="participant?.isOnline"
-        class="online-status"
-      ></div>
-    </div>
-
-    <div class="conversation-info">
-      <div class="info-header">
-        <h4 class="conversation-name">
-          {{ conversationTitle }}
-        </h4>
-        <span class="message-time">{{
-          formatTime(conversation.updatedAt)
-        }}</span>
-      </div>
-      <p class="message-preview">{{ getMessagePreview() }}</p>
-    </div>
-
-    <div v-if="conversation.unreadCount > 0" class="unread-badge">
-      {{ conversation.unreadCount }}
-    </div>
-
-    <button
-      class="delete-btn"
-      @click.stop="$emit('delete')"
-      title="Delete conversation"
-    >
-      ✕
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed } from "vue";
 import type { Conversation } from "../types/chat";
@@ -115,6 +71,50 @@ const conversationTitle = computed(() => {
 
 
 </script>
+
+<template>
+  <div
+    :class="['conversation-item', { active: isActive }]"
+    @click="$emit('select')"
+  >
+    <div class="conversation-avatar">
+      <img
+        v-if="participant"
+        :src="participant.avatar"
+        :alt="participant.username"
+        class="avatar"
+      />
+      <div
+        v-if="participant?.isOnline"
+        class="online-status"
+      ></div>
+    </div>
+
+    <div class="conversation-info">
+      <div class="info-header">
+        <h4 class="conversation-name">
+          {{ conversationTitle }}
+        </h4>
+        <span class="message-time">{{
+          formatTime(conversation.updatedAt)
+        }}</span>
+      </div>
+      <p class="message-preview">{{ getMessagePreview() }}</p>
+    </div>
+
+    <div v-if="conversation.unreadCount > 0" class="unread-badge">
+      {{ conversation.unreadCount }}
+    </div>
+
+    <button
+      class="delete-btn"
+      title="Delete conversation"
+      @click.stop="$emit('delete')"
+    >
+      ✕
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .conversation-item {

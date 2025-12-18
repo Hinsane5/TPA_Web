@@ -1,3 +1,89 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { postsApi } from '../services/apiService';
+import PostDetailOverlay from './PostDetailOverlay.vue';
+
+const route = useRoute();
+const router = useRouter();
+const collectionID = route.params.collectionID as string;
+
+// State
+const collectionName = ref("Collection"); // Ideally fetch name or pass as query param
+const posts = ref<any[]>([]);
+const loading = ref(true);
+const showActionsModal = ref(false);
+const modalView = ref<'options' | 'rename' | 'delete_confirm'>('options');
+const renameInput = ref("");
+const selectedPost = ref<any>(null);
+
+// Fetch Data
+const fetchPosts = async () => {
+  try {
+    loading.value = true;
+    const res = await postsApi.getCollectionPosts(collectionID);
+    posts.value = res.data.data || [];
+    
+    // Attempt to get name from query if passed, or could fetch specific collection details API if exists
+    if (route.query.name) {
+        collectionName.value = route.query.name as string;
+    }
+  } catch (err) {
+    console.error("Failed to load collection posts", err);
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(() => {
+    fetchPosts();
+});
+
+// Rename Logic
+const startRename = () => {
+    renameInput.value = collectionName.value;
+    modalView.value = 'rename';
+};
+
+const handleRename = async () => {
+    if(!renameInput.value.trim()) return;
+    try {
+        await postsApi.updateCollection(collectionID, renameInput.value);
+        collectionName.value = renameInput.value;
+        showActionsModal.value = false;
+        modalView.value = 'options';
+    } catch(err) {
+        alert("Failed to rename");
+    }
+};
+
+// Delete Logic
+const handleDelete = async () => {
+    try {
+        await postsApi.deleteCollection(collectionID);
+        router.push({ name: 'profile', params: { id: localStorage.getItem('userID') } });
+    } catch(err) {
+        alert("Failed to delete");
+    }
+};
+
+// Helpers
+const getDisplayUrl = (url: string) => {
+  if (!url) return "/placeholder.png";
+  return url.replace("http://minio:9000", "http://localhost:9000");
+};
+
+const openPostDetail = (post: any) => {
+    selectedPost.value = post;
+};
+
+const handleLikeToggle = (post: any) => {
+    // Basic optimistic update for the grid item
+    post.is_liked = !post.is_liked;
+    post.likes_count += post.is_liked ? 1 : -1;
+};
+</script>
+
 <template>
   <div class="collection-detail-page">
     <div class="collection-header">
@@ -91,99 +177,13 @@
 
     <PostDetailOverlay 
       v-if="selectedPost" 
-      :isOpen="!!selectedPost" 
+      :is-open="!!selectedPost" 
       :post="selectedPost"
       @close="selectedPost = null"
       @toggle-like="handleLikeToggle"
     />
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { postsApi } from '../services/apiService';
-import PostDetailOverlay from './PostDetailOverlay.vue';
-
-const route = useRoute();
-const router = useRouter();
-const collectionID = route.params.collectionID as string;
-
-// State
-const collectionName = ref("Collection"); // Ideally fetch name or pass as query param
-const posts = ref<any[]>([]);
-const loading = ref(true);
-const showActionsModal = ref(false);
-const modalView = ref<'options' | 'rename' | 'delete_confirm'>('options');
-const renameInput = ref("");
-const selectedPost = ref<any>(null);
-
-// Fetch Data
-const fetchPosts = async () => {
-  try {
-    loading.value = true;
-    const res = await postsApi.getCollectionPosts(collectionID);
-    posts.value = res.data.data || [];
-    
-    // Attempt to get name from query if passed, or could fetch specific collection details API if exists
-    if (route.query.name) {
-        collectionName.value = route.query.name as string;
-    }
-  } catch (err) {
-    console.error("Failed to load collection posts", err);
-  } finally {
-    loading.value = false;
-  }
-};
-
-onMounted(() => {
-    fetchPosts();
-});
-
-// Rename Logic
-const startRename = () => {
-    renameInput.value = collectionName.value;
-    modalView.value = 'rename';
-};
-
-const handleRename = async () => {
-    if(!renameInput.value.trim()) return;
-    try {
-        await postsApi.updateCollection(collectionID, renameInput.value);
-        collectionName.value = renameInput.value;
-        showActionsModal.value = false;
-        modalView.value = 'options';
-    } catch(err) {
-        alert("Failed to rename");
-    }
-};
-
-// Delete Logic
-const handleDelete = async () => {
-    try {
-        await postsApi.deleteCollection(collectionID);
-        router.push({ name: 'profile', params: { id: localStorage.getItem('userID') } });
-    } catch(err) {
-        alert("Failed to delete");
-    }
-};
-
-// Helpers
-const getDisplayUrl = (url: string) => {
-  if (!url) return "/placeholder.png";
-  return url.replace("http://minio:9000", "http://localhost:9000");
-};
-
-const openPostDetail = (post: any) => {
-    selectedPost.value = post;
-};
-
-const handleLikeToggle = (post: any) => {
-    // Basic optimistic update for the grid item
-    post.is_liked = !post.is_liked;
-    post.likes_count += post.is_liked ? 1 : -1;
-};
-</script>
 
 <style scoped>
 .collection-detail-page {

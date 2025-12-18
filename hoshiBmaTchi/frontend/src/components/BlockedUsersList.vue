@@ -1,24 +1,3 @@
-<template>
-  <div class="blocked-users-container">
-    <h2>Blocked Accounts</h2>
-    <div v-if="loading" class="loading">Loading...</div>
-    
-    <div v-else-if="blockedUsers.length === 0" class="empty-state">
-      You haven't blocked anyone.
-    </div>
-
-    <div v-else class="user-list">
-      <div v-for="user in blockedUsers" :key="user.user_id" class="user-item">
-        <div class="user-info">
-          <img :src="user.profile_picture_url || '/placeholder.png'" class="avatar" />
-          <span class="username">{{ user.username }}</span>
-        </div>
-        <button class="unblock-btn" @click="unblock(user.user_id)">Unblock</button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { usersApi } from '@/services/apiService';
@@ -51,6 +30,27 @@ onMounted(() => {
   fetchBlockedUsers();
 });
 </script>
+
+<template>
+  <div class="blocked-users-container">
+    <h2>Blocked Accounts</h2>
+    <div v-if="loading" class="loading">Loading...</div>
+    
+    <div v-else-if="blockedUsers.length === 0" class="empty-state">
+      You haven't blocked anyone.
+    </div>
+
+    <div v-else class="user-list">
+      <div v-for="user in blockedUsers" :key="user.user_id" class="user-item">
+        <div class="user-info">
+          <img :src="user.profile_picture_url || '/placeholder.png'" class="avatar" />
+          <span class="username">{{ user.username }}</span>
+        </div>
+        <button class="unblock-btn" @click="unblock(user.user_id)">Unblock</button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .blocked-users-container {

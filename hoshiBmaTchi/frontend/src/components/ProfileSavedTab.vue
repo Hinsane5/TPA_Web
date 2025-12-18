@@ -1,4 +1,50 @@
 @ -1,210 +1,207 @@
+<script setup lang="ts">
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { postsApi } from '../services/apiService';
+
+const collections = ref<any[]>([]);
+const loading = ref(true);
+const router = useRouter();
+
+const fetchCollections = async () => {
+  try {
+    const res = await postsApi.getUserCollections();
+    collections.value = res.data.collections || res.data || [];
+  } catch (error) {
+    console.error("Failed to fetch collections", error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const getImageStyle = (images: string[], index: number) => {
+  if (images && images[index]) {
+    return { 
+      backgroundImage: `url(${images[index]})`,
+      backgroundColor: '#262626' 
+    };
+  }
+  return { backgroundColor: '#262626' };
+};
+
+const handleCollectionClick = (id: string) => {
+  const collection = collections.value.find(c => c.id === id);
+  const name = collection ? collection.name : 'Collection';
+  
+  router.push({ 
+    name: 'collection-detail', 
+    params: { collectionID: id },
+    query: { name: name } 
+  });
+};
+
+onMounted(() => {
+  fetchCollections();
+});
+</script>
+
 <template>
   <div class="saved-container">
     <div v-if="loading" class="loading-state">
@@ -48,52 +94,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { postsApi } from '../services/apiService';
-
-const collections = ref<any[]>([]);
-const loading = ref(true);
-const router = useRouter();
-
-const fetchCollections = async () => {
-  try {
-    const res = await postsApi.getUserCollections();
-    collections.value = res.data.collections || res.data || [];
-  } catch (error) {
-    console.error("Failed to fetch collections", error);
-  } finally {
-    loading.value = false;
-  }
-};
-
-const getImageStyle = (images: string[], index: number) => {
-  if (images && images[index]) {
-    return { 
-      backgroundImage: `url(${images[index]})`,
-      backgroundColor: '#262626' 
-    };
-  }
-  return { backgroundColor: '#262626' };
-};
-
-const handleCollectionClick = (id: string) => {
-  const collection = collections.value.find(c => c.id === id);
-  const name = collection ? collection.name : 'Collection';
-  
-  router.push({ 
-    name: 'collection-detail', 
-    params: { collectionID: id },
-    query: { name: name } 
-  });
-};
-
-onMounted(() => {
-  fetchCollections();
-});
-</script>
 
 <style scoped>
 .saved-container {

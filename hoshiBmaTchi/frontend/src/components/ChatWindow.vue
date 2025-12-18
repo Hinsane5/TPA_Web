@@ -1,149 +1,3 @@
-<template>
-  <CallOverlay 
-    :active="callState !== 'idle'"
-    :status="callState"
-    :call-type="activeCallType"
-    :caller-name="incomingCaller?.name"
-    :caller-avatar="incomingCaller?.avatar"
-    :remote-users="remoteUsers"
-    :audio-enabled="isAudioEnabled"
-    :video-enabled="isVideoEnabled"
-    @accept="acceptCall"
-    @reject="leaveCall"
-    @end="leaveCall"
-    @toggle-audio="toggleAudio"
-    @toggle-video="toggleVideo"
-  />
-
-  <div v-if="selectedConversation && chatPartner" class="chat-window">
-    <div class="chat-header">
-      <div class="chat-header-left">
-        <div class="header-avatar">
-          <img
-            v-if="!selectedConversation.isGroup"
-            :src="chatPartner?.avatar || '/placeholder.svg'"
-            class="avatar"
-          />
-          <div v-else class="group-avatar-placeholder">👥</div>
-        </div>
-        <div class="header-info">
-          <h3 class="chat-title">
-            {{ selectedConversation.isGroup ? selectedConversation.name : chatPartner?.fullName }}
-          </h3>
-          <p class="chat-subtitle" v-if="!selectedConversation.isGroup">
-             {{ chatPartner?.isOnline ? 'Active now' : '' }}
-          </p>
-          <p class="chat-subtitle" v-else>
-             {{ selectedConversation.participants.length }} members
-          </p>
-        </div>
-      </div>
-
-      <div class="chat-header-actions">
-        <button class="header-action-btn icon-btn" title="Call" @click="startCall('audio')">
-          <img src="/icons/call-icon.png" alt="Call" class="action-icon" />
-        </button>
-        <button class="header-action-btn icon-btn" title="Video call" @click="startCall('video')">
-          <img src="/icons/video-call-icon.png" alt="Video Call" class="action-icon" />
-        </button>
-        
-        <button class="header-action-btn icon-btn" @click="handleDeleteConversation" title="Delete conversation">
-          <img src="/icons/trashbin-icon.png" alt="Delete" class="action-icon" />
-        </button>
-        <button class="header-action-btn" title="Info" @click="showDetails = true">
-          ℹ️
-        </button>
-      </div>
-    </div>
-
-    <div class="messages-area" ref="messagesContainer">
-      <div class="messages-container">
-        <MessageItem
-          v-for="message in messages"
-          :key="message.id"
-          :message="message"
-          :is-own-message="message.senderId === currentUserId"
-          @unsend="handleUnsend"
-        />
-      </div>
-    </div>
-
-    <div v-if="showGifPicker" class="gif-picker">
-      <div class="gif-header">
-        <div class="gif-search-wrapper">
-          <input 
-            v-model="gifSearchQuery" 
-            placeholder="Search GIPHY..." 
-            class="gif-search-input"
-          />
-        </div>
-        <button @click="showGifPicker = false" class="close-gif">✕</button>
-      </div>
-
-      <div class="gif-grid">
-        <div v-if="isLoadingGifs" class="loading-spinner">Loading...</div>
-        
-        <img 
-          v-for="gif in gifResults" 
-          :key="gif.id" 
-          :src="gif.images.fixed_height.url" 
-          class="gif-option"
-          @click="sendGif(gif.images.fixed_height.url)"
-        />
-      </div>
-      
-      <div class="giphy-attribution">Powered by GIPHY</div>
-    </div>
-
-    <div class="chat-input-area">
-      <div class="input-actions">
-        <button class="input-action-btn icon-btn" title="Add image">
-          <img src="/icons/gallery-icon.png" alt="Gallery" class="action-icon" />
-        </button>
-        <button class="input-action-btn icon-btn" title="Add GIF" @click="showGifPicker = !showGifPicker">
-          <span style="font-weight: 800; font-size: 10px; border: 1.5px solid currentColor; border-radius: 4px; padding: 2px;">GIF</span>
-        </button>
-        <button class="input-action-btn icon-btn" title="Add sticker">
-          <img src="/icons/sticker-icon.png" alt="Sticker" class="action-icon" />
-        </button>
-      </div>
-
-      <div class="input-wrapper">
-        <input
-          v-model="messageInput"
-          type="text"
-          placeholder="Message..."
-          class="message-input"
-          @keydown.enter="handleSendMessage"
-        />
-      </div>
-
-      <button
-        v-if="messageInput.trim()"
-        class="send-btn"
-        @click="handleSendMessage"
-        title="Send message"
-      >
-        ➤
-      </button>
-    </div>
-
-    <GroupDetailsModal
-        v-if="showDetails"
-        :conversation="selectedConversation"
-        :current-user-id="currentUserId"
-        @close="showDetails = false"
-        @leave="handleLeave"
-        @refresh="emit('refresh-data')" 
-    />
-
-  </div>
-
-  <div v-else class="chat-empty-state">
-    <p>Select a conversation to start messaging</p>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, watch, nextTick } from 'vue'
 import type { Conversation, Message } from '../types/chat'
@@ -292,6 +146,152 @@ const handleLeave = () => {
     showDetails.value = false;
 }
 </script>
+
+<template>
+  <CallOverlay 
+    :active="callState !== 'idle'"
+    :status="callState"
+    :call-type="activeCallType"
+    :caller-name="incomingCaller?.name"
+    :caller-avatar="incomingCaller?.avatar"
+    :remote-users="remoteUsers"
+    :audio-enabled="isAudioEnabled"
+    :video-enabled="isVideoEnabled"
+    @accept="acceptCall"
+    @reject="leaveCall"
+    @end="leaveCall"
+    @toggle-audio="toggleAudio"
+    @toggle-video="toggleVideo"
+  />
+
+  <div v-if="selectedConversation && chatPartner" class="chat-window">
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <div class="header-avatar">
+          <img
+            v-if="!selectedConversation.isGroup"
+            :src="chatPartner?.avatar || '/placeholder.svg'"
+            class="avatar"
+          />
+          <div v-else class="group-avatar-placeholder">👥</div>
+        </div>
+        <div class="header-info">
+          <h3 class="chat-title">
+            {{ selectedConversation.isGroup ? selectedConversation.name : chatPartner?.fullName }}
+          </h3>
+          <p v-if="!selectedConversation.isGroup" class="chat-subtitle">
+             {{ chatPartner?.isOnline ? 'Active now' : '' }}
+          </p>
+          <p v-else class="chat-subtitle">
+             {{ selectedConversation.participants.length }} members
+          </p>
+        </div>
+      </div>
+
+      <div class="chat-header-actions">
+        <button class="header-action-btn icon-btn" title="Call" @click="startCall('audio')">
+          <img src="/icons/call-icon.png" alt="Call" class="action-icon" />
+        </button>
+        <button class="header-action-btn icon-btn" title="Video call" @click="startCall('video')">
+          <img src="/icons/video-call-icon.png" alt="Video Call" class="action-icon" />
+        </button>
+        
+        <button class="header-action-btn icon-btn" title="Delete conversation" @click="handleDeleteConversation">
+          <img src="/icons/trashbin-icon.png" alt="Delete" class="action-icon" />
+        </button>
+        <button class="header-action-btn" title="Info" @click="showDetails = true">
+          ℹ️
+        </button>
+      </div>
+    </div>
+
+    <div ref="messagesContainer" class="messages-area">
+      <div class="messages-container">
+        <MessageItem
+          v-for="message in messages"
+          :key="message.id"
+          :message="message"
+          :is-own-message="message.senderId === currentUserId"
+          @unsend="handleUnsend"
+        />
+      </div>
+    </div>
+
+    <div v-if="showGifPicker" class="gif-picker">
+      <div class="gif-header">
+        <div class="gif-search-wrapper">
+          <input 
+            v-model="gifSearchQuery" 
+            placeholder="Search GIPHY..." 
+            class="gif-search-input"
+          />
+        </div>
+        <button class="close-gif" @click="showGifPicker = false">✕</button>
+      </div>
+
+      <div class="gif-grid">
+        <div v-if="isLoadingGifs" class="loading-spinner">Loading...</div>
+        
+        <img 
+          v-for="gif in gifResults" 
+          :key="gif.id" 
+          :src="gif.images.fixed_height.url" 
+          class="gif-option"
+          @click="sendGif(gif.images.fixed_height.url)"
+        />
+      </div>
+      
+      <div class="giphy-attribution">Powered by GIPHY</div>
+    </div>
+
+    <div class="chat-input-area">
+      <div class="input-actions">
+        <button class="input-action-btn icon-btn" title="Add image">
+          <img src="/icons/gallery-icon.png" alt="Gallery" class="action-icon" />
+        </button>
+        <button class="input-action-btn icon-btn" title="Add GIF" @click="showGifPicker = !showGifPicker">
+          <span style="font-weight: 800; font-size: 10px; border: 1.5px solid currentColor; border-radius: 4px; padding: 2px;">GIF</span>
+        </button>
+        <button class="input-action-btn icon-btn" title="Add sticker">
+          <img src="/icons/sticker-icon.png" alt="Sticker" class="action-icon" />
+        </button>
+      </div>
+
+      <div class="input-wrapper">
+        <input
+          v-model="messageInput"
+          type="text"
+          placeholder="Message..."
+          class="message-input"
+          @keydown.enter="handleSendMessage"
+        />
+      </div>
+
+      <button
+        v-if="messageInput.trim()"
+        class="send-btn"
+        title="Send message"
+        @click="handleSendMessage"
+      >
+        ➤
+      </button>
+    </div>
+
+    <GroupDetailsModal
+        v-if="showDetails"
+        :conversation="selectedConversation"
+        :current-user-id="currentUserId"
+        @close="showDetails = false"
+        @leave="handleLeave"
+        @refresh="emit('refresh-data')" 
+    />
+
+  </div>
+
+  <div v-else class="chat-empty-state">
+    <p>Select a conversation to start messaging</p>
+  </div>
+</template>
 
 <style scoped>
 /* Keep existing styles */

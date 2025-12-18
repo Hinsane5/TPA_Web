@@ -1,66 +1,3 @@
-<template>
-  <div class="login-container">
-    <div class="logo-section">
-      <img
-        src="/icons/instagram-icon.png"
-        alt="Instagram"
-        class="instagram-logo"
-      />
-      <h1 class="brand-name">hoshiBmatchi</h1>
-    </div>
-
-    <form @submit.prevent="handleLogin" class="form">
-      <div class="form-group">
-        <input
-          v-model="emailOrUsername"
-          type="text"
-          placeholder="Phone number, username, or email"
-          class="input-field"
-          required
-        />
-      </div>
-
-      <div class="form-group">
-        <input
-          v-model="password"
-          type="password"
-          placeholder="Password"
-          class="input-field"
-          required
-        />
-      </div>
-
-      <button type="submit" class="btn btn-primary">Log in</button>
-    </form>
-
-    <button type="button" class="btn btn-google" @click="">
-      <span class="google-icon">G</span>
-      Log in with Google
-    </button>
-
-    <div class="divider">
-      <span>OR</span>
-    </div>
-
-    <button
-      type="button"
-      class="forgot-password-link"
-      @click="navigateToForgot"
-    >
-      Forgot password?
-    </button>
-
-    <div class="signup-section">
-      <p class="signup-text">
-        Don't have an account?
-        <button type="button" class="link-button" @click="navigateToRegister">
-          Sign up
-        </button>
-      </p>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, inject } from "vue";
 import { useRouter } from "vue-router";
@@ -131,6 +68,69 @@ const navigateToForgot = () => {
   router.push("/forgot-password");
 };
 </script>
+
+<template>
+  <div class="login-container">
+    <div class="logo-section">
+      <img
+        src="/icons/instagram-icon.png"
+        alt="Instagram"
+        class="instagram-logo"
+      />
+      <h1 class="brand-name">hoshiBmatchi</h1>
+    </div>
+
+    <form class="form" @submit.prevent="handleLogin">
+      <div class="form-group">
+        <input
+          v-model="emailOrUsername"
+          type="text"
+          placeholder="Phone number, username, or email"
+          class="input-field"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <input
+          v-model="password"
+          type="password"
+          placeholder="Password"
+          class="input-field"
+          required
+        />
+      </div>
+
+      <button type="submit" class="btn btn-primary">Log in</button>
+    </form>
+
+    <button type="button" class="btn btn-google" @click="">
+      <span class="google-icon">G</span>
+      Log in with Google
+    </button>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <button
+      type="button"
+      class="forgot-password-link"
+      @click="navigateToForgot"
+    >
+      Forgot password?
+    </button>
+
+    <div class="signup-section">
+      <p class="signup-text">
+        Don't have an account?
+        <button type="button" class="link-button" @click="navigateToRegister">
+          Sign up
+        </button>
+      </p>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .login-container {

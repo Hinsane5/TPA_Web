@@ -1,39 +1,3 @@
-<template>
-  <div class="share-modal-overlay" @click.self="closeModal">
-    <div class="share-modal" @click.stop>
-      <div class="modal-header">
-        <h2 class="modal-title">Share</h2>
-        <button class="close-modal-btn" @click="closeModal">✕</button>
-      </div>
-
-      <div class="modal-content">
-        <div class="search-field">
-          <span class="search-label">To:</span>
-          <input 
-            v-model="searchQuery"
-            type="text" 
-            placeholder="Search..."
-            class="search-input"
-          />
-        </div>
-
-        <div class="suggested-section">
-          <h3 class="suggested-title">Suggested</h3>
-          <ShareUsersContainer 
-            :users="filteredUsers"
-            :selectedUsers="selectedUsers"
-            @select-user="toggleUserSelection"
-          />
-        </div>
-      </div>
-
-      <button class="send-btn" @click="handleSend" :disabled="selectedUsers.size === 0">
-        Send
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useStories } from '../composables/useStories';
@@ -72,6 +36,42 @@ const handleSend = () => {
   closeModal();
 };
 </script>
+
+<template>
+  <div class="share-modal-overlay" @click.self="closeModal">
+    <div class="share-modal" @click.stop>
+      <div class="modal-header">
+        <h2 class="modal-title">Share</h2>
+        <button class="close-modal-btn" @click="closeModal">✕</button>
+      </div>
+
+      <div class="modal-content">
+        <div class="search-field">
+          <span class="search-label">To:</span>
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search..."
+            class="search-input"
+          />
+        </div>
+
+        <div class="suggested-section">
+          <h3 class="suggested-title">Suggested</h3>
+          <ShareUsersContainer 
+            :users="filteredUsers"
+            :selected-users="selectedUsers"
+            @select-user="toggleUserSelection"
+          />
+        </div>
+      </div>
+
+      <button class="send-btn" :disabled="selectedUsers.size === 0" @click="handleSend">
+        Send
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .share-modal-overlay {

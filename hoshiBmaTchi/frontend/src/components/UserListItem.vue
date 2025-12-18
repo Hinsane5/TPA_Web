@@ -1,53 +1,3 @@
-<template>
-  <div class="user-list-item" @click="$emit('click')">
-    <div class="user-avatar-wrapper">
-      <img 
-        :src="user.profile_picture_url || '/default-avatar.png'" 
-        :alt="user.username"
-        class="user-avatar"
-        @error="handleImageError"
-      />
-    </div>
-
-    <div class="user-info-wrapper">
-      <div class="username-section">
-        <span class="username-text">{{ user.username }}</span>
-        <img 
-          v-if="user.is_verified"
-          src="/icons/verified-icon.png"
-          alt="Verified"
-          class="verified-badge"
-        />
-      </div>
-
-      <p class="user-details">
-        {{ user.name }}
-        <span v-if="formattedFollowers"> • {{ formattedFollowers }} followers</span>
-      </p>
-    </div>
-
-    <div class="action-area" @click.stop>
-      <button 
-        v-if="showClose" 
-        class="close-btn"
-        @click="$emit('remove')"
-        title="Remove from history"
-      >
-        ×
-      </button>
-
-      <button 
-        v-else-if="showFollow"
-        class="follow-button"
-        @click="handleFollowClick"
-        :class="{ following: isFollowingLocal }"
-      >
-        {{ isFollowingLocal ? 'Following' : 'Follow' }}
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 
@@ -103,6 +53,56 @@ const handleImageError = (e: Event) => {
   (e.target as HTMLImageElement).src = '/default-avatar.png';
 };
 </script>
+
+<template>
+  <div class="user-list-item" @click="$emit('click')">
+    <div class="user-avatar-wrapper">
+      <img 
+        :src="user.profile_picture_url || '/default-avatar.png'" 
+        :alt="user.username"
+        class="user-avatar"
+        @error="handleImageError"
+      />
+    </div>
+
+    <div class="user-info-wrapper">
+      <div class="username-section">
+        <span class="username-text">{{ user.username }}</span>
+        <img 
+          v-if="user.is_verified"
+          src="/icons/verified-icon.png"
+          alt="Verified"
+          class="verified-badge"
+        />
+      </div>
+
+      <p class="user-details">
+        {{ user.name }}
+        <span v-if="formattedFollowers"> • {{ formattedFollowers }} followers</span>
+      </p>
+    </div>
+
+    <div class="action-area" @click.stop>
+      <button 
+        v-if="showClose" 
+        class="close-btn"
+        title="Remove from history"
+        @click="$emit('remove')"
+      >
+        ×
+      </button>
+
+      <button 
+        v-else-if="showFollow"
+        class="follow-button"
+        :class="{ following: isFollowingLocal }"
+        @click="handleFollowClick"
+      >
+        {{ isFollowingLocal ? 'Following' : 'Follow' }}
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .user-list-item {

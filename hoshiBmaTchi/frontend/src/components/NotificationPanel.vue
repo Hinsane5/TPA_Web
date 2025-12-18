@@ -1,34 +1,3 @@
-<template>
-  <div v-if="isOpen" class="notification-panel-overlay" @click="closePanel">
-    <div class="notification-panel" @click.stop>
-      <div class="panel-header">
-        <h2>Notifications</h2>
-        <button class="close-btn" @click="closePanel">✕</button>
-      </div>
-      
-      <div class="notification-list">
-        <div 
-          v-for="notif in store.notifications" 
-          :key="notif.ID" 
-          class="notif-item" 
-          @click="handleNotificationClick(notif)"
-        >
-          <img :src="notif.sender_image || '/icons/profile-icon.png'" class="avatar" />
-          
-          <div class="notif-content">
-            <span class="username">{{ notif.sender_name }}</span>
-            <span class="message">{{ notif.message }}</span>
-          </div>
-        </div>
-
-        <div v-if="store.notifications.length === 0" class="empty-state">
-          <p>No notifications yet</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { useNotificationStore } from '@/stores/notificationStore';
 import { useRouter } from 'vue-router';
@@ -80,6 +49,37 @@ const handleNotificationClick = (notif: Notification) => {
   }
 };
 </script>
+
+<template>
+  <div v-if="isOpen" class="notification-panel-overlay" @click="closePanel">
+    <div class="notification-panel" @click.stop>
+      <div class="panel-header">
+        <h2>Notifications</h2>
+        <button class="close-btn" @click="closePanel">✕</button>
+      </div>
+      
+      <div class="notification-list">
+        <div 
+          v-for="notif in store.notifications" 
+          :key="notif.ID" 
+          class="notif-item" 
+          @click="handleNotificationClick(notif)"
+        >
+          <img :src="notif.sender_image || '/icons/profile-icon.png'" class="avatar" />
+          
+          <div class="notif-content">
+            <span class="username">{{ notif.sender_name }}</span>
+            <span class="message">{{ notif.message }}</span>
+          </div>
+        </div>
+
+        <div v-if="store.notifications.length === 0" class="empty-state">
+          <p>No notifications yet</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .notification-panel-overlay {

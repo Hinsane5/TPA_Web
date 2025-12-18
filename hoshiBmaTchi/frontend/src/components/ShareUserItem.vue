@@ -1,20 +1,3 @@
-<template>
-  <div class="user-item" @click="handleClick">
-    <div class="user-item-left">
-      <div class="user-avatar">{{ user.userAvatar }}</div>
-      <div class="user-text">
-        <p class="user-name">{{ user.fullName }}</p>
-        <p class="user-handle">{{ user.username }}</p>
-      </div>
-    </div>
-    <button 
-      class="user-checkbox"
-      :class="{ checked: isSelected }"
-      @click.stop="handleClick"
-    ></button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import type { User } from '../types/stories';
 
@@ -32,6 +15,23 @@ const handleClick = () => {
   emit('select');
 };
 </script>
+
+<template>
+  <div class="user-item" @click="handleClick">
+    <div class="user-item-left">
+      <div class="user-avatar">{{ user.userAvatar }}</div>
+      <div class="user-text">
+        <p class="user-name">{{ user.fullName }}</p>
+        <p class="user-handle">{{ user.username }}</p>
+      </div>
+    </div>
+    <button 
+      class="user-checkbox"
+      :class="{ checked: isSelected }"
+      @click.stop="handleClick"
+    ></button>
+  </div>
+</template>
 
 <style scoped>
 .user-item {

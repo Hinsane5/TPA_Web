@@ -1,57 +1,3 @@
-<template>
-  <div class="archive-page">
-    <div class="archive-header">
-      <button class="back-btn" @click="goBack">
-        <span class="back-arrow">←</span>
-      </button>
-      <div class="header-title">Archive</div>
-      <div class="header-placeholder"></div> </div>
-
-    <div class="archive-tabs">
-      <div class="tab-item active">STORIES</div>
-    </div>
-
-    <div class="stories-grid">
-      <div 
-        v-for="(story, index) in archivedStories" 
-        :key="story.id" 
-        class="story-grid-item"
-        @click="openStory(index)"
-      >
-        <div class="media-container">
-          <img 
-            v-if="story.mediaType === 'image'" 
-            :src="getSafeImageUrl(story.mediaUrl)" 
-            class="story-thumbnail" 
-            loading="lazy"
-          />
-          <video 
-            v-else 
-            :src="getSafeImageUrl(story.mediaUrl)" 
-            class="story-thumbnail"
-            preload="metadata"
-          ></video>
-        </div>
-        <div class="date-overlay">
-          {{ formatDate(story.timestamp) }}
-        </div>
-      </div>
-
-      <template v-if="isLoading">
-        <div v-for="n in 8" :key="`skeleton-${n}`" class="story-grid-item skeleton"></div>
-      </template>
-    </div>
-
-    <div ref="scrollTrigger" class="scroll-trigger"></div>
-
-    <StoriesCarouselOverlay 
-      v-if="showOverlay" 
-      :isOpen="showOverlay"
-      @close="closeOverlay"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
@@ -203,6 +149,60 @@ onUnmounted(() => {
   if (observer) observer.disconnect();
 });
 </script>
+
+<template>
+  <div class="archive-page">
+    <div class="archive-header">
+      <button class="back-btn" @click="goBack">
+        <span class="back-arrow">←</span>
+      </button>
+      <div class="header-title">Archive</div>
+      <div class="header-placeholder"></div> </div>
+
+    <div class="archive-tabs">
+      <div class="tab-item active">STORIES</div>
+    </div>
+
+    <div class="stories-grid">
+      <div 
+        v-for="(story, index) in archivedStories" 
+        :key="story.id" 
+        class="story-grid-item"
+        @click="openStory(index)"
+      >
+        <div class="media-container">
+          <img 
+            v-if="story.mediaType === 'image'" 
+            :src="getSafeImageUrl(story.mediaUrl)" 
+            class="story-thumbnail" 
+            loading="lazy"
+          />
+          <video 
+            v-else 
+            :src="getSafeImageUrl(story.mediaUrl)" 
+            class="story-thumbnail"
+            preload="metadata"
+          ></video>
+        </div>
+        <div class="date-overlay">
+          {{ formatDate(story.timestamp) }}
+        </div>
+      </div>
+
+      <template v-if="isLoading">
+        <div v-for="n in 8" :key="`skeleton-${n}`" class="story-grid-item skeleton"></div>
+      </template>
+    </div>
+
+    <div ref="scrollTrigger" class="scroll-trigger"></div>
+
+    <StoriesCarouselOverlay 
+      v-if="showOverlay" 
+      :is-open="showOverlay"
+      @close="closeOverlay"
+    />
+  </div>
+</template>
 
 <style scoped>
 .archive-page {

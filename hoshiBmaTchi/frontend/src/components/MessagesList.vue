@@ -1,39 +1,3 @@
-<template>
-  <div class="messages-list">
-    <div class="list-header">
-      <h2>{{ currentUser?.username }}</h2>
-      <button class="compose-btn" title="New message" @click="showCreateModal = true">
-        <img src="/icons/create-icon.jpg" style="filter: invert(1); width: 24px;" />
-      </button>
-    </div>
-
-    <div class="search-wrapper">
-      <input
-        v-model="searchInput"
-        type="text"
-        placeholder="Search conversations..."
-        class="search-input"
-      />
-    </div>
-
-    <div class="conversations-container">
-       <ConversationItem 
-         v-for="conversation in filteredConversations"
-         :key="conversation.id"
-         :conversation="conversation"
-         :current-user-id="currentUserId"
-         :is-active="selectedConversationId === conversation.id"
-         @select="selectConversation(conversation.id)"
-       />
-    </div>
-    <CreateChatModal 
-      v-if="showCreateModal" 
-      @close="showCreateModal = false"
-      @create="handleChatCreated"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import type { Conversation, User } from "../types/chat";
@@ -83,6 +47,42 @@ const deleteConversation = (conversationId: string) => {
   emit("delete-conversation", conversationId);
 };
 </script>
+
+<template>
+  <div class="messages-list">
+    <div class="list-header">
+      <h2>{{ currentUser?.username }}</h2>
+      <button class="compose-btn" title="New message" @click="showCreateModal = true">
+        <img src="/icons/create-icon.jpg" style="filter: invert(1); width: 24px;" />
+      </button>
+    </div>
+
+    <div class="search-wrapper">
+      <input
+        v-model="searchInput"
+        type="text"
+        placeholder="Search conversations..."
+        class="search-input"
+      />
+    </div>
+
+    <div class="conversations-container">
+       <ConversationItem 
+         v-for="conversation in filteredConversations"
+         :key="conversation.id"
+         :conversation="conversation"
+         :current-user-id="currentUserId"
+         :is-active="selectedConversationId === conversation.id"
+         @select="selectConversation(conversation.id)"
+       />
+    </div>
+    <CreateChatModal 
+      v-if="showCreateModal" 
+      @close="showCreateModal = false"
+      @create="handleChatCreated"
+    />
+  </div>
+</template>
 
 <style scoped>
 .messages-list {

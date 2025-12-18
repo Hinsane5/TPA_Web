@@ -1,13 +1,3 @@
-<template>
-  <ShareUserItem 
-    v-for="user in users" 
-    :key="user.id"
-    :user="user"
-    :isSelected="selectedUsers.has(user.id)"
-    @select="emit('select-user', user.id)"
-  />
-</template>
-
 <script setup lang="ts">
 import ShareUserItem from './ShareUserItem.vue';
 import type { User } from '../types/stories';
@@ -22,3 +12,13 @@ const emit = defineEmits<{
   'select-user': [userId: string];
 }>();
 </script>
+
+<template>
+  <ShareUserItem 
+    v-for="user in users" 
+    :key="user.id"
+    :user="user"
+    :is-selected="selectedUsers.has(user.id)"
+    @select="emit('select-user', user.id)"
+  />
+</template>

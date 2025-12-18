@@ -1,55 +1,3 @@
-<template>
-  <div class="share-modal-overlay" @click.self="closeModal">
-    <div class="share-modal">
-      <div class="modal-header">
-        <h2 class="modal-title">Share</h2>
-        <button class="close-modal-btn" @click="closeModal">✕</button>
-      </div>
-
-      <div class="modal-content">
-        <div class="search-field">
-          <span class="search-label">To:</span>
-          <input 
-            v-model="searchQuery"
-            type="text" 
-            placeholder="Search..."
-            class="search-input"
-          />
-        </div>
-
-        <div class="suggested-section">
-          <h3 class="suggested-title">Suggested</h3>
-          <div v-if="loading" class="loading-state">Loading...</div>
-          <div v-else class="users-list">
-             <div 
-                v-for="user in filteredUsers" 
-                :key="user.user_id || user.id" 
-                class="user-item"
-                @click="toggleSelection(user.user_id || user.id)"
-             >
-                <div class="user-info">
-                   <img :src="user.profile_picture_url || '/default-avatar.png'" class="user-avatar" />
-                   <div class="user-details">
-                      <span class="user-name">{{ user.username }}</span>
-                      <span class="user-fullname">{{ user.name || user.full_name }}</span>
-                   </div>
-                </div>
-                <div class="checkbox">
-                   <div v-if="selectedUserId === (user.user_id || user.id)" class="checked-circle">✓</div>
-                   <div v-else class="unchecked-circle"></div>
-                </div>
-             </div>
-          </div>
-        </div>
-      </div>
-
-      <button class="send-btn" @click="handleSend" :disabled="!selectedUserId">
-        Send
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { reelsApi, chatApi } from '../services/apiService';
@@ -116,6 +64,58 @@ const handleSend = async () => {
   }
 };
 </script>
+
+<template>
+  <div class="share-modal-overlay" @click.self="closeModal">
+    <div class="share-modal">
+      <div class="modal-header">
+        <h2 class="modal-title">Share</h2>
+        <button class="close-modal-btn" @click="closeModal">✕</button>
+      </div>
+
+      <div class="modal-content">
+        <div class="search-field">
+          <span class="search-label">To:</span>
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Search..."
+            class="search-input"
+          />
+        </div>
+
+        <div class="suggested-section">
+          <h3 class="suggested-title">Suggested</h3>
+          <div v-if="loading" class="loading-state">Loading...</div>
+          <div v-else class="users-list">
+             <div 
+                v-for="user in filteredUsers" 
+                :key="user.user_id || user.id" 
+                class="user-item"
+                @click="toggleSelection(user.user_id || user.id)"
+             >
+                <div class="user-info">
+                   <img :src="user.profile_picture_url || '/default-avatar.png'" class="user-avatar" />
+                   <div class="user-details">
+                      <span class="user-name">{{ user.username }}</span>
+                      <span class="user-fullname">{{ user.name || user.full_name }}</span>
+                   </div>
+                </div>
+                <div class="checkbox">
+                   <div v-if="selectedUserId === (user.user_id || user.id)" class="checked-circle">✓</div>
+                   <div v-else class="unchecked-circle"></div>
+                </div>
+             </div>
+          </div>
+        </div>
+      </div>
+
+      <button class="send-btn" :disabled="!selectedUserId" @click="handleSend">
+        Send
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .share-modal-overlay {

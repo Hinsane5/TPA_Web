@@ -1,28 +1,3 @@
-<template>
-  <div class="messages-page">
-    <MessagesList
-      v-if="currentUser" 
-      :conversations="conversations"
-      :selected-conversation-id="selectedConversationId"
-      :current-user-id="currentUser.id" 
-      :current-user="currentUser" 
-      @select-conversation="selectConversation"
-      @delete-conversation="deleteConversation"
-    />
-
-    <ChatWindow
-      v-if="currentUser"
-      :selected-conversation="selectedConversation"
-      :messages="messages"
-      :current-user-id="currentUser.id"
-      @send-message="sendMessage"
-      @unsend-message="unsendMessage"
-      @delete-conversation="deleteConversationFromChat"
-      @refresh-data="initialize(currentUser)" 
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { onMounted, watch } from 'vue'; 
 import { useRoute } from 'vue-router';  
@@ -77,6 +52,31 @@ const deleteConversationFromChat = () => {
 };
 
 </script>
+
+<template>
+  <div class="messages-page">
+    <MessagesList
+      v-if="currentUser" 
+      :conversations="conversations"
+      :selected-conversation-id="selectedConversationId"
+      :current-user-id="currentUser.id" 
+      :current-user="currentUser" 
+      @select-conversation="selectConversation"
+      @delete-conversation="deleteConversation"
+    />
+
+    <ChatWindow
+      v-if="currentUser"
+      :selected-conversation="selectedConversation"
+      :messages="messages"
+      :current-user-id="currentUser.id"
+      @send-message="sendMessage"
+      @unsend-message="unsendMessage"
+      @delete-conversation="deleteConversationFromChat"
+      @refresh-data="initialize(currentUser)" 
+    />
+  </div>
+</template>
 
 <style scoped>
 .messages-page {

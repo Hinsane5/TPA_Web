@@ -1,140 +1,3 @@
-<template>
-  <div class="stories-overlay">
-    <div class="overlay-backdrop" @click="closeOverlay"></div>
-
-    <div class="stories-container">
-      <button class="close-btn" @click="closeOverlay">✕</button>
-
-      <ProgressBarsContainer 
-        v-if="stories"
-        :stories="stories"
-        :currentStoryIndex="currentStoryIndex"
-      />
-
-      <div class="stories-header">
-        <div class="user-info">
-          <img 
-            v-if="currentStory?.userAvatar"
-            :src="getSafeImageUrl(currentStory.userAvatar)" 
-            class="avatar"
-            alt="User"
-          />
-          <div v-else class="avatar placeholder">
-            {{ currentStory?.username?.charAt(0).toUpperCase() }}
-          </div>
-          <div class="user-details">
-            <div class="username-row">
-              <span class="username">{{ currentStory?.username }}</span>
-              <span v-if="currentStory?.isVerified" class="verified-badge">✓</span>
-            </div>
-            <span class="time">{{ formatTime(currentStory?.timestamp) }}</span>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button class="action-btn" title="Mute">🔇</button>
-          <button class="action-btn" title="Play">▶️</button>
-          <button class="action-btn" title="More">⋯</button>
-        </div>
-      </div>
-
-      <div class="story-content" @click="togglePlayPause">
-        <template v-if="currentStory">
-          <img 
-            v-if="currentStory.mediaType === 'image'"
-            :src="getSafeImageUrl(currentStory.mediaUrl)" 
-            :alt="`Story by ${currentStory.username}`"
-            class="story-media"
-          />
-          
-          <video 
-            v-else-if="currentStory.mediaType === 'video'"
-            ref="videoPlayer"
-            :src="getSafeImageUrl(currentStory.mediaUrl)"
-            class="story-media"
-            autoplay
-            muted
-            playsinline
-            @ended="handleVideoEnd"
-          ></video>
-        </template>
-      </div>
-
-      <button 
-        v-if="currentStoryIndex > 0"
-        class="nav-btn prev-btn" 
-        @click="previousStory"
-        title="Previous story"
-      >
-        ‹
-      </button>
-
-      <button 
-        v-if="currentStoryIndex < stories.length - 1"
-        class="nav-btn next-btn" 
-        @click="nextStory"
-        title="Next story"
-      >
-        ›
-      </button>
-
-      <div class="bottom-actions">
-        <div class="reply-section">
-          <span class="reply-text">Reply to {{ currentStory?.username }}</span>
-        </div>
-        <div class="action-buttons">
-          <button 
-            class="like-btn"
-            :class="{ liked: currentStory?.isLiked }"
-            @click="toggleLike"
-            title="Like"
-          >
-            <img 
-              src="/icons/liked-icon.png" 
-              alt="Like" 
-              class="icon-img"
-            />
-          </button>
-         <button 
-            class="share-btn"
-            @click.stop="showShareModal = true"
-            title="Share"
-          >
-            <img 
-              src="/icons/share-icon.png" 
-              alt="Share" 
-              class="icon-img" 
-            />
-          </button>
-        </div>
-      </div>
-
-      <div class="reply-input-container">
-        <input 
-          v-model="storyReplyText"
-          type="text" 
-          placeholder="Reply..."
-          class="reply-input"
-          @keyup.enter="addReply"
-        />
-      </div>
-
-      <MiniCarouselContainer 
-        :stories="stories"
-        :currentStoryIndex="currentStoryIndex"
-        @select-story="currentStoryIndex = $event"
-      />
-    </div>
-
-    <ShareModal 
-      v-if="showShareModal && currentStory"
-      :contentId="currentStory?.id || ''"
-      type="story"
-      :thumbnail="getSafeImageUrl(currentStory?.mediaUrl)"
-      @close="showShareModal = false"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, watch, nextTick } from 'vue';
 import { useStories } from '../composables/useStories';
@@ -227,6 +90,143 @@ const getSafeImageUrl = (url: string | undefined) => {
   return url;
 };
 </script>
+
+<template>
+  <div class="stories-overlay">
+    <div class="overlay-backdrop" @click="closeOverlay"></div>
+
+    <div class="stories-container">
+      <button class="close-btn" @click="closeOverlay">✕</button>
+
+      <ProgressBarsContainer 
+        v-if="stories"
+        :stories="stories"
+        :current-story-index="currentStoryIndex"
+      />
+
+      <div class="stories-header">
+        <div class="user-info">
+          <img 
+            v-if="currentStory?.userAvatar"
+            :src="getSafeImageUrl(currentStory.userAvatar)" 
+            class="avatar"
+            alt="User"
+          />
+          <div v-else class="avatar placeholder">
+            {{ currentStory?.username?.charAt(0).toUpperCase() }}
+          </div>
+          <div class="user-details">
+            <div class="username-row">
+              <span class="username">{{ currentStory?.username }}</span>
+              <span v-if="currentStory?.isVerified" class="verified-badge">✓</span>
+            </div>
+            <span class="time">{{ formatTime(currentStory?.timestamp) }}</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="action-btn" title="Mute">🔇</button>
+          <button class="action-btn" title="Play">▶️</button>
+          <button class="action-btn" title="More">⋯</button>
+        </div>
+      </div>
+
+      <div class="story-content" @click="togglePlayPause">
+        <template v-if="currentStory">
+          <img 
+            v-if="currentStory.mediaType === 'image'"
+            :src="getSafeImageUrl(currentStory.mediaUrl)" 
+            :alt="`Story by ${currentStory.username}`"
+            class="story-media"
+          />
+          
+          <video 
+            v-else-if="currentStory.mediaType === 'video'"
+            ref="videoPlayer"
+            :src="getSafeImageUrl(currentStory.mediaUrl)"
+            class="story-media"
+            autoplay
+            muted
+            playsinline
+            @ended="handleVideoEnd"
+          ></video>
+        </template>
+      </div>
+
+      <button 
+        v-if="currentStoryIndex > 0"
+        class="nav-btn prev-btn" 
+        title="Previous story"
+        @click="previousStory"
+      >
+        ‹
+      </button>
+
+      <button 
+        v-if="currentStoryIndex < stories.length - 1"
+        class="nav-btn next-btn" 
+        title="Next story"
+        @click="nextStory"
+      >
+        ›
+      </button>
+
+      <div class="bottom-actions">
+        <div class="reply-section">
+          <span class="reply-text">Reply to {{ currentStory?.username }}</span>
+        </div>
+        <div class="action-buttons">
+          <button 
+            class="like-btn"
+            :class="{ liked: currentStory?.isLiked }"
+            title="Like"
+            @click="toggleLike"
+          >
+            <img 
+              src="/icons/liked-icon.png" 
+              alt="Like" 
+              class="icon-img"
+            />
+          </button>
+         <button 
+            class="share-btn"
+            title="Share"
+            @click.stop="showShareModal = true"
+          >
+            <img 
+              src="/icons/share-icon.png" 
+              alt="Share" 
+              class="icon-img" 
+            />
+          </button>
+        </div>
+      </div>
+
+      <div class="reply-input-container">
+        <input 
+          v-model="storyReplyText"
+          type="text" 
+          placeholder="Reply..."
+          class="reply-input"
+          @keyup.enter="addReply"
+        />
+      </div>
+
+      <MiniCarouselContainer 
+        :stories="stories"
+        :current-story-index="currentStoryIndex"
+        @select-story="currentStoryIndex = $event"
+      />
+    </div>
+
+    <ShareModal 
+      v-if="showShareModal && currentStory"
+      :content-id="currentStory?.id || ''"
+      type="story"
+      :thumbnail="getSafeImageUrl(currentStory?.mediaUrl)"
+      @close="showShareModal = false"
+    />
+  </div>
+</template>
 
 <style scoped>
 .stories-overlay {

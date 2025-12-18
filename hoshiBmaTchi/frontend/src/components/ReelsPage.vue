@@ -1,115 +1,3 @@
-<template>
-  <div class="reels-page-container">
-    <div class="reels-scroll-container" ref="scrollContainer">
-      <div 
-        v-for="(reel, index) in reels" 
-        :key="reel.id" 
-        class="reel-item"
-        :class="{ active: currentReelIndex === index }"
-        ref="reelItems"
-      >
-        <div class="video-wrapper" @click="togglePlay(index)">
-          <video
-            ref="videoRefs"
-            class="reel-video"
-            :src="getDisplayUrl(reel.video_url)"
-            :poster="getDisplayUrl(reel.thumbnail_url)"
-            loop="false"
-            muted
-            playsinline
-            @ended="handleVideoEnd(index)"
-          ></video>
-          
-          <div v-if="!isPlaying[index]" class="play-overlay">
-            <svg viewBox="0 0 24 24" class="play-icon" fill="white">
-              <path d="M8 5v14l11-7z"/>
-            </svg>
-          </div>
-        </div>
-
-        <div class="reel-overlay">
-          
-          <div class="reel-info">
-            <div class="user-profile" @click.stop="goToProfile(reel.user.id)">
-              <img :src="reel.user.profile_picture || '/default-avatar.png'" class="avatar" alt="User">
-              <span class="username">{{ reel.user.username }}</span>
-              <button class="follow-btn" v-if="!reel.user.is_following">• Follow</button>
-            </div>
-            
-            <div class="caption-container">
-              <p class="caption">
-                <span v-html="parseCaption(reel.caption)"></span>
-              </p>
-            </div>
-            
-            <div class="music-tag">
-              <svg viewBox="0 0 24 24" class="music-icon" fill="white"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-              <span>Original Audio - {{ reel.user.username }}</span>
-            </div>
-          </div>
-
-          <div class="reel-actions">
-            <button class="action-btn" @click.stop="toggleLike(reel)">
-              <img 
-                :src="reel.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'" 
-                class="action-icon"
-                :class="{ 'is-liked': reel.is_liked }"
-              />
-              <span class="count">{{ formatCount(reel.likes_count) }}</span>
-            </button>
-
-            <button class="action-btn" @click.stop="openComments(reel)">
-              <img src="/icons/comment-icon.png" class="action-icon" />
-              <span class="count">{{ formatCount(reel.comments_count) }}</span>
-            </button>
-
-            <button class="action-btn" @click.stop="openShareModal(reel)">
-              <img src="/icons/share-icon.png" class="action-icon" />
-            </button>
-
-            <button class="action-btn" @click.stop="toggleSave(reel)">
-              <img 
-                :src="reel.is_saved ? '/icons/saved-icon.png' : '/icons/save-icon.png'" 
-                class="action-icon"
-                :class="{ 'is-saved': reel.is_saved }"
-              />
-            </button>
-
-            <button class="action-btn" @click.stop="openMoreOptions(reel)">
-               <svg viewBox="0 0 24 24" class="action-icon svg-icon" fill="white">
-                 <circle cx="12" cy="12" r="2"/>
-                 <circle cx="12" cy="6" r="2"/>
-                 <circle cx="12" cy="18" r="2"/>
-               </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="loading" class="reel-item skeleton">
-        <div class="skeleton-avatar"></div>
-        <div class="skeleton-text"></div>
-        <div class="skeleton-text short"></div>
-      </div>
-    </div>
-
-   <PostDetailOverlay 
-      v-if="showCommentOverlay" 
-      :is-open="showCommentOverlay"
-      :post="activeReelForComments" 
-      @close="closeCommentOverlay"
-    />
-
-    <ShareModal 
-        v-if="showShareModal"
-        :contentId="activeReelForShare?.id"
-        type="reel"
-        :thumbnail="activeReelForShare?.thumbnail_url"
-        @close="closeShareModal"
-     />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
@@ -369,6 +257,118 @@ const parseCaption = (text: string) => {
 };
 
 </script>
+
+<template>
+  <div class="reels-page-container">
+    <div ref="scrollContainer" class="reels-scroll-container">
+      <div 
+        v-for="(reel, index) in reels" 
+        :key="reel.id" 
+        ref="reelItems"
+        class="reel-item"
+        :class="{ active: currentReelIndex === index }"
+      >
+        <div class="video-wrapper" @click="togglePlay(index)">
+          <video
+            ref="videoRefs"
+            class="reel-video"
+            :src="getDisplayUrl(reel.video_url)"
+            :poster="getDisplayUrl(reel.thumbnail_url)"
+            loop="false"
+            muted
+            playsinline
+            @ended="handleVideoEnd(index)"
+          ></video>
+          
+          <div v-if="!isPlaying[index]" class="play-overlay">
+            <svg viewBox="0 0 24 24" class="play-icon" fill="white">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="reel-overlay">
+          
+          <div class="reel-info">
+            <div class="user-profile" @click.stop="goToProfile(reel.user.id)">
+              <img :src="reel.user.profile_picture || '/default-avatar.png'" class="avatar" alt="User">
+              <span class="username">{{ reel.user.username }}</span>
+              <button v-if="!reel.user.is_following" class="follow-btn">• Follow</button>
+            </div>
+            
+            <div class="caption-container">
+              <p class="caption">
+                <span v-html="parseCaption(reel.caption)"></span>
+              </p>
+            </div>
+            
+            <div class="music-tag">
+              <svg viewBox="0 0 24 24" class="music-icon" fill="white"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+              <span>Original Audio - {{ reel.user.username }}</span>
+            </div>
+          </div>
+
+          <div class="reel-actions">
+            <button class="action-btn" @click.stop="toggleLike(reel)">
+              <img 
+                :src="reel.is_liked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'" 
+                class="action-icon"
+                :class="{ 'is-liked': reel.is_liked }"
+              />
+              <span class="count">{{ formatCount(reel.likes_count) }}</span>
+            </button>
+
+            <button class="action-btn" @click.stop="openComments(reel)">
+              <img src="/icons/comment-icon.png" class="action-icon" />
+              <span class="count">{{ formatCount(reel.comments_count) }}</span>
+            </button>
+
+            <button class="action-btn" @click.stop="openShareModal(reel)">
+              <img src="/icons/share-icon.png" class="action-icon" />
+            </button>
+
+            <button class="action-btn" @click.stop="toggleSave(reel)">
+              <img 
+                :src="reel.is_saved ? '/icons/saved-icon.png' : '/icons/save-icon.png'" 
+                class="action-icon"
+                :class="{ 'is-saved': reel.is_saved }"
+              />
+            </button>
+
+            <button class="action-btn" @click.stop="openMoreOptions(reel)">
+               <svg viewBox="0 0 24 24" class="action-icon svg-icon" fill="white">
+                 <circle cx="12" cy="12" r="2"/>
+                 <circle cx="12" cy="6" r="2"/>
+                 <circle cx="12" cy="18" r="2"/>
+               </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="loading" class="reel-item skeleton">
+        <div class="skeleton-avatar"></div>
+        <div class="skeleton-text"></div>
+        <div class="skeleton-text short"></div>
+      </div>
+    </div>
+
+   <PostDetailOverlay 
+      v-if="showCommentOverlay" 
+      :is-open="showCommentOverlay"
+      :post="activeReelForComments" 
+      @close="closeCommentOverlay"
+    />
+
+    <ShareModal 
+        v-if="showShareModal"
+        :content-id="activeReelForShare?.id"
+        type="reel"
+        :thumbnail="activeReelForShare?.thumbnail_url"
+        @close="closeShareModal"
+     />
+  </div>
+</template>
 
 <style scoped>
 .reels-page-container {

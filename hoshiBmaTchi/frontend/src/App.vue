@@ -1,11 +1,3 @@
-<template>
-  <div class="app-container">
-    <div class="form-wrapper">
-      <router-view />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 
 import { onMounted } from 'vue';
@@ -24,6 +16,14 @@ onMounted(() => {
 });
 
 </script>
+
+<template>
+  <div class="app-container">
+    <div class="form-wrapper">
+      <router-view />
+    </div>
+  </div>
+</template>
 
 <style>
 * {

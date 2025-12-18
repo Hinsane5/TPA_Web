@@ -1,95 +1,3 @@
-<template>
-  <div class="dashboard-layout">
-    <Sidebar 
-      :current-page="currentPage" 
-      :notification-count="notificationCount"
-      :is-search-active="isSearchOpen" 
-      @toggle-search="handleSearchToggle"
-      @navigate="handleNavigation" 
-      @logout="handleLogout"
-      @open-search="isSearchOpen = true"
-      @open-notifications="toggleNotifications" 
-      @open-create="openCreateModal"
-    />
-    
-    <main class="main-content">
-      <RouterView />
-    </main>
-
-    <SearchPanel :is-open="isSearchOpen" @close="isSearchOpen = false" @search="handleSearch" />
-
-    <div v-if="isNotificationOpen" class="notification-drawer">
-      <div class="notif-header">
-        <h3>Notifications</h3>
-        <button class="close-btn" @click="isNotificationOpen = false">×</button>
-      </div>
-      <div class="notif-content-area">
-        <ul class="notification-list">
-          <li 
-            v-for="notification in notificationStore.notifications" 
-            :key="notification.ID" 
-            class="notification-item" 
-            :class="{ 'unread': !notification.is_read }"
-            @click="handleNotificationClick(notification)"
-            style="cursor: pointer;"
-          >
-            <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="user" class="notif-avatar">
-            
-            <div class="notif-text-content">
-              <p class="notif-message">
-                <span class="username">{{ notification.sender_name || 'Unknown User' }}</span>
-                {{ notification.message }}
-              </p>
-              <span class="notif-time">{{ formatTimeAgo(notification.CreatedAt) }}</span>
-            </div>
-          </li>
-          <li v-if="notificationStore.notifications.length === 0" class="empty-state">
-            No notifications yet
-          </li>
-        </ul>
-      </div>
-    </div>
-
-    <div v-if="showCreateChoice" class="choice-modal-overlay" @click.self="showCreateChoice = false">
-      <div class="choice-modal-content">
-        <h3>Create</h3>
-        <div class="choice-list">
-          <button class="choice-item" @click="initiateUpload('post')">
-            <span class="choice-icon">
-              <img src="/icons/post-icon.png" alt="Post" class="choice-img-icon" />
-            </span>
-            <span>Post</span>
-          </button>
-          <button class="choice-item" @click="initiateUpload('story')">
-             <span class="choice-icon">
-               <img src="/icons/instagram-icon.png" alt="Story" class="choice-img-icon" />
-             </span> 
-            <span>Story</span>
-          </button>
-        </div>
-      </div>
-    </div>
-    
-    <input 
-      type="file" 
-      ref="fileInput" 
-      accept="image/*,video/*"
-      style="display: none"
-    >
-
-    <CreatePostOverlay 
-       v-if="showCreateOverlay"
-       :isOpen="showCreateOverlay"
-       :isStoryMode="uploadType === 'story'" 
-       @close="closeCreateOverlay"
-       @post-created="handlePostCreated"
-       @story-created="handleStoryCreated"
-    />
-    
-    <MiniMessagesComponent />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
@@ -245,6 +153,98 @@ onMounted(() => {
   checkLoginState()
 })
 </script>
+
+<template>
+  <div class="dashboard-layout">
+    <Sidebar 
+      :current-page="currentPage" 
+      :notification-count="notificationCount"
+      :is-search-active="isSearchOpen" 
+      @toggle-search="handleSearchToggle"
+      @navigate="handleNavigation" 
+      @logout="handleLogout"
+      @open-search="isSearchOpen = true"
+      @open-notifications="toggleNotifications" 
+      @open-create="openCreateModal"
+    />
+    
+    <main class="main-content">
+      <RouterView />
+    </main>
+
+    <SearchPanel :is-open="isSearchOpen" @close="isSearchOpen = false" @search="handleSearch" />
+
+    <div v-if="isNotificationOpen" class="notification-drawer">
+      <div class="notif-header">
+        <h3>Notifications</h3>
+        <button class="close-btn" @click="isNotificationOpen = false">×</button>
+      </div>
+      <div class="notif-content-area">
+        <ul class="notification-list">
+          <li 
+            v-for="notification in notificationStore.notifications" 
+            :key="notification.ID" 
+            class="notification-item" 
+            :class="{ 'unread': !notification.is_read }"
+            style="cursor: pointer;"
+            @click="handleNotificationClick(notification)"
+          >
+            <img src="https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png" alt="user" class="notif-avatar">
+            
+            <div class="notif-text-content">
+              <p class="notif-message">
+                <span class="username">{{ notification.sender_name || 'Unknown User' }}</span>
+                {{ notification.message }}
+              </p>
+              <span class="notif-time">{{ formatTimeAgo(notification.CreatedAt) }}</span>
+            </div>
+          </li>
+          <li v-if="notificationStore.notifications.length === 0" class="empty-state">
+            No notifications yet
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div v-if="showCreateChoice" class="choice-modal-overlay" @click.self="showCreateChoice = false">
+      <div class="choice-modal-content">
+        <h3>Create</h3>
+        <div class="choice-list">
+          <button class="choice-item" @click="initiateUpload('post')">
+            <span class="choice-icon">
+              <img src="/icons/post-icon.png" alt="Post" class="choice-img-icon" />
+            </span>
+            <span>Post</span>
+          </button>
+          <button class="choice-item" @click="initiateUpload('story')">
+             <span class="choice-icon">
+               <img src="/icons/instagram-icon.png" alt="Story" class="choice-img-icon" />
+             </span> 
+            <span>Story</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <input 
+      ref="fileInput" 
+      type="file" 
+      accept="image/*,video/*"
+      style="display: none"
+    >
+
+    <CreatePostOverlay 
+       v-if="showCreateOverlay"
+       :is-open="showCreateOverlay"
+       :is-story-mode="uploadType === 'story'" 
+       @close="closeCreateOverlay"
+       @post-created="handlePostCreated"
+       @story-created="handleStoryCreated"
+    />
+    
+    <MiniMessagesComponent />
+  </div>
+</template>
 
 <style scoped>
 .dashboard-layout {

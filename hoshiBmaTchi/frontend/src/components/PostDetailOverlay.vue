@@ -1,303 +1,3 @@
-<template>
-  <div v-if="isOpen" class="overlay-backdrop" @click.self="$emit('close')">
-    <div class="overlay-container" @click.stop>
-      <div class="overlay-left">
-        <div class="media-container" @dblclick="$emit('toggle-like', post)">
-          <div v-if="currentMedia" class="media-wrapper">
-            <video
-              v-if="
-                currentMedia.media_type &&
-                currentMedia.media_type.startsWith('video/')
-              "
-              :src="getDisplayUrl(currentMedia.media_url)"
-              controls
-              autoplay
-              class="post-image"
-            ></video>
-
-            <img
-              v-else
-              :src="getDisplayUrl(currentMedia.media_url)"
-              alt="Post content"
-              class="post-image"
-            />
-          </div>
-
-          <button
-            v-if="hasMultiple && currentIndex > 0"
-            class="nav-btn left"
-            @click.stop="currentIndex--"
-          >
-            ❮
-          </button>
-
-          <button
-            v-if="hasMultiple && currentIndex < mediaList.length - 1"
-            class="nav-btn right"
-            @click.stop="currentIndex++"
-          >
-            ❯
-          </button>
-
-          <div v-if="hasMultiple" class="dots-container">
-            <div
-              v-for="(_, idx) in mediaList"
-              :key="idx"
-              class="dot"
-              :class="{ active: idx === currentIndex }"
-            ></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="overlay-right">
-        <div class="overlay-header">
-          <div class="header-content">
-            <img
-              :src="post.profile_picture || '/placeholder.png'"
-              class="author-avatar"
-            />
-            <div class="author-info">
-              <p class="author-username">{{ post.username }}</p>
-                <img 
-                  v-if="post.is_verified" 
-                  src="/icons/verified-icon.png" 
-                  alt="Verified" 
-                  class="verified-badge-small"
-                />
-              <p
-                v-if="!isOwnPost && !isFollowing"
-                class="follow-text"
-                @click="handleFollow"
-              >
-                • Follow
-              </p>
-              <p
-                v-if="!isOwnPost && isFollowing"
-                class="following-text"
-                @click="handleUnfollow"
-              >
-                • Following
-              </p>
-            </div>
-          </div>
-          
-          <div class="header-actions">
-            <button class="icon-button menu-btn" @click.stop="showMenu = !showMenu">•••</button>
-            <button class="close-button" @click="$emit('close')">✕</button>
-            
-            <div v-if="showMenu" class="dropdown-menu">
-                <button 
-                  v-if="isOwnPost" 
-                  @click="handleDelete" 
-                  class="dropdown-item danger"
-                >
-                  Remove Post
-                </button>
-
-                <button 
-                  v-else 
-                  @click="handleReport" 
-                  class="dropdown-item danger"
-                >
-                  Report Post
-                </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="comments-section">
-          <CommentItem
-            v-if="post.caption"
-            :username="post.username"
-            :profile-image="post.profile_picture"
-            :comment-text="post.caption"
-            :timestamp="post.created_at"
-            :likes="post.likes_count"
-          />
-
-          <div v-if="loadingComments" class="loading-spinner">
-            <div class="spinner"></div>
-          </div>
-
-          <CommentItem
-            v-for="comment in enrichedComments"
-            :key="comment.id"
-            :username="comment.username"
-            :profile-image="comment.profile_picture"
-            :comment-text="comment.content"
-            :timestamp="comment.created_at"
-            @reply="handleReply(comment.username)"
-          />
-
-          <div
-            v-if="
-              !loadingComments && enrichedComments.length === 0 && !post.caption
-            "
-            class="no-comments"
-          >
-            <p>No comments yet.</p>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="action-section-wrapper">
-          <div class="action-icons">
-            <div class="icons-left">
-              <button class="icon-button" @click="$emit('toggle-like', post)">
-                <img
-                  :src="
-                    post.is_liked
-                      ? '/icons/liked-icon.png'
-                      : '/icons/notifications-icon.png'
-                  "
-                  class="icon"
-                  :class="{ active: post.is_liked }"
-                />
-              </button>
-              <button class="icon-button" @click="focusInput">
-                <img src="/icons/comment-icon.png" class="icon" />
-              </button>
-              <button class="icon-button" @click="showShareModal = true">
-                <img src="/icons/share-icon.png" class="icon" />
-              </button>
-            </div>
-
-            <div
-              class="save-wrapper"
-              @mouseenter="handleMouseEnter"
-              @mouseleave="handleMouseLeave"
-            >
-              <button
-                class="icon-button"
-                @click="toggleDefaultSave"
-                :title="isSaved ? 'Unsave' : 'Save'"
-              >
-                <img
-                  :src="
-                    isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'
-                  "
-                  class="icon"
-                  :class="{ saved: isSaved }"
-                />
-              </button>
-
-              <transition name="fade">
-                <div v-if="showPopover" class="save-popover">
-                  <div class="popover-header">Save to...</div>
-
-                  <div class="collections-list">
-                    <div class="popover-item" @click="saveToCollection('')">
-                      <div class="popover-thumb">
-                        <img src="/icons/save-icon.png" class="thumb-icon" />
-                      </div>
-                      <span class="popover-name">All Posts</span>
-                      <span
-                        v-if="savedCollectionId === '' && isSaved"
-                        class="check-mark"
-                        >✓</span
-                      >
-                    </div>
-
-                    <div
-                      v-for="col in collections"
-                      :key="col.id"
-                      class="popover-item"
-                      @click="saveToCollection(col.id)"
-                    >
-                      <div class="popover-thumb">
-                        <img
-                          v-if="getCollectionCover(col)"
-                          :src="getDisplayUrl(getCollectionCover(col))"
-                          class="cover-img"
-                        />
-                        <div v-else class="empty-cover"></div>
-                      </div>
-                      <span class="popover-name">{{ col.name }}</span>
-                      <span
-                        v-if="savedCollectionId === col.id && isSaved"
-                        class="check-mark"
-                        >✓</span
-                      >
-                    </div>
-                  </div>
-
-                  <div class="popover-footer">
-                    <div v-if="showCreateInput" class="create-input-wrapper">
-                      <input
-                        v-model="newCollectionName"
-                        placeholder="Collection Name"
-                        class="mini-input"
-                        ref="createInputRef"
-                        @keyup.enter="createNewCollection"
-                      />
-                      <button class="mini-btn" @click="createNewCollection">
-                        Add
-                      </button>
-                    </div>
-
-                    <div
-                      v-else
-                      class="popover-item add-item"
-                      @click="enableCreateMode"
-                    >
-                      <div class="plus-icon-wrapper">+</div>
-                      <span class="popover-name">New Collection</span>
-                    </div>
-                  </div>
-                </div>
-              </transition>
-            </div>
-          </div>
-          <p class="likes-text">{{ post.likes_count }} likes</p>
-          <p class="date-text">{{ formatFullDate(post.created_at) }}</p>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="comment-input-section">
-          <input
-            ref="commentInputRef"
-            v-model="commentText"
-            placeholder="Add a comment..."
-            class="comment-input"
-            @keyup.enter="submitComment"
-          />
-          <button
-            v-if="commentText.trim()"
-            @click="submitComment"
-            class="post-button"
-            :disabled="isSubmitting"
-          >
-            Post
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div v-if="showReportModal" class="report-modal-backdrop" @click.self="showReportModal = false">
-        <div class="report-modal">
-            <h3>Report Post</h3>
-            <textarea v-model="reportReason" placeholder="Why are you reporting this post?" rows="4"></textarea>
-            <div class="modal-buttons">
-                <button @click="submitReport" class="btn-submit">Submit Report</button>
-                <button @click="showReportModal = false" class="btn-cancel">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <ShareModal 
-      v-if="showShareModal"
-      :contentId="post.id"
-      type="post"
-      :thumbnail="currentMedia ? getDisplayUrl(currentMedia.media_url) : ''"
-      @close="showShareModal = false"
-    />
-
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { format } from "date-fns";
@@ -403,7 +103,7 @@ const enrichedComments = computed(() => {
 onMounted(async () => {
   document.body.style.overflow = "hidden";
 
-  if (!isOwnPost) {
+  if (!isOwnPost.value) {
     try {
       const profileRes = await usersApi.getUserProfile(props.post.user_id);
       isFollowing.value = profileRes.data.is_following;
@@ -641,6 +341,306 @@ const submitReport = async () => {
     }
 };
 </script>
+
+<template>
+  <div v-if="isOpen" class="overlay-backdrop" @click.self="$emit('close')">
+    <div class="overlay-container" @click.stop>
+      <div class="overlay-left">
+        <div class="media-container" @dblclick="$emit('toggle-like', post)">
+          <div v-if="currentMedia" class="media-wrapper">
+            <video
+              v-if="
+                currentMedia.media_type &&
+                currentMedia.media_type.startsWith('video/')
+              "
+              :src="getDisplayUrl(currentMedia.media_url)"
+              controls
+              autoplay
+              class="post-image"
+            ></video>
+
+            <img
+              v-else
+              :src="getDisplayUrl(currentMedia.media_url)"
+              alt="Post content"
+              class="post-image"
+            />
+          </div>
+
+          <button
+            v-if="hasMultiple && currentIndex > 0"
+            class="nav-btn left"
+            @click.stop="currentIndex--"
+          >
+            ❮
+          </button>
+
+          <button
+            v-if="hasMultiple && currentIndex < mediaList.length - 1"
+            class="nav-btn right"
+            @click.stop="currentIndex++"
+          >
+            ❯
+          </button>
+
+          <div v-if="hasMultiple" class="dots-container">
+            <div
+              v-for="(_, idx) in mediaList"
+              :key="idx"
+              class="dot"
+              :class="{ active: idx === currentIndex }"
+            ></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="overlay-right">
+        <div class="overlay-header">
+          <div class="header-content">
+            <img
+              :src="post.profile_picture || '/placeholder.png'"
+              class="author-avatar"
+            />
+            <div class="author-info">
+              <p class="author-username">{{ post.username }}</p>
+                <img 
+                  v-if="post.is_verified" 
+                  src="/icons/verified-icon.png" 
+                  alt="Verified" 
+                  class="verified-badge-small"
+                />
+              <p
+                v-if="!isOwnPost && !isFollowing"
+                class="follow-text"
+                @click="handleFollow"
+              >
+                • Follow
+              </p>
+              <p
+                v-if="!isOwnPost && isFollowing"
+                class="following-text"
+                @click="handleUnfollow"
+              >
+                • Following
+              </p>
+            </div>
+          </div>
+          
+          <div class="header-actions">
+            <button class="icon-button menu-btn" @click.stop="showMenu = !showMenu">•••</button>
+            <button class="close-button" @click="$emit('close')">✕</button>
+            
+            <div v-if="showMenu" class="dropdown-menu">
+                <button 
+                  v-if="isOwnPost" 
+                  class="dropdown-item danger" 
+                  @click="handleDelete"
+                >
+                  Remove Post
+                </button>
+
+                <button 
+                  v-else 
+                  class="dropdown-item danger" 
+                  @click="handleReport"
+                >
+                  Report Post
+                </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="comments-section">
+          <CommentItem
+            v-if="post.caption"
+            :username="post.username"
+            :profile-image="post.profile_picture"
+            :comment-text="post.caption"
+            :timestamp="post.created_at"
+            :likes="post.likes_count"
+          />
+
+          <div v-if="loadingComments" class="loading-spinner">
+            <div class="spinner"></div>
+          </div>
+
+          <CommentItem
+            v-for="comment in enrichedComments"
+            :key="comment.id"
+            :username="comment.username"
+            :profile-image="comment.profile_picture"
+            :comment-text="comment.content"
+            :timestamp="comment.created_at"
+            @reply="handleReply(comment.username)"
+          />
+
+          <div
+            v-if="
+              !loadingComments && enrichedComments.length === 0 && !post.caption
+            "
+            class="no-comments"
+          >
+            <p>No comments yet.</p>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="action-section-wrapper">
+          <div class="action-icons">
+            <div class="icons-left">
+              <button class="icon-button" @click="$emit('toggle-like', post)">
+                <img
+                  :src="
+                    post.is_liked
+                      ? '/icons/liked-icon.png'
+                      : '/icons/notifications-icon.png'
+                  "
+                  class="icon"
+                  :class="{ active: post.is_liked }"
+                />
+              </button>
+              <button class="icon-button" @click="focusInput">
+                <img src="/icons/comment-icon.png" class="icon" />
+              </button>
+              <button class="icon-button" @click="showShareModal = true">
+                <img src="/icons/share-icon.png" class="icon" />
+              </button>
+            </div>
+
+            <div
+              class="save-wrapper"
+              @mouseenter="handleMouseEnter"
+              @mouseleave="handleMouseLeave"
+            >
+              <button
+                class="icon-button"
+                :title="isSaved ? 'Unsave' : 'Save'"
+                @click="toggleDefaultSave"
+              >
+                <img
+                  :src="
+                    isSaved ? '/icons/saved-icon.png' : '/icons/save-icon.png'
+                  "
+                  class="icon"
+                  :class="{ saved: isSaved }"
+                />
+              </button>
+
+              <transition name="fade">
+                <div v-if="showPopover" class="save-popover">
+                  <div class="popover-header">Save to...</div>
+
+                  <div class="collections-list">
+                    <div class="popover-item" @click="saveToCollection('')">
+                      <div class="popover-thumb">
+                        <img src="/icons/save-icon.png" class="thumb-icon" />
+                      </div>
+                      <span class="popover-name">All Posts</span>
+                      <span
+                        v-if="savedCollectionId === '' && isSaved"
+                        class="check-mark"
+                        >✓</span
+                      >
+                    </div>
+
+                    <div
+                      v-for="col in collections"
+                      :key="col.id"
+                      class="popover-item"
+                      @click="saveToCollection(col.id)"
+                    >
+                      <div class="popover-thumb">
+                        <img
+                          v-if="getCollectionCover(col)"
+                          :src="getDisplayUrl(getCollectionCover(col))"
+                          class="cover-img"
+                        />
+                        <div v-else class="empty-cover"></div>
+                      </div>
+                      <span class="popover-name">{{ col.name }}</span>
+                      <span
+                        v-if="savedCollectionId === col.id && isSaved"
+                        class="check-mark"
+                        >✓</span
+                      >
+                    </div>
+                  </div>
+
+                  <div class="popover-footer">
+                    <div v-if="showCreateInput" class="create-input-wrapper">
+                      <input
+                        ref="createInputRef"
+                        v-model="newCollectionName"
+                        placeholder="Collection Name"
+                        class="mini-input"
+                        @keyup.enter="createNewCollection"
+                      />
+                      <button class="mini-btn" @click="createNewCollection">
+                        Add
+                      </button>
+                    </div>
+
+                    <div
+                      v-else
+                      class="popover-item add-item"
+                      @click="enableCreateMode"
+                    >
+                      <div class="plus-icon-wrapper">+</div>
+                      <span class="popover-name">New Collection</span>
+                    </div>
+                  </div>
+                </div>
+              </transition>
+            </div>
+          </div>
+          <p class="likes-text">{{ post.likes_count }} likes</p>
+          <p class="date-text">{{ formatFullDate(post.created_at) }}</p>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="comment-input-section">
+          <input
+            ref="commentInputRef"
+            v-model="commentText"
+            placeholder="Add a comment..."
+            class="comment-input"
+            @keyup.enter="submitComment"
+          />
+          <button
+            v-if="commentText.trim()"
+            class="post-button"
+            :disabled="isSubmitting"
+            @click="submitComment"
+          >
+            Post
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showReportModal" class="report-modal-backdrop" @click.self="showReportModal = false">
+        <div class="report-modal">
+            <h3>Report Post</h3>
+            <textarea v-model="reportReason" placeholder="Why are you reporting this post?" rows="4"></textarea>
+            <div class="modal-buttons">
+                <button class="btn-submit" @click="submitReport">Submit Report</button>
+                <button class="btn-cancel" @click="showReportModal = false">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <ShareModal 
+      v-if="showShareModal"
+      :content-id="post.id"
+      type="post"
+      :thumbnail="currentMedia ? getDisplayUrl(currentMedia.media_url) : ''"
+      @close="showShareModal = false"
+    />
+
+  </div>
+</template>
 
 <style scoped>
 /* --- LAYOUT --- */

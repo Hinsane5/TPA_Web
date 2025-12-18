@@ -1,138 +1,3 @@
-<template>
-  <div v-if="isOpen" class="create-overlay" @click="closeCreate">
-    <div class="create-modal" @click.stop>
-      
-      <div v-if="selectedFiles.length === 0" class="upload-step">
-        <div class="modal-header">
-          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
-          <button class="close-btn" @click="closeCreate">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="upload-area" @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="handleDrop">
-            <div :class="['upload-content', { dragover: dragOver }]">
-              <p class="upload-text">Drag photos and videos here</p>
-              <button class="select-btn" @click="triggerFileInput">Select from computer</button>
-            </div>
-            <input 
-              ref="fileInput"
-              type="file" 
-              multiple 
-              accept="image/*,video/*"
-              style="display: none"
-              @change="handleFileSelect"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div v-else class="edit-step">
-        <div class="modal-header">
-          <button class="back-btn" @click="goBack">← Back</button>
-          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
-          <button 
-            class="share-btn" 
-            @click="handleSharePost"
-            :disabled="isUploading"
-          >
-            {{ isUploading ? 'Sharing...' : 'Share' }}
-          </button>
-        </div>
-        
-        <div class="edit-container">
-          <div class="preview-area" :class="{ 'full-width': isStoryMode }">
-            <div class="media-wrapper" v-if="currentFile">
-              <video 
-                v-if="currentFile.type.startsWith('video/')" 
-                :src="currentPreviewUrl" 
-                controls 
-                class="preview-image"
-              ></video>
-              <img 
-                v-else 
-                :src="currentPreviewUrl" 
-                :alt="currentFile.name" 
-                class="preview-image" 
-              />
-            </div>
-
-            <template v-if="selectedFiles.length > 1">
-                <button 
-                v-if="currentIndex > 0" 
-                class="nav-btn left" 
-                @click="currentIndex--"
-                >❮</button>
-                
-                <button 
-                v-if="currentIndex < selectedFiles.length - 1" 
-                class="nav-btn right" 
-                @click="currentIndex++"
-                >❯</button>
-                
-                <div class="dots-container">
-                <span 
-                    v-for="(_, index) in selectedFiles" 
-                    :key="index" 
-                    class="dot"
-                    :class="{ active: index === currentIndex }"
-                    @click="currentIndex = index"
-                ></span>
-                </div>
-            </template>
-          </div>
-
-          <div v-if="!isStoryMode" class="caption-area">
-            <textarea 
-              v-model="postDescription"
-              placeholder="Write a caption..."
-              class="caption-input"
-              @input="updateWordCount"
-            ></textarea>
-            <div class="caption-footer">
-              <span class="word-count">{{ wordCount }} / 2200</span>
-            </div>
-
-            <input 
-              v-model="location"
-              type="text"
-              placeholder="Add location"
-              class="location-input"
-            />
-
-            <div v-if="currentFile && currentFile.type.startsWith('video/')" class="reel-option-container" style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">
-              <label class="toggle-label" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-                <span style="font-size: 14px; color: var(--text-primary); font-weight: 600;">Share as Reel</span>
-                <input type="checkbox" v-model="isReel" style="accent-color: var(--primary-color); transform: scale(1.2);" />
-              </label>
-              
-            </div>
-
-            <div v-if="isUploading" class="upload-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
-              </div>
-              <p class="progress-text">{{ uploadProgress }}% uploaded</p>
-            </div>
-
-            <div v-if="errorMessage" class="error-message">
-              {{ errorMessage }}
-            </div>
-          </div>
-
-          <div v-if="isStoryMode && isUploading" class="story-upload-overlay">
-             <div class="upload-progress" style="width: 60%; text-align: center;">
-              <div class="progress-bar">
-                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
-              </div>
-              <p class="progress-text" style="color: white; margin-top: 8px;">Uploading Story...</p>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import axios from 'axios'
@@ -361,6 +226,141 @@ const handleSharePost = async () => {
   }
 }
 </script>
+
+<template>
+  <div v-if="isOpen" class="create-overlay" @click="closeCreate">
+    <div class="create-modal" @click.stop>
+      
+      <div v-if="selectedFiles.length === 0" class="upload-step">
+        <div class="modal-header">
+          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
+          <button class="close-btn" @click="closeCreate">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="upload-area" @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="handleDrop">
+            <div :class="['upload-content', { dragover: dragOver }]">
+              <p class="upload-text">Drag photos and videos here</p>
+              <button class="select-btn" @click="triggerFileInput">Select from computer</button>
+            </div>
+            <input 
+              ref="fileInput"
+              type="file" 
+              multiple 
+              accept="image/*,video/*"
+              style="display: none"
+              @change="handleFileSelect"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div v-else class="edit-step">
+        <div class="modal-header">
+          <button class="back-btn" @click="goBack">← Back</button>
+          <h2>{{ isStoryMode ? 'Create New Story' : 'Create New Post' }}</h2>
+          <button 
+            class="share-btn" 
+            :disabled="isUploading"
+            @click="handleSharePost"
+          >
+            {{ isUploading ? 'Sharing...' : 'Share' }}
+          </button>
+        </div>
+        
+        <div class="edit-container">
+          <div class="preview-area" :class="{ 'full-width': isStoryMode }">
+            <div v-if="currentFile" class="media-wrapper">
+              <video 
+                v-if="currentFile.type.startsWith('video/')" 
+                :src="currentPreviewUrl" 
+                controls 
+                class="preview-image"
+              ></video>
+              <img 
+                v-else 
+                :src="currentPreviewUrl" 
+                :alt="currentFile.name" 
+                class="preview-image" 
+              />
+            </div>
+
+            <template v-if="selectedFiles.length > 1">
+                <button 
+                v-if="currentIndex > 0" 
+                class="nav-btn left" 
+                @click="currentIndex--"
+                >❮</button>
+                
+                <button 
+                v-if="currentIndex < selectedFiles.length - 1" 
+                class="nav-btn right" 
+                @click="currentIndex++"
+                >❯</button>
+                
+                <div class="dots-container">
+                <span 
+                    v-for="(_, index) in selectedFiles" 
+                    :key="index" 
+                    class="dot"
+                    :class="{ active: index === currentIndex }"
+                    @click="currentIndex = index"
+                ></span>
+                </div>
+            </template>
+          </div>
+
+          <div v-if="!isStoryMode" class="caption-area">
+            <textarea 
+              v-model="postDescription"
+              placeholder="Write a caption..."
+              class="caption-input"
+              @input="updateWordCount"
+            ></textarea>
+            <div class="caption-footer">
+              <span class="word-count">{{ wordCount }} / 2200</span>
+            </div>
+
+            <input 
+              v-model="location"
+              type="text"
+              placeholder="Add location"
+              class="location-input"
+            />
+
+            <div v-if="currentFile && currentFile.type.startsWith('video/')" class="reel-option-container" style="padding: 12px 0; border-bottom: 1px solid var(--border-color);">
+              <label class="toggle-label" style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                <span style="font-size: 14px; color: var(--text-primary); font-weight: 600;">Share as Reel</span>
+                <input v-model="isReel" type="checkbox" style="accent-color: var(--primary-color); transform: scale(1.2);" />
+              </label>
+              
+            </div>
+
+            <div v-if="isUploading" class="upload-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+              </div>
+              <p class="progress-text">{{ uploadProgress }}% uploaded</p>
+            </div>
+
+            <div v-if="errorMessage" class="error-message">
+              {{ errorMessage }}
+            </div>
+          </div>
+
+          <div v-if="isStoryMode && isUploading" class="story-upload-overlay">
+             <div class="upload-progress" style="width: 60%; text-align: center;">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: uploadProgress + '%' }"></div>
+              </div>
+              <p class="progress-text" style="color: white; margin-top: 8px;">Uploading Story...</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .create-overlay {

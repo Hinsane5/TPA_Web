@@ -1,229 +1,3 @@
-<template>
-  <div class="register-container">
-    <div class="logo-section">
-      <h1 class="brand-name">hoshiBmatchi</h1>
-      <p class="subtitle">
-        Sign up to see photos and videos from your friends.
-      </p>
-    </div>
-
-    <form @submit.prevent="handleRegister" class="form">
-      <!-- Full Name -->
-      <div class="form-group">
-        <label class="form-label">Full Name</label>
-        <input
-          v-model="formData.fullName"
-          type="text"
-          placeholder="Enter your full name"
-          class="input-field"
-          @blur="validateFullName"
-        />
-        <span v-if="errors.fullName" class="error-message">{{
-          errors.fullName
-        }}</span>
-      </div>
-
-      <!-- Username -->
-      <div class="form-group">
-        <label class="form-label">Username</label>
-        <input
-          v-model="formData.username"
-          type="text"
-          placeholder="Choose a username"
-          class="input-field"
-          @blur="validateUsername"
-        />
-        <span v-if="errors.username" class="error-message">{{
-          errors.username
-        }}</span>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Email</label>
-        <input
-          v-model="formData.email"
-          type="email"
-          placeholder="Enter your email"
-          class="input-field"
-          @blur="validateEmail"
-        />
-        <span v-if="errors.email" class="error-message">{{
-          errors.email
-        }}</span>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Password</label>
-        <input
-          v-model="formData.password"
-          type="password"
-          placeholder="Create a password"
-          class="input-field"
-          @input="validatePassword"
-        />
-        <!-- <div v-if="passwordStrength" class="password-strength">
-          <div class="strength-bar">
-            <div
-              class="strength-fill"
-              :class="`strength-${passwordStrength.strength}`"
-              :style="{
-                width: `${
-                  (Object.values(passwordStrength.criteria).filter(Boolean)
-                    .length /
-                    5) *
-                  100
-                }%`,
-              }"
-            ></div>
-          </div>
-          <span
-            class="strength-text"
-            :class="`text-${passwordStrength.strength}`"
-          >
-            {{ passwordStrength.message }}
-          </span>
-
-          <div
-            v-if="Object.keys(passwordStrength?.criteria || {}).length > 0"
-            class="criteria-list"
-          >
-            <div
-              v-for="(value, key) in passwordStrength.criteria"
-              :key="key"
-              class="criteria-item"
-              :class="{ met: value }"
-            >
-              <span class="criterion-dot"></span>
-              <span class="criterion-text">{{ getCriterionText(key) }}</span>
-            </div>
-          </div>
-        </div> -->
-
-        <span v-if="errors.password" class="error-message">{{
-          errors.password
-        }}</span>
-      </div>
-
-      <div class="form-group">
-        <label class="form-label">Confirm Password</label>
-        <input
-          v-model="formData.confirmPassword"
-          type="password"
-          placeholder="Confirm your password"
-          class="input-field"
-          @blur="validateConfirmPassword"
-        />
-        <span v-if="errors.confirmPassword" class="error-message">{{
-          errors.confirmPassword
-        }}</span>
-      </div>
-
-      <!-- Date of Birth -->
-      <div class="form-group">
-        <label class="form-label">Date of Birth</label>
-        <input
-          v-model="formData.dateOfBirth"
-          type="date"
-          class="input-field"
-          @blur="validateAge"
-        />
-        <span v-if="errors.dateOfBirth" class="error-message">{{
-          errors.dateOfBirth
-        }}</span>
-      </div>
-
-      <!-- Gender -->
-      <div class="form-group">
-        <label class="form-label">Gender</label>
-        <select
-          v-model="formData.gender"
-          class="input-field"
-          @blur="validateGender"
-        >
-          <option value="">Select your gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-        </select>
-        <span v-if="errors.gender" class="error-message">{{
-          errors.gender
-        }}</span>
-      </div>
-
-      <!-- Profile Picture -->
-      <div class="form-group">
-        <label class="form-label">Profile Picture</label>
-        <input
-          type="file"
-          accept="image/*"
-          class="input-field file-input"
-          @change="handleProfilePictureUpload"
-        />
-        <span v-if="errors.profilePicture" class="error-message">{{
-          errors.profilePicture
-        }}</span>
-      </div>
-
-      <!-- OTP Code -->
-      <div class="form-group">
-        <label class="form-label">OTP Code (6-digit)</label>
-        <div class="otp-input-group">
-          <input
-            v-model="formData.otpCode"
-            type="text"
-            placeholder="000000"
-            maxlength="6"
-            class="input-field otp-input"
-            @blur="validateOTP"
-          />
-          <button type="button" class="btn btn-otp" @click="sendOTP">
-            Send OTP
-          </button>
-        </div>
-        <span v-if="errors.otpCode" class="error-message">{{
-          errors.otpCode
-        }}</span>
-      </div>
-
-      <!-- Newsletter Checkbox -->
-      <div class="checkbox-group">
-        <input
-          v-model="formData.subscribeNewsletter"
-          type="checkbox"
-          id="newsletter"
-          class="checkbox-input"
-        />
-        <label for="newsletter" class="checkbox-label"
-          >Subscribe to our newsletter</label
-        >
-      </div>
-
-      <!-- 2FA Checkbox -->
-      <div class="checkbox-group">
-        <input
-          v-model="formData.enable2FA"
-          type="checkbox"
-          id="twofa"
-          class="checkbox-input"
-        />
-        <label for="twofa" class="checkbox-label"
-          >Enable Two-Factor Authentication (2FA)</label
-        >
-      </div>
-
-      <button type="submit" class="btn btn-primary">Sign up</button>
-    </form>
-
-    <div class="login-section">
-      <p class="login-text">
-        Have an account?
-        <button type="button" class="link-button" @click="navigateToLogin">
-          Log in
-        </button>
-      </p>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
@@ -450,6 +224,232 @@ const navigateToLogin = () => {
   router.push("/login");
 };
 </script>
+
+<template>
+  <div class="register-container">
+    <div class="logo-section">
+      <h1 class="brand-name">hoshiBmatchi</h1>
+      <p class="subtitle">
+        Sign up to see photos and videos from your friends.
+      </p>
+    </div>
+
+    <form class="form" @submit.prevent="handleRegister">
+      <!-- Full Name -->
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input
+          v-model="formData.fullName"
+          type="text"
+          placeholder="Enter your full name"
+          class="input-field"
+          @blur="validateFullName"
+        />
+        <span v-if="errors.fullName" class="error-message">{{
+          errors.fullName
+        }}</span>
+      </div>
+
+      <!-- Username -->
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input
+          v-model="formData.username"
+          type="text"
+          placeholder="Choose a username"
+          class="input-field"
+          @blur="validateUsername"
+        />
+        <span v-if="errors.username" class="error-message">{{
+          errors.username
+        }}</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input
+          v-model="formData.email"
+          type="email"
+          placeholder="Enter your email"
+          class="input-field"
+          @blur="validateEmail"
+        />
+        <span v-if="errors.email" class="error-message">{{
+          errors.email
+        }}</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input
+          v-model="formData.password"
+          type="password"
+          placeholder="Create a password"
+          class="input-field"
+          @input="validatePassword"
+        />
+        <!-- <div v-if="passwordStrength" class="password-strength">
+          <div class="strength-bar">
+            <div
+              class="strength-fill"
+              :class="`strength-${passwordStrength.strength}`"
+              :style="{
+                width: `${
+                  (Object.values(passwordStrength.criteria).filter(Boolean)
+                    .length /
+                    5) *
+                  100
+                }%`,
+              }"
+            ></div>
+          </div>
+          <span
+            class="strength-text"
+            :class="`text-${passwordStrength.strength}`"
+          >
+            {{ passwordStrength.message }}
+          </span>
+
+          <div
+            v-if="Object.keys(passwordStrength?.criteria || {}).length > 0"
+            class="criteria-list"
+          >
+            <div
+              v-for="(value, key) in passwordStrength.criteria"
+              :key="key"
+              class="criteria-item"
+              :class="{ met: value }"
+            >
+              <span class="criterion-dot"></span>
+              <span class="criterion-text">{{ getCriterionText(key) }}</span>
+            </div>
+          </div>
+        </div> -->
+
+        <span v-if="errors.password" class="error-message">{{
+          errors.password
+        }}</span>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input
+          v-model="formData.confirmPassword"
+          type="password"
+          placeholder="Confirm your password"
+          class="input-field"
+          @blur="validateConfirmPassword"
+        />
+        <span v-if="errors.confirmPassword" class="error-message">{{
+          errors.confirmPassword
+        }}</span>
+      </div>
+
+      <!-- Date of Birth -->
+      <div class="form-group">
+        <label class="form-label">Date of Birth</label>
+        <input
+          v-model="formData.dateOfBirth"
+          type="date"
+          class="input-field"
+          @blur="validateAge"
+        />
+        <span v-if="errors.dateOfBirth" class="error-message">{{
+          errors.dateOfBirth
+        }}</span>
+      </div>
+
+      <!-- Gender -->
+      <div class="form-group">
+        <label class="form-label">Gender</label>
+        <select
+          v-model="formData.gender"
+          class="input-field"
+          @blur="validateGender"
+        >
+          <option value="">Select your gender</option>
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+        </select>
+        <span v-if="errors.gender" class="error-message">{{
+          errors.gender
+        }}</span>
+      </div>
+
+      <!-- Profile Picture -->
+      <div class="form-group">
+        <label class="form-label">Profile Picture</label>
+        <input
+          type="file"
+          accept="image/*"
+          class="input-field file-input"
+          @change="handleProfilePictureUpload"
+        />
+        <span v-if="errors.profilePicture" class="error-message">{{
+          errors.profilePicture
+        }}</span>
+      </div>
+
+      <!-- OTP Code -->
+      <div class="form-group">
+        <label class="form-label">OTP Code (6-digit)</label>
+        <div class="otp-input-group">
+          <input
+            v-model="formData.otpCode"
+            type="text"
+            placeholder="000000"
+            maxlength="6"
+            class="input-field otp-input"
+            @blur="validateOTP"
+          />
+          <button type="button" class="btn btn-otp" @click="sendOTP">
+            Send OTP
+          </button>
+        </div>
+        <span v-if="errors.otpCode" class="error-message">{{
+          errors.otpCode
+        }}</span>
+      </div>
+
+      <!-- Newsletter Checkbox -->
+      <div class="checkbox-group">
+        <input
+          id="newsletter"
+          v-model="formData.subscribeNewsletter"
+          type="checkbox"
+          class="checkbox-input"
+        />
+        <label for="newsletter" class="checkbox-label"
+          >Subscribe to our newsletter</label
+        >
+      </div>
+
+      <!-- 2FA Checkbox -->
+      <div class="checkbox-group">
+        <input
+          id="twofa"
+          v-model="formData.enable2FA"
+          type="checkbox"
+          class="checkbox-input"
+        />
+        <label for="twofa" class="checkbox-label"
+          >Enable Two-Factor Authentication (2FA)</label
+        >
+      </div>
+
+      <button type="submit" class="btn btn-primary">Sign up</button>
+    </form>
+
+    <div class="login-section">
+      <p class="login-text">
+        Have an account?
+        <button type="button" class="link-button" @click="navigateToLogin">
+          Log in
+        </button>
+      </p>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .register-container {

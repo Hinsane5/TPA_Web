@@ -1,26 +1,3 @@
-<template>
-  <button 
-    class="mini-story"
-    :class="{ active: isActive }"
-    @click="handleClick"
-    :title="`Story by ${username}`"
-  >
-    <div class="mini-avatar-container">
-        <img 
-          v-if="avatar" 
-          :src="avatar" 
-          alt="User" 
-          class="mini-avatar-img"
-        />
-        <div v-else class="mini-avatar-placeholder">
-            {{ username.charAt(0).toUpperCase() }}
-        </div>
-    </div>
-    
-    <span class="mini-username">{{ username }}</span>
-  </button>
-</template>
-
 <script setup lang="ts">
 interface Props {
   avatar?: string; // Made optional
@@ -42,6 +19,29 @@ const handleClick = () => {
   emit('click');
 };
 </script>
+
+<template>
+  <button 
+    class="mini-story"
+    :class="{ active: isActive }"
+    :title="`Story by ${username}`"
+    @click="handleClick"
+  >
+    <div class="mini-avatar-container">
+        <img 
+          v-if="avatar" 
+          :src="avatar" 
+          alt="User" 
+          class="mini-avatar-img"
+        />
+        <div v-else class="mini-avatar-placeholder">
+            {{ username.charAt(0).toUpperCase() }}
+        </div>
+    </div>
+    
+    <span class="mini-username">{{ username }}</span>
+  </button>
+</template>
 
 <style scoped>
 .mini-story {

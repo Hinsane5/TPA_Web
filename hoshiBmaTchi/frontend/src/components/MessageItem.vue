@@ -1,107 +1,3 @@
-<template>
-  <div :class="['message-item', { 'is-own': isOwnMessage }]">
-    <div v-if="!isOwnMessage" class="message-avatar">
-      <img
-        :src="message.senderAvatar"
-        :alt="message.senderName"
-        class="avatar"
-      />
-    </div>
-
-    <div class="message-content-wrapper">
-      <div class="message-bubble">
-        <p 
-          v-if="message.messageType === 'text'" 
-          class="message-text"
-          @click="handleMessageClick"
-          v-html="parseMessage(message.content)"
-        ></p>
-
-        <div v-else-if="message.messageType === 'image'" class="message-media">
-          <img
-            :src="getDisplayUrl(message.content)"
-            :alt="message.senderName"
-            class="media-image"
-          />
-        </div>
-        <div v-else-if="message.messageType === 'video'" class="message-media">
-          <video 
-            :src="getDisplayUrl(message.content)" 
-            class="media-video" 
-            controls
-          ></video>
-        </div>
-        <div v-else-if="message.messageType === 'gif'" class="message-media">
-          <img
-            :src="message.content"
-            :alt="message.senderName"
-            class="media-gif"
-          />
-        </div>
-
-        <div v-else-if="isSharedContent" class="shared-content-card" @click="viewSharedContent">
-          <div class="shared-media-preview">
-            <video
-                v-if="isSharedVideo"
-                :src="getDisplayUrl(message.mediaUrl)"
-                class="shared-thumbnail"
-                muted
-                autoplay
-                loop
-                playsinline
-              ></video>
-            <img 
-              v-if="message.mediaUrl" 
-              :src="getDisplayUrl(message.mediaUrl)" 
-              class="shared-thumbnail" 
-            />
-            <div v-else class="shared-placeholder">
-              <span class="placeholder-icon">{{ getShareIcon }}</span>
-            </div>
-            
-            <div class="type-badge">
-              <img :src="`/icons/${getShareTypeIcon}-icon.png`" class="badge-icon" />
-            </div>
-          </div>
-          
-          <div class="shared-info">
-            <span class="shared-title">Shared {{ getShareTypeName }}</span>
-            <span class="view-link">Tap to view</span>
-          </div>
-        </div>
-
-        <div v-if="message.isEdited" class="edited-indicator">(edited)</div>
-      </div>
-
-      <div class="message-footer">
-        <span class="message-time">
-          {{ formatTime(message.timestamp) }}
-        </span>
-        <span v-if="isOwnMessage" :class="['message-status', message.status]">
-          {{
-            message.status === "sending"
-              ? "⏱️"
-              : message.status === "sent"
-              ? "✓"
-              : "✓✓"
-          }}
-        </span>
-      </div>
-
-      <div v-if="isOwnMessage" class="message-actions">
-        <button
-          v-if="message.canUnsend"
-          class="action-btn"
-          @click="$emit('unsend', message.id)"
-          title="Unsend message"
-        >
-          ⤴️
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import type { Message } from "../types/chat";
 import { computed } from 'vue';
@@ -235,6 +131,110 @@ const isSharedVideo = computed(() => {
 });
 
 </script>
+
+<template>
+  <div :class="['message-item', { 'is-own': isOwnMessage }]">
+    <div v-if="!isOwnMessage" class="message-avatar">
+      <img
+        :src="message.senderAvatar"
+        :alt="message.senderName"
+        class="avatar"
+      />
+    </div>
+
+    <div class="message-content-wrapper">
+      <div class="message-bubble">
+        <p 
+          v-if="message.messageType === 'text'" 
+          class="message-text"
+          @click="handleMessageClick"
+          v-html="parseMessage(message.content)"
+        ></p>
+
+        <div v-else-if="message.messageType === 'image'" class="message-media">
+          <img
+            :src="getDisplayUrl(message.content)"
+            :alt="message.senderName"
+            class="media-image"
+          />
+        </div>
+        <div v-else-if="message.messageType === 'video'" class="message-media">
+          <video 
+            :src="getDisplayUrl(message.content)" 
+            class="media-video" 
+            controls
+          ></video>
+        </div>
+        <div v-else-if="message.messageType === 'gif'" class="message-media">
+          <img
+            :src="message.content"
+            :alt="message.senderName"
+            class="media-gif"
+          />
+        </div>
+
+        <div v-else-if="isSharedContent" class="shared-content-card" @click="viewSharedContent">
+          <div class="shared-media-preview">
+            <video
+                v-if="isSharedVideo"
+                :src="getDisplayUrl(message.mediaUrl)"
+                class="shared-thumbnail"
+                muted
+                autoplay
+                loop
+                playsinline
+              ></video>
+            <img 
+              v-if="message.mediaUrl" 
+              :src="getDisplayUrl(message.mediaUrl)" 
+              class="shared-thumbnail" 
+            />
+            <div v-else class="shared-placeholder">
+              <span class="placeholder-icon">{{ getShareIcon }}</span>
+            </div>
+            
+            <div class="type-badge">
+              <img :src="`/icons/${getShareTypeIcon}-icon.png`" class="badge-icon" />
+            </div>
+          </div>
+          
+          <div class="shared-info">
+            <span class="shared-title">Shared {{ getShareTypeName }}</span>
+            <span class="view-link">Tap to view</span>
+          </div>
+        </div>
+
+        <div v-if="message.isEdited" class="edited-indicator">(edited)</div>
+      </div>
+
+      <div class="message-footer">
+        <span class="message-time">
+          {{ formatTime(message.timestamp) }}
+        </span>
+        <span v-if="isOwnMessage" :class="['message-status', message.status]">
+          {{
+            message.status === "sending"
+              ? "⏱️"
+              : message.status === "sent"
+              ? "✓"
+              : "✓✓"
+          }}
+        </span>
+      </div>
+
+      <div v-if="isOwnMessage" class="message-actions">
+        <button
+          v-if="message.canUnsend"
+          class="action-btn"
+          title="Unsend message"
+          @click="$emit('unsend', message.id)"
+        >
+          ⤴️
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .message-item {

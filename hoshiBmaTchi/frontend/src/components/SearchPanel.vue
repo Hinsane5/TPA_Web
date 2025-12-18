@@ -1,70 +1,3 @@
-<template>
-  <div v-if="isOpen" class="search-panel-overlay" @click="closeSearch">
-    <div class="search-panel" @click.stop>
-      <div class="search-header">
-        <input 
-          v-model="searchQuery"
-          type="text"
-          placeholder="Search"
-          class="search-input"
-          autofocus
-        />
-        <button class="close-btn" @click="closeSearch">×</button>
-      </div>
-
-      <div class="search-results">
-        <div v-if="!searchQuery && recentSearches.length > 0" class="recent-section">
-          <div class="section-header">
-            <span>Recent</span>
-            <button @click="clearHistory" class="clear-all-btn">Clear all</button>
-          </div>
-          
-          <UserListItem 
-            v-for="user in recentSearches" 
-            :key="user.user_id"
-            :user="user"
-            :show-close="true"
-            @click="goToProfile(user)"
-            @remove="removeFromHistory(user.user_id)"
-          />
-        </div>
-
-        <div v-else-if="searchQuery" class="results-list">
-          
-          <div v-if="isHashtagSearch">
-             <div 
-                v-for="tag in results" 
-                :key="tag.name" 
-                class="hashtag-item"
-                @click="goToHashtag(tag.name)"
-             >
-                <div class="hashtag-icon-circle">#</div>
-                <div class="hashtag-info">
-                   <p class="hashtag-name">#{{ tag.name }}</p>
-                   <p class="hashtag-count">{{ tag.count }} posts</p>
-                </div>
-             </div>
-          </div>
-
-          <div v-else>
-            <UserListItem 
-              v-for="user in results" 
-              :key="user.user_id"
-              :user="user"
-              @click="goToProfile(user)"
-            />
-          </div>
-
-        </div>
-
-        <div v-else class="empty-state">
-          <p>Start typing to search</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
@@ -220,6 +153,73 @@ onMounted(() => {
   // Initial load if needed
 })
 </script>
+
+<template>
+  <div v-if="isOpen" class="search-panel-overlay" @click="closeSearch">
+    <div class="search-panel" @click.stop>
+      <div class="search-header">
+        <input 
+          v-model="searchQuery"
+          type="text"
+          placeholder="Search"
+          class="search-input"
+          autofocus
+        />
+        <button class="close-btn" @click="closeSearch">×</button>
+      </div>
+
+      <div class="search-results">
+        <div v-if="!searchQuery && recentSearches.length > 0" class="recent-section">
+          <div class="section-header">
+            <span>Recent</span>
+            <button class="clear-all-btn" @click="clearHistory">Clear all</button>
+          </div>
+          
+          <UserListItem 
+            v-for="user in recentSearches" 
+            :key="user.user_id"
+            :user="user"
+            :show-close="true"
+            @click="goToProfile(user)"
+            @remove="removeFromHistory(user.user_id)"
+          />
+        </div>
+
+        <div v-else-if="searchQuery" class="results-list">
+          
+          <div v-if="isHashtagSearch">
+             <div 
+                v-for="tag in results" 
+                :key="tag.name" 
+                class="hashtag-item"
+                @click="goToHashtag(tag.name)"
+             >
+                <div class="hashtag-icon-circle">#</div>
+                <div class="hashtag-info">
+                   <p class="hashtag-name">#{{ tag.name }}</p>
+                   <p class="hashtag-count">{{ tag.count }} posts</p>
+                </div>
+             </div>
+          </div>
+
+          <div v-else>
+            <UserListItem 
+              v-for="user in results" 
+              :key="user.user_id"
+              :user="user"
+              @click="goToProfile(user)"
+            />
+          </div>
+
+        </div>
+
+        <div v-else class="empty-state">
+          <p>Start typing to search</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* ... (Keep your existing styles for search-panel-overlay, etc.) ... */

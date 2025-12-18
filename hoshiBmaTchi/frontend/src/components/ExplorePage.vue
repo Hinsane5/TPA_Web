@@ -1,83 +1,3 @@
-<template>
-  <div class="explore-container">
-    <div class="explore-header" v-if="searchQuery">
-      <h2>{{ searchQuery.startsWith('#') ? searchQuery : '#' + searchQuery }}</h2>
-    </div>
-
-    <div class="explore-grid" ref="scrollContainer">
-      <div 
-        v-for="(post, index) in posts" 
-        :key="post.id" 
-        class="explore-item"
-        :class="{ 'big-item': isBigItem(index) }"
-        @click="openPostDetail(post)"
-      >
-        <div v-if="post.media && post.media.length > 0 && post.media[0].media_type.startsWith('image')" class="media-container">
-          <img 
-            :src="post.media[0].media_url" 
-            loading="lazy"
-            class="media-content"
-            @error="handleImageError"
-          />
-        </div>
-
-        <div v-else-if="post.media && post.media.length > 0" class="media-container">
-          <video 
-            :src="post.media[0].media_url" 
-            class="media-content"
-            autoplay
-            muted
-            loop
-            playsinline
-          ></video>
-          <div class="reel-icon">
-            <img src="/icons/reels-icon.png" alt="Reel" />
-          </div>
-        </div>
-
-        <div v-else class="media-container text-only">
-          <p class="caption-preview">{{ post.caption }}</p>
-        </div>
-
-        <div v-if="post.media && post.media.length > 1" class="gallery-icon">
-          <img src="/icons/gallery-icon.png" alt="Gallery" />
-        </div>
-
-        <div class="item-overlay">
-          <div class="item-stats">
-            <div class="stat">
-               <img src="/icons/liked-icon.png" class="stat-icon" />
-               <span>{{ formatNumber(post.likes_count) }}</span>
-            </div>
-            <div class="stat">
-               <img src="/icons/comment-icon.png" class="stat-icon" />
-               <span>{{ formatNumber(post.comments_count) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <template v-if="loading">
-        <div v-for="n in 6" :key="`skeleton-${n}`" class="explore-item skeleton"></div>
-      </template>
-
-      <div v-if="!loading && posts.length === 0" class="empty-state">
-        <p>No posts found.</p>
-      </div>
-    </div>
-
-    <div ref="observerTarget" class="observer-target"></div>
-
-    <PostDetailOverlay 
-      v-if="selectedPost" 
-      :is-open="true"
-      :post="selectedPost" 
-      @close="closePostDetail" 
-      @toggle-like="handleLike"
-    />
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
@@ -183,6 +103,86 @@ onMounted(() => {
   }
 })
 </script>
+
+<template>
+  <div class="explore-container">
+    <div v-if="searchQuery" class="explore-header">
+      <h2>{{ searchQuery.startsWith('#') ? searchQuery : '#' + searchQuery }}</h2>
+    </div>
+
+    <div ref="scrollContainer" class="explore-grid">
+      <div 
+        v-for="(post, index) in posts" 
+        :key="post.id" 
+        class="explore-item"
+        :class="{ 'big-item': isBigItem(index) }"
+        @click="openPostDetail(post)"
+      >
+        <div v-if="post.media && post.media.length > 0 && post.media[0].media_type.startsWith('image')" class="media-container">
+          <img 
+            :src="post.media[0].media_url" 
+            loading="lazy"
+            class="media-content"
+            @error="handleImageError"
+          />
+        </div>
+
+        <div v-else-if="post.media && post.media.length > 0" class="media-container">
+          <video 
+            :src="post.media[0].media_url" 
+            class="media-content"
+            autoplay
+            muted
+            loop
+            playsinline
+          ></video>
+          <div class="reel-icon">
+            <img src="/icons/reels-icon.png" alt="Reel" />
+          </div>
+        </div>
+
+        <div v-else class="media-container text-only">
+          <p class="caption-preview">{{ post.caption }}</p>
+        </div>
+
+        <div v-if="post.media && post.media.length > 1" class="gallery-icon">
+          <img src="/icons/gallery-icon.png" alt="Gallery" />
+        </div>
+
+        <div class="item-overlay">
+          <div class="item-stats">
+            <div class="stat">
+               <img src="/icons/liked-icon.png" class="stat-icon" />
+               <span>{{ formatNumber(post.likes_count) }}</span>
+            </div>
+            <div class="stat">
+               <img src="/icons/comment-icon.png" class="stat-icon" />
+               <span>{{ formatNumber(post.comments_count) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template v-if="loading">
+        <div v-for="n in 6" :key="`skeleton-${n}`" class="explore-item skeleton"></div>
+      </template>
+
+      <div v-if="!loading && posts.length === 0" class="empty-state">
+        <p>No posts found.</p>
+      </div>
+    </div>
+
+    <div ref="observerTarget" class="observer-target"></div>
+
+    <PostDetailOverlay 
+      v-if="selectedPost" 
+      :is-open="true"
+      :post="selectedPost" 
+      @close="closePostDetail" 
+      @toggle-like="handleLike"
+    />
+  </div>
+</template>
 
 <style scoped>
 .explore-container {

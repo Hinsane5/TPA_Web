@@ -1,53 +1,3 @@
-<template>
-  <div v-if="active" class="call-overlay">
-    <div v-if="status === 'incoming'" class="incoming-modal">
-      <div class="caller-info">
-        <div class="avatar-pulse">
-           <img :src="callerAvatar || '/placeholder.svg'" class="caller-avatar" />
-        </div>
-        <h3>{{ callerName }}</h3>
-        <p>Incoming {{ callType }} Call...</p>
-      </div>
-      <div class="actions">
-        <button @click="$emit('reject')" class="btn-reject">
-          <img src="/icons/call-icon.png" alt="Decline" width="24" style="transform: rotate(135deg); filter: invert(1);"/>
-        </button>
-        <button @click="$emit('accept')" class="btn-accept">
-          <img src="/icons/call-icon.png" alt="Accept" width="24"/>
-        </button>
-      </div>
-    </div>
-
-    <div v-else class="active-call">
-      <div class="video-grid" :class="gridClass">
-        <div id="local-player" class="video-container local">
-           <p class="user-label">You</p>
-        </div>
-        
-        <div v-for="(user, index) in remoteUsers" :key="user.uid" :id="'remote-player-' + user.uid" class="video-container">
-           <p class="user-label">
-             {{ remoteUsers.length === 1 ? remoteDisplayName : `User ${user.uid}` }}
-           </p>
-        </div>
-      </div>
-
-      <div class="controls-bar">
-        <button @click="$emit('toggle-audio')" class="control-btn" :class="{ 'off': !audioEnabled }">
-           Mic {{ audioEnabled ? 'On' : 'Off' }}
-        </button>
-        
-        <button v-if="callType === 'video'" @click="$emit('toggle-video')" class="control-btn" :class="{ 'off': !videoEnabled }">
-           Cam {{ videoEnabled ? 'On' : 'Off' }}
-        </button>
-        
-        <button @click="$emit('end')" class="control-btn end-call">
-           End Call
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useChatStore } from '../composables/useChatStore'; // Import the store
@@ -93,6 +43,56 @@ const gridClass = computed(() => {
   return 'grid-auto';
 });
 </script>
+
+<template>
+  <div v-if="active" class="call-overlay">
+    <div v-if="status === 'incoming'" class="incoming-modal">
+      <div class="caller-info">
+        <div class="avatar-pulse">
+           <img :src="callerAvatar || '/placeholder.svg'" class="caller-avatar" />
+        </div>
+        <h3>{{ callerName }}</h3>
+        <p>Incoming {{ callType }} Call...</p>
+      </div>
+      <div class="actions">
+        <button class="btn-reject" @click="$emit('reject')">
+          <img src="/icons/call-icon.png" alt="Decline" width="24" style="transform: rotate(135deg); filter: invert(1);"/>
+        </button>
+        <button class="btn-accept" @click="$emit('accept')">
+          <img src="/icons/call-icon.png" alt="Accept" width="24"/>
+        </button>
+      </div>
+    </div>
+
+    <div v-else class="active-call">
+      <div class="video-grid" :class="gridClass">
+        <div id="local-player" class="video-container local">
+           <p class="user-label">You</p>
+        </div>
+        
+        <div v-for="(user, index) in remoteUsers" :id="'remote-player-' + user.uid" :key="user.uid" class="video-container">
+           <p class="user-label">
+             {{ remoteUsers.length === 1 ? remoteDisplayName : `User ${user.uid}` }}
+           </p>
+        </div>
+      </div>
+
+      <div class="controls-bar">
+        <button class="control-btn" :class="{ 'off': !audioEnabled }" @click="$emit('toggle-audio')">
+           Mic {{ audioEnabled ? 'On' : 'Off' }}
+        </button>
+        
+        <button v-if="callType === 'video'" class="control-btn" :class="{ 'off': !videoEnabled }" @click="$emit('toggle-video')">
+           Cam {{ videoEnabled ? 'On' : 'Off' }}
+        </button>
+        
+        <button class="control-btn end-call" @click="$emit('end')">
+           End Call
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .call-overlay {

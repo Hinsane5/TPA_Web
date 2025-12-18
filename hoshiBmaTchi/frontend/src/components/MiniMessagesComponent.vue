@@ -1,38 +1,3 @@
-<template>
-  <div 
-    v-if="isVisible" 
-    class="mini-messages-pill" 
-    :style="{ left: position.x + 'px', top: position.y + 'px' }" 
-    @mousedown="startDrag"
-  >
-    <div class="pill-header">
-      <div class="icon-wrapper">
-        <img 
-          src="../../public/icons/messages-icon.png" 
-          alt="Messages" 
-          class="messenger-icon" 
-        />
-        
-        <div v-if="unreadSourcesCount > 0" class="badge">
-          {{ unreadSourcesCount }}
-        </div>
-      </div>
-      <span class="label">Messages</span>
-    </div>
-
-    <div class="avatars-container">
-      <div 
-        v-for="(user, index) in recentChatUsers" 
-        :key="user.id" 
-        class="avatar-wrapper"
-        :style="{ zIndex: 3 - index }"
-      >
-        <img :src="user.avatar || '/placeholder.svg'" :alt="user.username" class="avatar-img" />
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
@@ -121,6 +86,41 @@ const navigateToMessages = () => {
   router.push('/dashboard/messages');
 };
 </script>
+
+<template>
+  <div 
+    v-if="isVisible" 
+    class="mini-messages-pill" 
+    :style="{ left: position.x + 'px', top: position.y + 'px' }" 
+    @mousedown="startDrag"
+  >
+    <div class="pill-header">
+      <div class="icon-wrapper">
+        <img 
+          src="../../public/icons/messages-icon.png" 
+          alt="Messages" 
+          class="messenger-icon" 
+        />
+        
+        <div v-if="unreadSourcesCount > 0" class="badge">
+          {{ unreadSourcesCount }}
+        </div>
+      </div>
+      <span class="label">Messages</span>
+    </div>
+
+    <div class="avatars-container">
+      <div 
+        v-for="(user, index) in recentChatUsers" 
+        :key="user.id" 
+        class="avatar-wrapper"
+        :style="{ zIndex: 3 - index }"
+      >
+        <img :src="user.avatar || '/placeholder.svg'" :alt="user.username" class="avatar-img" />
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .mini-messages-pill {

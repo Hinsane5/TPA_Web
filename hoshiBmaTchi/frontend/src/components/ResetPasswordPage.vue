@@ -1,122 +1,3 @@
-<template>
-  <div class="reset-password-container">
-    <div class="lock-icon-section">
-      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
-    </div>
-
-    <div class="content-section">
-      <h2 class="heading">Reset Password</h2>
-      <p class="description">
-        Enter your new password below. Make sure it's strong and secure.
-      </p>
-    </div>
-
-    <form @submit.prevent="handleResetPassword" class="form">
-      <div class="form-group">
-        <label for="new-password" class="form-label">New Password</label>
-        <div class="password-input-wrapper">
-          <input
-            v-model="newPassword"
-            :type="showNewPassword ? 'text' : 'password'"
-            id="new-password"
-            placeholder="Enter new password"
-            class="input-field"
-            required
-          />
-          <button
-            type="button"
-            @click="showNewPassword = !showNewPassword"
-            class="toggle-password-btn"
-          >
-            {{ showNewPassword ? "👁️" : "👁️‍🗨️" }}
-          </button>
-        </div>
-        <!-- <div v-if="passwordValidation.criteria" class="password-criteria">
-          <div
-            :class="['criterion', { met: passwordValidation.criteria.length }]"
-          >
-            ✓ At least 8 characters
-          </div>
-          <div
-            :class="[
-              'criterion',
-              { met: passwordValidation.criteria.uppercase },
-            ]"
-          >
-            ✓ Uppercase letter
-          </div>
-          <div
-            :class="[
-              'criterion',
-              { met: passwordValidation.criteria.lowercase },
-            ]"
-          >
-            ✓ Lowercase letter
-          </div>
-          <div
-            :class="['criterion', { met: passwordValidation.criteria.number }]"
-          >
-            ✓ Number
-          </div>
-          <div
-            :class="['criterion', { met: passwordValidation.criteria.special }]"
-          >
-            ✓ Special character
-          </div>
-        </div> -->
-        <p
-          v-if="newPassword && !passwordValidation.isValid"
-          class="error-message"
-        >
-          {{ passwordValidation.message }}
-        </p>
-      </div>
-
-      <!-- Confirm Password Input -->
-      <div class="form-group">
-        <label for="confirm-password" class="form-label"
-          >Confirm Password</label
-        >
-        <div class="password-input-wrapper">
-          <input
-            v-model="confirmPassword"
-            :type="showConfirmPassword ? 'text' : 'password'"
-            id="confirm-password"
-            placeholder="Confirm new password"
-            class="input-field"
-            required
-          />
-          <button
-            type="button"
-            @click="showConfirmPassword = !showConfirmPassword"
-            class="toggle-password-btn"
-          >
-            {{ showConfirmPassword ? "👁️" : "👁️‍🗨️" }}
-          </button>
-        </div>
-        <p
-          v-if="confirmPassword && !confirmPasswordMatch"
-          class="error-message"
-        >
-          Passwords do not match
-        </p>
-      </div>
-
-      <button
-        type="submit"
-        class="btn btn-primary"
-        :disabled="!isFormValid || isLoading"
-      >
-        {{ isLoading ? "Resetting..." : "Reset Password" }}
-      </button>
-    </form>
-
-    <button type="button" class="back-button" @click="navigateTo('login')">
-      Back to login
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -214,6 +95,125 @@ const navigateTo = (page: AuthPage) => {
   }
 };
 </script>
+
+<template>
+  <div class="reset-password-container">
+    <div class="lock-icon-section">
+      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
+    </div>
+
+    <div class="content-section">
+      <h2 class="heading">Reset Password</h2>
+      <p class="description">
+        Enter your new password below. Make sure it's strong and secure.
+      </p>
+    </div>
+
+    <form class="form" @submit.prevent="handleResetPassword">
+      <div class="form-group">
+        <label for="new-password" class="form-label">New Password</label>
+        <div class="password-input-wrapper">
+          <input
+            id="new-password"
+            v-model="newPassword"
+            :type="showNewPassword ? 'text' : 'password'"
+            placeholder="Enter new password"
+            class="input-field"
+            required
+          />
+          <button
+            type="button"
+            class="toggle-password-btn"
+            @click="showNewPassword = !showNewPassword"
+          >
+            {{ showNewPassword ? "👁️" : "👁️‍🗨️" }}
+          </button>
+        </div>
+        <!-- <div v-if="passwordValidation.criteria" class="password-criteria">
+          <div
+            :class="['criterion', { met: passwordValidation.criteria.length }]"
+          >
+            ✓ At least 8 characters
+          </div>
+          <div
+            :class="[
+              'criterion',
+              { met: passwordValidation.criteria.uppercase },
+            ]"
+          >
+            ✓ Uppercase letter
+          </div>
+          <div
+            :class="[
+              'criterion',
+              { met: passwordValidation.criteria.lowercase },
+            ]"
+          >
+            ✓ Lowercase letter
+          </div>
+          <div
+            :class="['criterion', { met: passwordValidation.criteria.number }]"
+          >
+            ✓ Number
+          </div>
+          <div
+            :class="['criterion', { met: passwordValidation.criteria.special }]"
+          >
+            ✓ Special character
+          </div>
+        </div> -->
+        <p
+          v-if="newPassword && !passwordValidation.isValid"
+          class="error-message"
+        >
+          {{ passwordValidation.message }}
+        </p>
+      </div>
+
+      <!-- Confirm Password Input -->
+      <div class="form-group">
+        <label for="confirm-password" class="form-label"
+          >Confirm Password</label
+        >
+        <div class="password-input-wrapper">
+          <input
+            id="confirm-password"
+            v-model="confirmPassword"
+            :type="showConfirmPassword ? 'text' : 'password'"
+            placeholder="Confirm new password"
+            class="input-field"
+            required
+          />
+          <button
+            type="button"
+            class="toggle-password-btn"
+            @click="showConfirmPassword = !showConfirmPassword"
+          >
+            {{ showConfirmPassword ? "👁️" : "👁️‍🗨️" }}
+          </button>
+        </div>
+        <p
+          v-if="confirmPassword && !confirmPasswordMatch"
+          class="error-message"
+        >
+          Passwords do not match
+        </p>
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary"
+        :disabled="!isFormValid || isLoading"
+      >
+        {{ isLoading ? "Resetting..." : "Reset Password" }}
+      </button>
+    </form>
+
+    <button type="button" class="back-button" @click="navigateTo('login')">
+      Back to login
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .reset-password-container {

@@ -1,66 +1,3 @@
-<template>
-  <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>New Message</h3>
-        <button class="close-btn" @click="$emit('close')">✕</button>
-      </div>
-
-      <div class="modal-body">
-        <div v-if="selectedUsers.length > 1" class="input-group">
-          <input 
-            v-model="groupName" 
-            placeholder="Name your group..." 
-            class="text-input"
-          />
-        </div>
-
-        <div class="search-section">
-          <div class="to-label">To:</div>
-          <div class="selected-tags">
-            <span v-for="user in selectedUsers" :key="user.user_id" class="user-tag">
-              {{ user.username }}
-              <button @click="toggleUser(user)">✕</button>
-            </span>
-            <input 
-              v-model="searchQuery" 
-              placeholder="Search..." 
-              class="search-input"
-            />
-          </div>
-        </div>
-
-        <div class="results-list">
-          <div v-if="loading" class="loading">Loading...</div>
-          <div 
-            v-for="user in searchResults" 
-            :key="user.user_id" 
-            class="user-item"
-            @click="toggleUser(user)"
-          >
-            <img :src="user.profile_picture_url || '/placeholder.svg'" class="avatar" />
-            <div class="user-info">
-              <span class="username">{{ user.username }}</span>
-              <span class="fullname">{{ user.name }}</span>
-            </div>
-            <div class="checkbox">
-              <div v-if="isSelected(user.user_id)" class="checked-indicator">✓</div>
-            </div>
-          </div>
-        </div>
-
-        <button 
-          class="create-btn" 
-          :disabled="selectedUsers.length === 0"
-          @click="createChat"
-        >
-          Chat
-        </button>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { usersApi } from '../services/apiService';
@@ -149,6 +86,69 @@ watch(debouncedSearchQuery, async (newQuery) => {
   }
 });
 </script>
+
+<template>
+  <div class="modal-overlay" @click.self="$emit('close')">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>New Message</h3>
+        <button class="close-btn" @click="$emit('close')">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div v-if="selectedUsers.length > 1" class="input-group">
+          <input 
+            v-model="groupName" 
+            placeholder="Name your group..." 
+            class="text-input"
+          />
+        </div>
+
+        <div class="search-section">
+          <div class="to-label">To:</div>
+          <div class="selected-tags">
+            <span v-for="user in selectedUsers" :key="user.user_id" class="user-tag">
+              {{ user.username }}
+              <button @click="toggleUser(user)">✕</button>
+            </span>
+            <input 
+              v-model="searchQuery" 
+              placeholder="Search..." 
+              class="search-input"
+            />
+          </div>
+        </div>
+
+        <div class="results-list">
+          <div v-if="loading" class="loading">Loading...</div>
+          <div 
+            v-for="user in searchResults" 
+            :key="user.user_id" 
+            class="user-item"
+            @click="toggleUser(user)"
+          >
+            <img :src="user.profile_picture_url || '/placeholder.svg'" class="avatar" />
+            <div class="user-info">
+              <span class="username">{{ user.username }}</span>
+              <span class="fullname">{{ user.name }}</span>
+            </div>
+            <div class="checkbox">
+              <div v-if="isSelected(user.user_id)" class="checked-indicator">✓</div>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          class="create-btn" 
+          :disabled="selectedUsers.length === 0"
+          @click="createChat"
+        >
+          Chat
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .modal-overlay {

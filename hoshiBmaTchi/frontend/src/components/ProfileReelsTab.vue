@@ -1,52 +1,3 @@
-<template>
-  <div class="reels-tab-container">
-    <div v-if="loading" class="loading-skeleton">
-      <div v-for="n in 4" :key="n" class="skeleton-item"></div>
-    </div>
-
-    <div v-else-if="reels.length === 0" class="empty-state">
-      <div class="empty-icon-wrapper">
-        <img src="/icons/reels-icon.png" alt="Reels" class="empty-icon" />
-      </div>
-      <h2>No Reels Yet</h2>
-      <p>Capture and edit short videos.</p>
-    </div>
-
-    <div v-else class="reels-grid">
-      <div 
-        v-for="reel in reels" 
-        :key="reel.id" 
-        class="reel-item"
-        @click="openReel(reel)"
-      >
-        <div class="media-container">
-          <img 
-            :src="getThumbnail(reel)" 
-            class="reel-thumbnail" 
-            loading="lazy" 
-            alt="Reel thumbnail" 
-          />
-          
-          <div class="video-indicator">
-            <img src="/icons/reels-icon.png" alt="Reel" />
-          </div>
-
-          <div class="hover-overlay">
-            <div class="stat">
-              <img src="/icons/liked-icon.png" alt="Likes" />
-              <span>{{ formatCount(reel.likes_count) }}</span>
-            </div>
-            <div class="stat">
-              <img src="/icons/comment-icon.png" alt="Comments" />
-              <span>{{ formatCount(reel.comments_count) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { postsApi } from '@/services/apiService';
@@ -104,6 +55,55 @@ watch(() => props.userId, () => {
   fetchReels();
 });
 </script>
+
+<template>
+  <div class="reels-tab-container">
+    <div v-if="loading" class="loading-skeleton">
+      <div v-for="n in 4" :key="n" class="skeleton-item"></div>
+    </div>
+
+    <div v-else-if="reels.length === 0" class="empty-state">
+      <div class="empty-icon-wrapper">
+        <img src="/icons/reels-icon.png" alt="Reels" class="empty-icon" />
+      </div>
+      <h2>No Reels Yet</h2>
+      <p>Capture and edit short videos.</p>
+    </div>
+
+    <div v-else class="reels-grid">
+      <div 
+        v-for="reel in reels" 
+        :key="reel.id" 
+        class="reel-item"
+        @click="openReel(reel)"
+      >
+        <div class="media-container">
+          <img 
+            :src="getThumbnail(reel)" 
+            class="reel-thumbnail" 
+            loading="lazy" 
+            alt="Reel thumbnail" 
+          />
+          
+          <div class="video-indicator">
+            <img src="/icons/reels-icon.png" alt="Reel" />
+          </div>
+
+          <div class="hover-overlay">
+            <div class="stat">
+              <img src="/icons/liked-icon.png" alt="Likes" />
+              <span>{{ formatCount(reel.likes_count) }}</span>
+            </div>
+            <div class="stat">
+              <img src="/icons/comment-icon.png" alt="Comments" />
+              <span>{{ formatCount(reel.comments_count) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .reels-tab-container {

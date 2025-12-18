@@ -1,9 +1,3 @@
-<template>
-  <div class="progress-bar"
-    :class="{ active: isActive, completed: isCompleted }"
-  ></div>
-</template>
-
 <script setup lang="ts">
 interface Props {
   isActive: boolean;
@@ -12,6 +6,13 @@ interface Props {
 
 defineProps<Props>();
 </script>
+
+<template>
+  <div
+class="progress-bar"
+    :class="{ active: isActive, completed: isCompleted }"
+  ></div>
+</template>
 
 <style scoped>
 .progress-bar {

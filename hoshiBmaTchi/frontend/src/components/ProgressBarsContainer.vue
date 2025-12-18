@@ -1,14 +1,3 @@
-<template>
-  <div class="progress-container">
-    <div 
-      v-for="(story, idx) in stories" 
-      :key="story.id"
-      class="progress-bar"
-      :class="{ active: idx === currentStoryIndex, completed: idx < currentStoryIndex }"
-    ></div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import type { Story } from '../types/stories';
 
@@ -19,6 +8,17 @@ interface Props {
 
 defineProps<Props>();
 </script>
+
+<template>
+  <div class="progress-container">
+    <div 
+      v-for="(story, idx) in stories" 
+      :key="story.id"
+      class="progress-bar"
+      :class="{ active: idx === currentStoryIndex, completed: idx < currentStoryIndex }"
+    ></div>
+  </div>
+</template>
 
 <style scoped>
 .progress-container {

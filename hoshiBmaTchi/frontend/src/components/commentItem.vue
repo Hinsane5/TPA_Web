@@ -1,54 +1,3 @@
-<template>
-  <div class="comment-item">
-    <img 
-      :src="profileImage || '/default-avatar.png'" 
-      :alt="username"
-      class="comment-avatar"
-      @click="$emit('click-user')"
-    />
-    
-    <div class="comment-content">
-      <div class="comment-text-wrapper">
-        <div class="comment-header-row">
-          <span class="comment-username" @click="$emit('click-user')">{{ username }}</span>
-          <img 
-            v-if="isVerified" 
-            src="/icons/verified-icon.png" 
-            class="verified-badge-tiny" 
-            alt="Verified"
-          />
-        </div>
-        <span 
-          class="comment-body" 
-          v-html="parseRichText(commentText)"
-          @click="handleCommentClick"
-        ></span>
-      </div>
-
-      <div class="comment-metadata">
-        <span class="comment-time">{{ formattedTime }}</span>
-        <span v-if="likes > 0" class="comment-likes">{{ likes }} likes</span>
-        <button class="reply-action" @click="$emit('reply')">Reply</button>
-      </div>
-
-      <div v-if="repliesCount > 0" class="replies-toggle">
-        <div class="divider-line"></div>
-        <button class="replies-button" @click="toggleReplies">
-          {{ showReplies ? 'Hide' : 'View' }} {{ repliesCount }} {{ repliesCount === 1 ? 'reply' : 'replies' }}
-        </button>
-      </div>
-    </div>
-
-    <button class="like-button" @click="toggleLike">
-      <img 
-        :src="isLiked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
-        class="action-icon"
-        :class="{ active: isLiked }"
-      />
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { formatDistanceToNow } from "date-fns";
@@ -141,6 +90,57 @@ const handleCommentClick = async (event: MouseEvent) => {
 };
 
 </script>
+
+<template>
+  <div class="comment-item">
+    <img 
+      :src="profileImage || '/default-avatar.png'" 
+      :alt="username"
+      class="comment-avatar"
+      @click="$emit('click-user')"
+    />
+    
+    <div class="comment-content">
+      <div class="comment-text-wrapper">
+        <div class="comment-header-row">
+          <span class="comment-username" @click="$emit('click-user')">{{ username }}</span>
+          <img 
+            v-if="isVerified" 
+            src="/icons/verified-icon.png" 
+            class="verified-badge-tiny" 
+            alt="Verified"
+          />
+        </div>
+        <span 
+          class="comment-body" 
+          @click="handleCommentClick"
+          v-html="parseRichText(commentText)"
+        ></span>
+      </div>
+
+      <div class="comment-metadata">
+        <span class="comment-time">{{ formattedTime }}</span>
+        <span v-if="likes > 0" class="comment-likes">{{ likes }} likes</span>
+        <button class="reply-action" @click="$emit('reply')">Reply</button>
+      </div>
+
+      <div v-if="repliesCount > 0" class="replies-toggle">
+        <div class="divider-line"></div>
+        <button class="replies-button" @click="toggleReplies">
+          {{ showReplies ? 'Hide' : 'View' }} {{ repliesCount }} {{ repliesCount === 1 ? 'reply' : 'replies' }}
+        </button>
+      </div>
+    </div>
+
+    <button class="like-button" @click="toggleLike">
+      <img 
+        :src="isLiked ? '/icons/liked-icon.png' : '/icons/notifications-icon.png'"
+        class="action-icon"
+        :class="{ active: isLiked }"
+      />
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .comment-item {

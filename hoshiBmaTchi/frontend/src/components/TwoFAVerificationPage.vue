@@ -1,47 +1,3 @@
-<template>
-  <div class="twofa-container">
-    <div class="lock-icon-section">
-      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
-    </div>
-
-    <div class="content-section">
-      <h1 class="title">Verify Your Identity</h1>
-      <p class="description">
-        Enter the 6-digit code from your authenticator app or sent to your registered email.
-      </p>
-    </div>
-
-    <form @submit.prevent="handleSubmit" class="form">
-      <div class="form-group">
-        <label class="form-label">2FA Code</label>
-        <input 
-          v-model="otpCode"
-          type="text" 
-          placeholder="000000" 
-          maxlength="6"
-          inputmode="numeric"
-          class="input-field twofa-input"
-        />
-        <span v-if="error" class="error-message">{{ error }}</span>
-      </div>
-
-      <button type="submit" class="btn btn-primary">Verify 2FA Code</button>
-    </form>
-
-    <div class="divider">
-      <span>OR</span>
-    </div>
-
-    <button type="button" class="create-account-link" @click="navigateToRegister">
-      Create new account
-    </button>
-
-    <button type="button" class="back-button" @click="navigateToLogin">
-      Back to login
-    </button>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { authApi } from '../services/apiService'
@@ -110,6 +66,50 @@ const navigateToLogin = () => {
 }
 
 </script>
+
+<template>
+  <div class="twofa-container">
+    <div class="lock-icon-section">
+      <img src="/icons/lock-icon.png" alt="Lock" class="lock-icon" />
+    </div>
+
+    <div class="content-section">
+      <h1 class="title">Verify Your Identity</h1>
+      <p class="description">
+        Enter the 6-digit code from your authenticator app or sent to your registered email.
+      </p>
+    </div>
+
+    <form class="form" @submit.prevent="handleSubmit">
+      <div class="form-group">
+        <label class="form-label">2FA Code</label>
+        <input 
+          v-model="otpCode"
+          type="text" 
+          placeholder="000000" 
+          maxlength="6"
+          inputmode="numeric"
+          class="input-field twofa-input"
+        />
+        <span v-if="error" class="error-message">{{ error }}</span>
+      </div>
+
+      <button type="submit" class="btn btn-primary">Verify 2FA Code</button>
+    </form>
+
+    <div class="divider">
+      <span>OR</span>
+    </div>
+
+    <button type="button" class="create-account-link" @click="navigateToRegister">
+      Create new account
+    </button>
+
+    <button type="button" class="back-button" @click="navigateToLogin">
+      Back to login
+    </button>
+  </div>
+</template>
 
 <style scoped>
 .twofa-container {

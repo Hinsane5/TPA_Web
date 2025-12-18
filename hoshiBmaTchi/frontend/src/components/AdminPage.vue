@@ -1,107 +1,3 @@
-<template>
-  <div class="admin-container">
-    <aside class="admin-sidebar">
-      <h2>Admin Panel</h2>
-      <ul>
-        <li :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">User Management</li>
-        <li :class="{ active: activeTab === 'verification' }" @click="activeTab = 'verification'">Verification Requests</li>
-        <li :class="{ active: activeTab === 'reports' }" @click="activeTab = 'reports'">Content Moderation</li>
-        <li :class="{ active: activeTab === 'newsletter' }" @click="activeTab = 'newsletter'">Newsletter</li>
-      </ul>
-    </aside>
-
-    <main class="admin-content">
-      <div v-if="activeTab === 'users'" class="tab-content">
-        <h3>User Management</h3>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Email</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="user in users" :key="user.user_id">
-              <td>{{ user.username }}</td>
-              <td>{{ user.email }}</td>
-              <td>
-                <span :class="['status-badge', user.is_banned ? 'banned' : 'active']">
-                  {{ user.is_banned ? 'Banned' : 'Active' }}
-                </span>
-              </td>
-              <td>
-                <button v-if="!user.is_banned" @click="toggleBan(user, true)" class="btn-danger">Ban</button>
-                <button v-else @click="toggleBan(user, false)" class="btn-success">Unban</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div v-if="activeTab === 'verification'" class="tab-content">
-        <h3>Verification Requests</h3>
-        <div class="cards-grid">
-          <div v-for="req in verificationRequests" :key="req.id" class="request-card">
-            <div class="req-header">
-              <img :src="req.profile_picture_url" alt="User" class="avatar">
-              <strong>{{ req.username }}</strong>
-            </div>
-            <p><strong>Reason:</strong> {{ req.reason }}</p>
-            <div class="id-photo-wrapper">
-              <img :src="req.selfie_url" alt="ID Selfie" class="id-photo">
-            </div>
-            <div class="card-actions">
-              <button @click="handleVerification(req.id, 'ACCEPTED')" class="btn-success">Accept</button>
-              <button @click="handleVerification(req.id, 'REJECTED')" class="btn-danger">Reject</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="activeTab === 'reports'" class="tab-content">
-        <div class="sub-tabs">
-          <button @click="reportType = 'post'" :class="{ active: reportType === 'post' }">Post Reports</button>
-          <button @click="reportType = 'user'" :class="{ active: reportType === 'user' }">User Reports</button>
-        </div>
-
-        <div class="list-container">
-          <div v-for="report in reports" :key="report.id" class="report-item">
-            <div class="report-info">
-              <p><strong>Reporter:</strong> {{ report.reporter_name }}</p>
-              <p><strong>Reason:</strong> {{ report.reason }}</p>
-              <p v-if="reportType === 'post'"><strong>Post ID:</strong> {{ report.post_id }}</p>
-              <p v-if="reportType === 'user'"><strong>Reported User:</strong> {{ report.reported_user_name }}</p>
-            </div>
-            <div class="report-actions">
-              <button @click="handleReport(report.id, 'ACCEPT')" class="btn-danger">
-                {{ reportType === 'post' ? 'Delete Post' : 'Ban User' }}
-              </button>
-              <button @click="handleReport(report.id, 'REJECT')" class="btn-secondary">Ignore</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div v-if="activeTab === 'newsletter'" class="tab-content">
-        <h3>Send Newsletter</h3>
-        <form @submit.prevent="sendNewsletter" class="newsletter-form">
-          <div class="form-group">
-            <label>Subject</label>
-            <input v-model="newsletter.subject" type="text" required placeholder="Newsletter Subject">
-          </div>
-          <div class="form-group">
-            <label>Message Body</label>
-            <textarea v-model="newsletter.body" rows="6" required placeholder="Write your update here..."></textarea>
-          </div>
-          <button type="submit" class="btn-primary">Send to All Subscribers</button>
-        </form>
-      </div>
-    </main>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { adminApi } from '@/services/apiService';
@@ -170,6 +66,110 @@ onMounted(() => {
   loadUsers();
 });
 </script>
+
+<template>
+  <div class="admin-container">
+    <aside class="admin-sidebar">
+      <h2>Admin Panel</h2>
+      <ul>
+        <li :class="{ active: activeTab === 'users' }" @click="activeTab = 'users'">User Management</li>
+        <li :class="{ active: activeTab === 'verification' }" @click="activeTab = 'verification'">Verification Requests</li>
+        <li :class="{ active: activeTab === 'reports' }" @click="activeTab = 'reports'">Content Moderation</li>
+        <li :class="{ active: activeTab === 'newsletter' }" @click="activeTab = 'newsletter'">Newsletter</li>
+      </ul>
+    </aside>
+
+    <main class="admin-content">
+      <div v-if="activeTab === 'users'" class="tab-content">
+        <h3>User Management</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th>Email</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="user in users" :key="user.user_id">
+              <td>{{ user.username }}</td>
+              <td>{{ user.email }}</td>
+              <td>
+                <span :class="['status-badge', user.is_banned ? 'banned' : 'active']">
+                  {{ user.is_banned ? 'Banned' : 'Active' }}
+                </span>
+              </td>
+              <td>
+                <button v-if="!user.is_banned" class="btn-danger" @click="toggleBan(user, true)">Ban</button>
+                <button v-else class="btn-success" @click="toggleBan(user, false)">Unban</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="activeTab === 'verification'" class="tab-content">
+        <h3>Verification Requests</h3>
+        <div class="cards-grid">
+          <div v-for="req in verificationRequests" :key="req.id" class="request-card">
+            <div class="req-header">
+              <img :src="req.profile_picture_url" alt="User" class="avatar">
+              <strong>{{ req.username }}</strong>
+            </div>
+            <p><strong>Reason:</strong> {{ req.reason }}</p>
+            <div class="id-photo-wrapper">
+              <img :src="req.selfie_url" alt="ID Selfie" class="id-photo">
+            </div>
+            <div class="card-actions">
+              <button class="btn-success" @click="handleVerification(req.id, 'ACCEPTED')">Accept</button>
+              <button class="btn-danger" @click="handleVerification(req.id, 'REJECTED')">Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'reports'" class="tab-content">
+        <div class="sub-tabs">
+          <button :class="{ active: reportType === 'post' }" @click="reportType = 'post'">Post Reports</button>
+          <button :class="{ active: reportType === 'user' }" @click="reportType = 'user'">User Reports</button>
+        </div>
+
+        <div class="list-container">
+          <div v-for="report in reports" :key="report.id" class="report-item">
+            <div class="report-info">
+              <p><strong>Reporter:</strong> {{ report.reporter_name }}</p>
+              <p><strong>Reason:</strong> {{ report.reason }}</p>
+              <p v-if="reportType === 'post'"><strong>Post ID:</strong> {{ report.post_id }}</p>
+              <p v-if="reportType === 'user'"><strong>Reported User:</strong> {{ report.reported_user_name }}</p>
+            </div>
+            <div class="report-actions">
+              <button class="btn-danger" @click="handleReport(report.id, 'ACCEPT')">
+                {{ reportType === 'post' ? 'Delete Post' : 'Ban User' }}
+              </button>
+              <button class="btn-secondary" @click="handleReport(report.id, 'REJECT')">Ignore</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'newsletter'" class="tab-content">
+        <h3>Send Newsletter</h3>
+        <form class="newsletter-form" @submit.prevent="sendNewsletter">
+          <div class="form-group">
+            <label>Subject</label>
+            <input v-model="newsletter.subject" type="text" required placeholder="Newsletter Subject">
+          </div>
+          <div class="form-group">
+            <label>Message Body</label>
+            <textarea v-model="newsletter.body" rows="6" required placeholder="Write your update here..."></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Send to All Subscribers</button>
+        </form>
+      </div>
+    </main>
+  </div>
+</template>
 
 <style scoped>
 .admin-container {

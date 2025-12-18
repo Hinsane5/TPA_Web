@@ -1,3 +1,95 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue'
+import type { DashboardPage } from '../types'
+import { useAuth } from '../composables/useAuth'
+import { usersApi } from '../services/apiService'
+
+interface NavItem {
+  id: DashboardPage
+  label: string
+  iconPath: string
+}
+
+const props = defineProps<{
+  currentPage: DashboardPage
+  notificationCount?: number
+}>()
+
+const notificationCount = computed(() => props.notificationCount ?? 0)
+
+const emit = defineEmits<{
+  navigate: [page: DashboardPage]
+  logout: []
+  openSearch: []
+  openNotifications: []
+  openCreate: []
+}>()
+
+const isMoreMenuOpen = ref(false)
+const userProfile = ref<any>(null) 
+
+const { user, logout } = useAuth()
+
+const navItems: NavItem[] = [
+  { id: 'home', label: 'Home', iconPath: '/icons/home-icon.png' },
+  { id: 'explore', label: 'Explore', iconPath: '/icons/explore-icon.png' },
+  { id: 'reels', label: 'Reels', iconPath: '/icons/reels-icon.png' },
+  { id: 'messages', label: 'Messages', iconPath: '/icons/messages-icon.png' },
+  { id: 'profile', label: 'Profile', iconPath: '/icons/profile-icon.png' },
+]
+
+// HELPER: Convert minio:9000 to localhost:9000
+const getDisplayUrl = (url: string) => {
+  if (!url) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
+  return url.replace("http://minio:9000", "http://localhost:9000");
+};
+
+const navigateTo = (page: DashboardPage | 'settings' | 'saved' | 'admin') => {
+  if (page === 'settings') {
+    emit('navigate', 'settings' as any)
+  } else if (page === 'saved') {
+    emit('navigate', 'profile')
+  } else if (page === 'admin') {
+    emit('navigate', 'admin' as any)
+  } else {
+    emit('navigate', page)
+  }
+  isMoreMenuOpen.value = false
+}
+
+const toggleMoreMenu = () => {
+  isMoreMenuOpen.value = !isMoreMenuOpen.value
+}
+
+const toggleTheme = () => {
+  console.log('Toggle theme')
+}
+
+const handleLogout = () => {
+  logout()
+}
+
+const fetchUserProfile = async () => {
+  try {
+    const res = await usersApi.getMe();
+    userProfile.value = res.data;
+  } catch (error) {
+    console.error("Failed to load user profile for sidebar", error);
+  }
+}
+
+// Watch for user changes (e.g. after login) to re-fetch profile
+watch(user, (newUser) => {
+  if (newUser) {
+    fetchUserProfile();
+  }
+}, { immediate: true });
+
+onMounted(() => {
+  fetchUserProfile();
+})
+</script>
+
 <template>
   <aside class="sidebar">
     <div class="sidebar-content">
@@ -95,7 +187,7 @@
       </div>
     </div>
 
-    <div class="user-profile" v-if="userProfile">
+    <div v-if="userProfile" class="user-profile">
       <img 
         :src="getDisplayUrl(userProfile.profile_picture_url)" 
         :alt="userProfile.username" 
@@ -108,98 +200,6 @@
     </div>
   </aside>
 </template>
-
-<script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
-import type { DashboardPage } from '../types'
-import { useAuth } from '../composables/useAuth'
-import { usersApi } from '../services/apiService'
-
-interface NavItem {
-  id: DashboardPage
-  label: string
-  iconPath: string
-}
-
-const props = defineProps<{
-  currentPage: DashboardPage
-  notificationCount?: number
-}>()
-
-const notificationCount = computed(() => props.notificationCount ?? 0)
-
-const emit = defineEmits<{
-  navigate: [page: DashboardPage]
-  logout: []
-  openSearch: []
-  openNotifications: []
-  openCreate: []
-}>()
-
-const isMoreMenuOpen = ref(false)
-const userProfile = ref<any>(null) 
-
-const { user, logout } = useAuth()
-
-const navItems: NavItem[] = [
-  { id: 'home', label: 'Home', iconPath: '/icons/home-icon.png' },
-  { id: 'explore', label: 'Explore', iconPath: '/icons/explore-icon.png' },
-  { id: 'reels', label: 'Reels', iconPath: '/icons/reels-icon.png' },
-  { id: 'messages', label: 'Messages', iconPath: '/icons/messages-icon.png' },
-  { id: 'profile', label: 'Profile', iconPath: '/icons/profile-icon.png' },
-]
-
-// HELPER: Convert minio:9000 to localhost:9000
-const getDisplayUrl = (url: string) => {
-  if (!url) return 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
-  return url.replace("http://minio:9000", "http://localhost:9000");
-};
-
-const navigateTo = (page: DashboardPage | 'settings' | 'saved' | 'admin') => {
-  if (page === 'settings') {
-    emit('navigate', 'settings' as any)
-  } else if (page === 'saved') {
-    emit('navigate', 'profile')
-  } else if (page === 'admin') {
-    emit('navigate', 'admin' as any)
-  } else {
-    emit('navigate', page)
-  }
-  isMoreMenuOpen.value = false
-}
-
-const toggleMoreMenu = () => {
-  isMoreMenuOpen.value = !isMoreMenuOpen.value
-}
-
-const toggleTheme = () => {
-  console.log('Toggle theme')
-}
-
-const handleLogout = () => {
-  logout()
-}
-
-const fetchUserProfile = async () => {
-  try {
-    const res = await usersApi.getMe();
-    userProfile.value = res.data;
-  } catch (error) {
-    console.error("Failed to load user profile for sidebar", error);
-  }
-}
-
-// Watch for user changes (e.g. after login) to re-fetch profile
-watch(user, (newUser) => {
-  if (newUser) {
-    fetchUserProfile();
-  }
-}, { immediate: true });
-
-onMounted(() => {
-  fetchUserProfile();
-})
-</script>
 
 <style scoped>
 .sidebar {

@@ -1,209 +1,3 @@
-<template>
-  <div class="settings-page">
-    <div class="settings-container">
-      <aside class="settings-sidebar">
-        <h2 class="sidebar-title">Settings</h2>
-        <ul class="sidebar-menu">
-          <li 
-            v-for="tab in tabs" 
-            :key="tab.id" 
-            :class="{ active: currentTab === tab.id }" 
-            @click="currentTab = tab.id"
-          >
-            {{ tab.label }}
-          </li>
-        </ul>
-      </aside>
-
-      <main class="settings-content">
-        
-        <div v-if="currentTab === 'edit-profile'" class="content-wrapper edit-profile-view">
-          <header class="profile-header">
-            <div class="profile-avatar-container">
-              <img :src="profileForm.profile_picture_url || '/default-avatar.png'" alt="Profile" class="avatar-large" />
-            </div>
-            <div class="profile-actions">
-              <span class="username-display">{{ profileForm.name || 'User' }}</span>
-              <button class="link-btn" @click="triggerFileInput">Change Profile Photo</button>
-              <input type="file" ref="fileInput" @change="handleFileChange" class="hidden-input" accept="image/png, image/jpeg" />
-            </div>
-          </header>
-
-          <form @submit.prevent="saveProfile" class="ig-form">
-            <div class="form-row">
-              <aside><label>Name</label></aside>
-              <div class="field">
-                <input v-model="profileForm.name" type="text" placeholder="Name" />
-                <p class="help-text">Help people discover your account by using the name you're known by.</p>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <aside><label>Bio</label></aside>
-              <div class="field">
-                <textarea v-model="profileForm.bio" maxlength="150" rows="3"></textarea>
-                <div class="char-count">{{ (profileForm.bio || '').length }} / 150</div>
-              </div>
-            </div>
-
-            <div class="form-row">
-              <aside><label>Gender</label></aside>
-              <div class="field">
-                <select v-model="profileForm.gender" class="custom-select">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-row submit-row">
-              <aside></aside>
-              <div class="field">
-                <button type="submit" class="btn-primary">Submit</button>
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <div v-if="currentTab === 'notifications'" class="content-wrapper">
-          <h3 class="section-title">Notifications</h3>
-          <div class="setting-item">
-            <div class="setting-info">
-              <label>Push Notifications</label>
-              <p>Receive push notifications on your device.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" v-model="notifSettings.enable_push" @change="saveNotifications" />
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="setting-item">
-            <div class="setting-info">
-              <label>Email Notifications</label>
-              <p>Receive updates via email.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" v-model="notifSettings.enable_email" @change="saveNotifications" />
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div v-if="currentTab === 'privacy'" class="content-wrapper">
-          <h3 class="section-title">Account Privacy</h3>
-          <div class="setting-item">
-            <div class="setting-info">
-              <label>Private Account</label>
-              <p>When your account is private, only people you approve can see your photos and videos.</p>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" v-model="privacySettings.is_private" @change="savePrivacy" />
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-
-        <div v-if="currentTab === 'close-friends'" class="content-wrapper">
-          <h3 class="section-title">Close Friends</h3>
-          <p class="section-desc">We don't send notifications when you edit your close friends list.</p>
-          
-          <div class="search-container">
-            <input v-model="searchQuery" @input="searchUsers" placeholder="Search" class="ig-input search-input"/>
-          </div>
-
-          <div v-if="searchResults.length > 0" class="user-list search-results">
-            <div v-for="user in searchResults" :key="user.id" class="user-row">
-              <div class="user-left">
-                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
-                <span class="username">{{ user.username }}</span>
-              </div>
-              <button @click="addToCloseFriends(user)" class="btn-text-blue">Add</button>
-            </div>
-          </div>
-
-          <h4 class="sub-header" v-if="closeFriendsList.length > 0">Your List</h4>
-          <div class="user-list">
-            <div v-for="user in closeFriendsList" :key="user.user_id" class="user-row">
-              <div class="user-left">
-                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
-                <span class="username">{{ user.username }}</span>
-              </div>
-              <button @click="removeFromCloseFriends(user.user_id)" class="btn-danger-outline">Remove</button>
-            </div>
-            <div v-if="closeFriendsList.length === 0" class="empty-state">No close friends yet.</div>
-          </div>
-        </div>
-
-        <div v-if="currentTab === 'blocked'" class="content-wrapper">
-          <h3 class="section-title">Blocked Accounts</h3>
-          <p class="section-desc">You can block people anytime from their profiles.</p>
-          <div class="user-list">
-            <div v-for="user in blockedList" :key="user.user_id" class="user-row">
-               <div class="user-left">
-                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
-                <span class="username">{{ user.username }}</span>
-              </div>
-              <button @click="unblockUser(user.user_id)" class="btn-secondary">Unblock</button>
-            </div>
-            <div v-if="blockedList.length === 0" class="empty-state">You haven't blocked anyone.</div>
-          </div>
-        </div>
-
-        <div v-if="currentTab === 'hide-story'" class="content-wrapper">
-          <h3 class="section-title">Hide Story From</h3>
-          
-          <div class="search-container">
-            <input v-model="searchQueryStory" @input="searchUsersStory" placeholder="Search" class="ig-input search-input"/>
-          </div>
-
-          <div v-if="searchResultsStory.length > 0" class="user-list search-results">
-            <div v-for="user in searchResultsStory" :key="user.id" class="user-row">
-              <div class="user-left">
-                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
-                <span class="username">{{ user.username }}</span>
-              </div>
-              <button @click="hideStory(user)" class="btn-text-blue">Hide</button>
-            </div>
-          </div>
-
-          <h4 class="sub-header" v-if="hiddenStoryList.length > 0">Hidden Users</h4>
-          <div class="user-list">
-            <div v-for="user in hiddenStoryList" :key="user.user_id" class="user-row">
-               <div class="user-left">
-                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
-                <span class="username">{{ user.username }}</span>
-              </div>
-              <button @click="unhideStory(user.user_id)" class="btn-secondary">Unhide</button>
-            </div>
-            <div v-if="hiddenStoryList.length === 0" class="empty-state">Not hiding story from anyone.</div>
-          </div>
-        </div>
-
-        <div v-if="currentTab === 'request-verified'" class="content-wrapper">
-          <h3 class="section-title">Request Verification</h3>
-          <p class="section-desc">Apply for Instagram Verification.</p>
-          <form @submit.prevent="submitVerification" class="ig-form stack-form">
-            <div class="form-group">
-              <label>National Identity Card Number</label>
-              <input v-model="verifyForm.national_id" type="text" class="ig-input" placeholder="e.g. 1234567890" required />
-            </div>
-            <div class="form-group">
-              <label>Reason for Verification</label>
-              <textarea v-model="verifyForm.reason" class="ig-input" rows="3" required placeholder="Why should you be verified?"></textarea>
-            </div>
-            <div class="form-group">
-              <label>Photo of your face (Selfie)</label>
-              <input type="file" ref="selfieInput" class="file-control" required accept="image/*" />
-            </div>
-            <button type="submit" class="btn-primary full-width">Submit Request</button>
-          </form>
-        </div>
-
-      </main>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, onMounted, reactive } from 'vue';
 import { settingsApi, usersApi, postsApi } from '@/services/apiService';
@@ -403,6 +197,212 @@ onMounted(async () => {
     }
 });
 </script>
+
+<template>
+  <div class="settings-page">
+    <div class="settings-container">
+      <aside class="settings-sidebar">
+        <h2 class="sidebar-title">Settings</h2>
+        <ul class="sidebar-menu">
+          <li 
+            v-for="tab in tabs" 
+            :key="tab.id" 
+            :class="{ active: currentTab === tab.id }" 
+            @click="currentTab = tab.id"
+          >
+            {{ tab.label }}
+          </li>
+        </ul>
+      </aside>
+
+      <main class="settings-content">
+        
+        <div v-if="currentTab === 'edit-profile'" class="content-wrapper edit-profile-view">
+          <header class="profile-header">
+            <div class="profile-avatar-container">
+              <img :src="profileForm.profile_picture_url || '/default-avatar.png'" alt="Profile" class="avatar-large" />
+            </div>
+            <div class="profile-actions">
+              <span class="username-display">{{ profileForm.name || 'User' }}</span>
+              <button class="link-btn" @click="triggerFileInput">Change Profile Photo</button>
+              <input ref="fileInput" type="file" class="hidden-input" accept="image/png, image/jpeg" @change="handleFileChange" />
+            </div>
+          </header>
+
+          <form class="ig-form" @submit.prevent="saveProfile">
+            <div class="form-row">
+              <aside><label>Name</label></aside>
+              <div class="field">
+                <input v-model="profileForm.name" type="text" placeholder="Name" />
+                <p class="help-text">Help people discover your account by using the name you're known by.</p>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <aside><label>Bio</label></aside>
+              <div class="field">
+                <textarea v-model="profileForm.bio" maxlength="150" rows="3"></textarea>
+                <div class="char-count">{{ (profileForm.bio || '').length }} / 150</div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <aside><label>Gender</label></aside>
+              <div class="field">
+                <select v-model="profileForm.gender" class="custom-select">
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row submit-row">
+              <aside></aside>
+              <div class="field">
+                <button type="submit" class="btn-primary">Submit</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div v-if="currentTab === 'notifications'" class="content-wrapper">
+          <h3 class="section-title">Notifications</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <label>Push Notifications</label>
+              <p>Receive push notifications on your device.</p>
+            </div>
+            <label class="toggle-switch">
+              <input v-model="notifSettings.enable_push" type="checkbox" @change="saveNotifications" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <label>Email Notifications</label>
+              <p>Receive updates via email.</p>
+            </div>
+            <label class="toggle-switch">
+              <input v-model="notifSettings.enable_email" type="checkbox" @change="saveNotifications" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'privacy'" class="content-wrapper">
+          <h3 class="section-title">Account Privacy</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <label>Private Account</label>
+              <p>When your account is private, only people you approve can see your photos and videos.</p>
+            </div>
+            <label class="toggle-switch">
+              <input v-model="privacySettings.is_private" type="checkbox" @change="savePrivacy" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'close-friends'" class="content-wrapper">
+          <h3 class="section-title">Close Friends</h3>
+          <p class="section-desc">We don't send notifications when you edit your close friends list.</p>
+          
+          <div class="search-container">
+            <input v-model="searchQuery" placeholder="Search" class="ig-input search-input" @input="searchUsers"/>
+          </div>
+
+          <div v-if="searchResults.length > 0" class="user-list search-results">
+            <div v-for="user in searchResults" :key="user.id" class="user-row">
+              <div class="user-left">
+                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
+                <span class="username">{{ user.username }}</span>
+              </div>
+              <button class="btn-text-blue" @click="addToCloseFriends(user)">Add</button>
+            </div>
+          </div>
+
+          <h4 v-if="closeFriendsList.length > 0" class="sub-header">Your List</h4>
+          <div class="user-list">
+            <div v-for="user in closeFriendsList" :key="user.user_id" class="user-row">
+              <div class="user-left">
+                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
+                <span class="username">{{ user.username }}</span>
+              </div>
+              <button class="btn-danger-outline" @click="removeFromCloseFriends(user.user_id)">Remove</button>
+            </div>
+            <div v-if="closeFriendsList.length === 0" class="empty-state">No close friends yet.</div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'blocked'" class="content-wrapper">
+          <h3 class="section-title">Blocked Accounts</h3>
+          <p class="section-desc">You can block people anytime from their profiles.</p>
+          <div class="user-list">
+            <div v-for="user in blockedList" :key="user.user_id" class="user-row">
+               <div class="user-left">
+                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
+                <span class="username">{{ user.username }}</span>
+              </div>
+              <button class="btn-secondary" @click="unblockUser(user.user_id)">Unblock</button>
+            </div>
+            <div v-if="blockedList.length === 0" class="empty-state">You haven't blocked anyone.</div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'hide-story'" class="content-wrapper">
+          <h3 class="section-title">Hide Story From</h3>
+          
+          <div class="search-container">
+            <input v-model="searchQueryStory" placeholder="Search" class="ig-input search-input" @input="searchUsersStory"/>
+          </div>
+
+          <div v-if="searchResultsStory.length > 0" class="user-list search-results">
+            <div v-for="user in searchResultsStory" :key="user.id" class="user-row">
+              <div class="user-left">
+                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small"/>
+                <span class="username">{{ user.username }}</span>
+              </div>
+              <button class="btn-text-blue" @click="hideStory(user)">Hide</button>
+            </div>
+          </div>
+
+          <h4 v-if="hiddenStoryList.length > 0" class="sub-header">Hidden Users</h4>
+          <div class="user-list">
+            <div v-for="user in hiddenStoryList" :key="user.user_id" class="user-row">
+               <div class="user-left">
+                <img :src="user.profile_picture_url || '/default-avatar.png'" class="avatar-small" />
+                <span class="username">{{ user.username }}</span>
+              </div>
+              <button class="btn-secondary" @click="unhideStory(user.user_id)">Unhide</button>
+            </div>
+            <div v-if="hiddenStoryList.length === 0" class="empty-state">Not hiding story from anyone.</div>
+          </div>
+        </div>
+
+        <div v-if="currentTab === 'request-verified'" class="content-wrapper">
+          <h3 class="section-title">Request Verification</h3>
+          <p class="section-desc">Apply for Instagram Verification.</p>
+          <form class="ig-form stack-form" @submit.prevent="submitVerification">
+            <div class="form-group">
+              <label>National Identity Card Number</label>
+              <input v-model="verifyForm.national_id" type="text" class="ig-input" placeholder="e.g. 1234567890" required />
+            </div>
+            <div class="form-group">
+              <label>Reason for Verification</label>
+              <textarea v-model="verifyForm.reason" class="ig-input" rows="3" required placeholder="Why should you be verified?"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Photo of your face (Selfie)</label>
+              <input ref="selfieInput" type="file" class="file-control" required accept="image/*" />
+            </div>
+            <button type="submit" class="btn-primary full-width">Submit Request</button>
+          </form>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* Base Styles */
